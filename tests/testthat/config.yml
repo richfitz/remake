@@ -1,0 +1,21 @@
+# example configuration script for maker; using this to test out some
+# ideas.
+sources:
+  - code.R
+
+packages:
+  - MASS
+
+targets:
+  data.csv:
+    rule: download_data
+    target_argument_name: dest
+
+  processed:
+    depends: data.csv
+    rule: process_data
+
+  plot.pdf:
+    depends: processed
+    rule: do_plot
+    target_argument_name: filename

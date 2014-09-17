@@ -3,7 +3,7 @@
 \name{store}
 \alias{store}
 \title{Data store used by maker}
-\format{\preformatted{Class 'R6ClassGenerator' <environment: 0x7fd339ca9790> 
+\format{\preformatted{Class 'R6ClassGenerator' <environment: 0x7f80e60084d8> 
  - attr(*, "name")= chr "store_generator"
 }}
 \usage{
