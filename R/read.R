@@ -49,7 +49,7 @@ validate_target <- function(target_name, obj) {
   target$new(target_name, obj$rule, obj$depends, obj$target_argument_name)
 }
 
-target <- R6::R6Class(
+target <- R6Class(
   "target",
   public=list(
     name=NULL,
@@ -68,7 +68,18 @@ target <- R6::R6Class(
       ## self$depends.
       self$target_argument_name <- target_argument_name
 
-      assert_scalar_character(rule)
+      if (is.null(rule)) {
+        if (self$type != "file") {
+          stop("NULL rules are only allowed for files")
+        }
+        ## TODO: Not sure that this is the best place for this, but
+        ## this means it will always be caught.
+        if (!file.exists(name)) {
+          warning("Creating NULL target for nonexistant file ", name)
+        }
+      } else {
+        assert_scalar_character(rule)
+      }
       self$rule <- rule
 
       ## These get wired up as actual maker::target objects on a
@@ -87,13 +98,35 @@ target <- R6::R6Class(
       }
       i <- match(depends_name, names(obj$targets))
       if (any(is.na(i))) {
-        stop(sprintf("Unknown dependencies of %s: %s",
-                     self$name,
-                     paste(obj$depends[is.na(i)], collapse=", ")))
+        ## These are all that are missing:
+        msg <- depends_name[is.na(i)]
+        ## Missing non-file dependencies is always an error:
+        if (any(!target_is_file(msg))) {
+          stop(sprintf("Unknown dependencies of %s: %s",
+                       self$name,
+                       paste(msg[!target_is_file(msg)], collapse=", ")))
+        }
+        ## Ones that are there are OK.
+        ok <- file.exists(msg)
+        ## But ones that are missing warrant a warning (?)
+        ## TODO: Decode on the logic here.  Possibly need a section
+        ## somewhere in the file indicating which of these are going
+        ## to be created by what.
+        if (!all(ok)) {
+          warning(sprintf("Missing file dependencies of %s: %s",
+                          self$name,
+                          paste(msg[!ok], collapse=", ")),
+                  immediate.=TRUE)
+        }
       }
       ## This preserves the original names:
+      j <- !is.na(i)
       self$depends <- as.list(self$depends)
-      self$depends[] <- unname(obj$targets[i])
+      self$depends[j] <- unname(obj$targets[i[j]])
+      if (!all(j)) {
+        k <- which(!j)
+        self$depends[k] <- lapply(depends_name[k], target$new, rule=NULL)
+      }
     }
     ))
 

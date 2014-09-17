@@ -51,3 +51,21 @@ test_that("simple run", {
 
   cleanup()
 })
+
+test_that("Depending on a file we don't make", {
+  cleanup()
+  ## Manually run the download step from before -- now we have a file
+  ## that maker wants to depend on, but does not generate:
+  e <- new.env()
+  source("code.R", e)
+  e$download_data("data.csv")
+  ## This configuration is the same as config.yml, but it does not
+  ## contain a rule for building data.csv
+  m <- maker$new("config2.yml")
+
+  expect_that(m$build("data.csv"), throws_error("No such target"))
+  m$build("processed")
+  m$build("plot.pdf")
+
+  cleanup()
+})
