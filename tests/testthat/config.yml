@@ -4,7 +4,7 @@ sources:
   - code.R
 
 packages:
-  - MASS
+  - testthat
 
 targets:
   data.csv:
