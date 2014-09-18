@@ -127,6 +127,10 @@ target <- R6Class(
         k <- which(!j)
         self$depends[k] <- lapply(depends_name[k], target$new, rule=NULL)
       }
+    },
+
+    dependencies=function() {
+      sapply(self$depends, function(x) x$name)
     }
     ))
 

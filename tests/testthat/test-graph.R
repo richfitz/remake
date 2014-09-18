@@ -27,3 +27,11 @@ test_that("Cycle detection", {
   expect_that(topological_order(list(a="b", b="c", c="a")),
               throws_error("cyclic dependency"))
 })
+
+test_that("Dependency filtering", {
+  graph <- list(a="b", b="c", c="d", d=NULL)
+  expect_that(dependencies("a", graph), equals(letters[1:4]))
+  expect_that(dependencies("b", graph), equals(letters[2:4]))
+  expect_that(dependencies("c", graph), equals(letters[3:4]))
+  expect_that(dependencies("d", graph), equals("d"))
+})

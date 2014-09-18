@@ -268,6 +268,33 @@ maker <- R6Class(
       self$store$db$set(target_name, self$dependency_status(target_name))
     },
 
+    ## Really, when doing a dry_run, the status of a target is current
+    ## if UNKNOWN if a dependency has status BUILD.  For now, I'm not
+    ## worrying about that though.
+    update=function(target_name, verbose=TRUE, dry_run=FALSE) {
+      current <- self$is_current(target_name)
+      if (verbose) {
+        status <- if (current) "OK" else "BUILD"
+        self$print_message(target_name, status)
+      }
+      if (!current && !dry_run) {
+        self$build(target_name)
+      }
+    },
+
+    make=function(target_name, verbose=TRUE, dry_run=FALSE) {
+      graph <- self$dependency_graph()
+      plan <- dependencies(target_name, graph)
+      for (target in plan) {
+        self$update(target, verbose, dry_run)
+      }
+    },
+
+    print_message=function(target_name, status) {
+      ## 'status' is one of BUILD / OK
+      message(sprintf("[ %5s ] %s", status, target_name))
+    },
+
     is_current=function(target_name) {
       is_current(self$get_target(target_name), self$store)
     },
@@ -281,6 +308,12 @@ maker <- R6Class(
 
     targets=function() {
       names(self$config$targets)
-    }
+    },
 
+    dependency_graph=function() {
+      targets <- self$targets()
+      g <- lapply(targets, function(t) self$get_target(t)$dependencies())
+      names(g) <- targets
+      topological_sort(g)
+    }
     ))

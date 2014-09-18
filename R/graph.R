@@ -26,3 +26,13 @@ topological_order <- function(graph) {
 topological_sort <- function(graph) {
   graph[topological_order(graph)]
 }
+
+dependencies <- function(node, graph) {
+  seen <- structure(logical(length(graph)), names=names(graph))
+  while (length(node) > 0L) {
+    seen[node] <- TRUE
+    kids <- unlist(unname(graph[node]))
+    node <- kids[!seen[kids]]
+  }
+  names(seen[seen])
+}
