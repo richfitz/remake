@@ -36,15 +36,22 @@ object_store <- R6Class(
       writeLines(hash, self$hashname(key))
     },
 
-    del=function(key) {
-      file.remove(self$fullname(key))
+    del=function(key, missing_ok=FALSE) {
+      ## TODO: Generalise this pattern (see also get_hash)
+      exists <- self$contains(key)
+      if (exists) {
+        file.remove(self$fullname(key))
+        file.remove(self$hashname(key))
+      } else if (!missing_ok) {
+        stop(sprintf("key %s not found in object store", key))
+      }
+      invisible(exists)
     },
 
     get_hash=function(key, missing_ok=FALSE) {
-      file <- self$hashname(key)
-      exists <- file.exists(file)
+      exists <- self$contains(key)
       if (exists) {
-        readLines(file)
+        readLines(self$hashname(key))
       } else if (missing_ok) {
         NA_character_
       } else {
@@ -114,9 +121,20 @@ file_store <- R6Class(
       file.exists(self$fullname(filename))
     },
 
+    ## Deal with directories here?  Probably not.
+    del=function(filename, missing_ok=FALSE) {
+      ## TODO: Generalise this pattern (see also get_hash)
+      exists <- self$contains(filename)
+      if (exists) {
+        file.remove(self$fullname(filename))
+      } else if (!missing_ok) {
+        stop(sprintf("file %s not found in file store", filename))
+      }
+      invisible(exists)
+    },
+
     get_hash=function(filename, missing_ok=FALSE) {
-      file <- self$fullname(filename)
-      exists <- file.exists(file)
+      exists <- self$contains(filename)
       if (exists) {
         unname(tools::md5sum(self$fullname(filename)))
       } else if (missing_ok) {
@@ -128,11 +146,6 @@ file_store <- R6Class(
 
     fullname=function(filename) {
       filename
-    },
-
-    ## Deal with directories here?  Probably not.
-    del=function(filename) {
-      file.remove(self$fullname(filename))
     }
     ))
 
@@ -160,8 +173,14 @@ maker_db <- R6Class(
       writeLines(str, self$fullname(key))
     },
 
-    del=function(key) {
-      file.remove(self$fullname(key))
+    del=function(key, missing_ok=FALSE) {
+      exists <- self$contains(key)
+      if (exists) {
+        file.remove(self$fullname(key))
+      } else if (!missing_ok) {
+        stop(sprintf("key %s not found in maker database", key))
+      }
+      invisible(exists)
     },
 
     contains=function(key) {
@@ -216,6 +235,12 @@ store <- R6Class(
 
     contains=function(name, type=NULL) {
       private$right_store(type)$contains(name)
+    },
+
+    del=function(name, type=NULL, missing_ok=TRUE) {
+      did_delete_obj <- private$right_store(type)$del(name, missing_ok)
+      did_delete_db  <- self$db$del(name, missing_ok)
+      invisible(did_delete_obj || did_delete_db)
     },
 
     get_hash=function(name, type=NULL, missing_ok) {

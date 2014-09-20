@@ -126,6 +126,29 @@ maker <- R6Class(
       }
     },
 
+    cleanup=function(level="tidy", verbose=TRUE) {
+      levels <- cleanup_levels()
+      level <- match(match_value(level, setdiff(levels, "never")), levels)
+      targets <- self$get_targets(self$target_names())
+      target_level <- match(sapply(targets, function(x) x$cleanup), levels)
+      self$remove_targets(names(targets)[target_level <= level], verbose)
+    },
+
+    remove_targets=function(target_names, verbose=TRUE) {
+      for (t in target_names) {
+        self$remove_target(t, verbose)
+      }
+    },
+
+    remove_target=function(target_name, verbose=TRUE) {
+      target <- self$get_target(target_name)
+      did_remove <- self$store$del(target$name, target$type)
+      if (verbose) {
+        status <- if (did_remove) "DEL" else ""
+        message(sprintf("[ %5s ] %s", status, target$name))
+      }
+    },
+
     is_current=function(target_name) {
       is_current(self$get_target(target_name), self$store)
     },
@@ -197,9 +220,16 @@ read_maker_file <- function(filename) {
 
   validate_target <- function(target_name, obj) {
     warn_unknown(target_name, target,
-                 c("rule", "depends", "target_argument_name"))
-    target$new(target_name, obj$rule, obj$depends, obj$target_argument_name)
+                 c("rule", "depends", "target_argument_name",
+                   "cleanup_level"))
+    target$new(target_name, obj$rule, obj$depends,
+               with_default(obj$cleanup_level, "tidy"),
+               obj$target_argument_name)
   }
   dat$targets <- lnapply(dat$targets, validate_target)
   dat
+}
+
+cleanup_levels <- function() {
+  c("tidy", "clean", "deepclean", "never")
 }

@@ -48,3 +48,12 @@ lnapply <- function(X, FUN, ...) {
 is_directory <- function(path) {
   file.info(path)$isdir
 }
+
+## Like match.arg(), but does not allow for abbreviation.
+match_value <- function(arg, choices, msg=NULL) {
+  assert_scalar_character(arg)
+  if (!(arg %in% choices)) {
+    stop("'arg' must be one of ", paste(dQuote(choices), collapse=", "))
+  }
+  arg
+}

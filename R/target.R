@@ -5,14 +5,19 @@ target <- R6Class(
     depends=NULL,
     rule=NULL,
     type=NULL,
+    cleanup=NULL,
     target_argument_name=NULL,
     implicit=NULL,
-    initialize=function(name, rule, depends=NULL,
+    initialize=function(name, rule, depends=NULL, cleanup="tidy",
       target_argument_name=NULL, implicit=FALSE) {
       #
       self$name <- name
       self$type <- if (target_is_file(name)) "file" else "object"
       self$implicit <- implicit
+      if (is.null(rule)) {
+        cleanup <- "never"
+      }
+      self$cleanup <- match_value(cleanup, cleanup_levels())
 
       if (self$type == "object" && !is.null(target_argument_name)) {
         stop("'target_argument_name' is only allowed for file targets")

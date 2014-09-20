@@ -40,3 +40,15 @@ test_that("Build works", {
   expect_that(file.exists("plot.pdf"), is_true())
   cleanup()
 })
+
+test_that("Cleanup works", {
+  cleanup()
+  m <- maker$new("config.yml")
+  m$make("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_true())
+  m$cleanup()
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(file.exists("plot.pdf"), is_false())
+  m$cleanup("deepclean")
+  expect_that(file.exists("data.csv"), is_false())
+})
