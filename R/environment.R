@@ -5,17 +5,12 @@ create_environment <- function(sources, packages) {
   }
   for (s in sources) {
     if (is_directory(s)) {
-      source_dir(s, e, chdir=TRUE)
+      for (f in dir(s, pattern="^.*\\.[Rr]$", full.names=TRUE)) {
+        source(f, e, chdir=TRUE)
+      }
     } else {
       source(s, e, chdir=TRUE)
     }
   }
   e
-}
-
-source_dir <- function(path, ..., pattern="^.*\\.\\[Rr]$") {
-  files <- dir(path, pattern, full.names=TRUE)
-  for (f in files) {
-    source(f, ...)
-  }
 }
