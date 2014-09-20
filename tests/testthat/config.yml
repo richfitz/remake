@@ -19,3 +19,6 @@ targets:
     depends: processed
     rule: do_plot
     target_argument_name: filename
+
+  everything:
+    depends: plot.pdf

@@ -1,50 +1,3 @@
-## * `packages`: vector of packages to read
-## * `sources`: vector of source files to read
-## * `default_target`: name of the default target (within `targets`)
-## * `targets`: an unordered dictionary of targets to build.  Each
-##   target has form:
-##
-## name:
-##   rule: generating_function
-##   depends: <see below>
-##
-## The name is a character string and must be unique within this file.
-## If it contains a slash (/) or ends in one of the filename
-## extensions it will be assumed to be a file.  Otherwise it is
-## assumed to be the identifier for an R object.
-
-read_maker <- function(filename) {
-  validate_maker(yaml_read(filename), filename)
-}
-
-validate_maker <- function(dat, filename) {
-  warn_unknown(filename, dat, c("packages", "sources", "targets"))
-
-  dat$packages <- with_default(dat$packages, character(0))
-  dat$sources  <- with_default(dat$sources,  character(0))
-
-  if (!is.character(dat$packages)) {
-    stop("'packages' must be a character vector")
-  }
-  if (!is.character(dat$sources)) {
-    stop("'sources' must be a character vector")
-  }
-  if (!all(file.exists(dat$sources))) {
-    stop("All files in 'sources' must exist")
-  }
-  if (any(duplicated(names(dat$targets)))) {
-    stop("All target names must be unique")
-  }
-  dat$targets <- lnapply(dat$targets, validate_target)
-  dat
-}
-
-validate_target <- function(target_name, obj) {
-  warn_unknown(target_name, target,
-               c("rule", "depends", "target_argument_name"))
-  target$new(target_name, obj$rule, obj$depends, obj$target_argument_name)
-}
-
 target <- R6Class(
   "target",
   public=list(
@@ -69,12 +22,7 @@ target <- R6Class(
       self$target_argument_name <- target_argument_name
 
       if (is.null(rule)) {
-        if (self$type != "file") {
-          stop("NULL rules are only allowed for files")
-        }
-        ## TODO: Not sure that this is the best place for this, but
-        ## this means it will always be caught.
-        if (!file.exists(name)) {
+        if (self$type == "file" && !file.exists(name)) {
           warning("Creating NULL target for nonexistant file ", name)
         }
       } else {
@@ -118,7 +66,6 @@ target <- R6Class(
       sapply(self$depends, function(x) x$name)
     }
     ))
-
 
 ##' Returns the vector of known file extensions.  If a target ends in
 ##' one of these, then it will be considered a file, rather than an

@@ -65,3 +65,16 @@ test_that("Depending on a file we don't make", {
 
   cleanup()
 })
+
+test_that("Fake targets", {
+  cleanup()
+  m <- maker$new("config.yml")
+  expect_that(m$is_current("data.csv"), is_false())
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$is_current("plot.pdf"), is_false())
+  m$make("everything")
+  expect_that(m$is_current("data.csv"),  is_true())
+  expect_that(m$is_current("processed"), is_true())
+  expect_that(m$is_current("plot.pdf"),  is_true())
+  cleanup()
+})
