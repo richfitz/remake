@@ -273,8 +273,16 @@ maker <- R6Class(
 
     build=function(target_name) {
       target <- self$get_target(target_name)
+      ## TODO: Probably shortcut return here on NULL rules?
       if (target$implicit) {
         stop("Can't build implicit targets")
+      }
+      ## This avoids either manually creating directories, or obscure
+      ## errors when R can't save a file to a place.  Possibly this
+      ## should be a configurable behaviour, but we're guaranteed to
+      ## be working with genuine files so this should be harmless.
+      if (target$type == "file") {
+        dir.create(dirname(target$name), showWarnings=FALSE, recursive=TRUE)
       }
       res <- do_run(self$get_target(target_name), self$store, self$env)
       if (target$type == "object") {
