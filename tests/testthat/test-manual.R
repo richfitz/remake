@@ -11,11 +11,6 @@ cleanup <- function() {
   invisible(NULL)
 }
 
-## TODO: Should be able to depend on *files* that aren't targets.  I
-## think at this point that is not possible, but that's going to be
-## the case for external files.  However, depending on external
-## *objects* is never OK.
-
 test_that("simple run", {
   cleanup()
   m <- maker$new("config.yml")
@@ -63,7 +58,8 @@ test_that("Depending on a file we don't make", {
   ## contain a rule for building data.csv
   m <- maker$new("config2.yml")
 
-  expect_that(m$build("data.csv"), throws_error("No such target"))
+  expect_that(m$build("data.csv"),
+              throws_error("Can't build implicit targets"))
   m$build("processed")
   m$build("plot.pdf")
 

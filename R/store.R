@@ -237,6 +237,11 @@ store <- R6Class(
              stop("Invalid type ", dQuote(type)))
     }))
 
+
+##' The actual maker object to interact with.
+##' @title Main maker object
+##' @export
+##' @importFrom R6 R6Class
 maker <- R6Class(
   "maker",
   public=list(
@@ -244,9 +249,16 @@ maker <- R6Class(
     config=NULL,
     env=NULL,
 
-    initialize=function(maker_file, path=".") {
+    initialize=function(maker_file="maker.yml", path=".") {
       self$store <- store$new(path)
       self$config <- read_maker(maker_file)
+      for (t in self$config$targets) {
+        t$initialise_depends(self)
+      }
+      self$build_environment()
+    },
+
+    build_environment=function() {
       self$env <- create_environment(sources=self$config$sources,
                                      packages=self$config$packages)
     },
@@ -261,6 +273,9 @@ maker <- R6Class(
 
     build=function(target_name) {
       target <- self$get_target(target_name)
+      if (target$implicit) {
+        stop("Can't build implicit targets")
+      }
       res <- do_run(self$get_target(target_name), self$store, self$env)
       if (target$type == "object") {
         self$store$objects$set(target_name, res)
@@ -300,18 +315,43 @@ maker <- R6Class(
     },
 
     get_target=function(target_name) {
-      if (!(target_name %in% names(self$config$targets))) {
+      if (!(target_name %in% self$target_names())) {
         stop("No such target ", target_name)
       }
       self$config$targets[[target_name]]
     },
 
-    targets=function() {
+    get_targets=function(target_names) {
+      if (!all(target_names %in% self$target_names())) {
+        stop("No such target ",
+             paste(setdiff(target_names, self$target_names()), collapse=", "))
+      }
+      self$config$targets[target_names]
+    },
+
+    add_targets=function(x) {
+      if (!all(sapply(x, inherits, "target"))) {
+        stop("All elements must be targets")
+      }
+      target_names <- vapply(x, "[[", character(1), "name")
+      if (any(duplicated(target_names))) {
+        stop("All target names must be unique")
+      }
+      if (any(target_names %in% self$target_names())) {
+        stop("Targets already present: ",
+             paste(intersect(target_names, self$target_names()),
+                   collapse=", "))
+      }
+      names(x) <- target_names
+      self$config$targets <- c(self$config$targets, x)
+    },
+
+    target_names=function() {
       names(self$config$targets)
     },
 
     dependency_graph=function() {
-      targets <- self$targets()
+      targets <- self$target_names()
       g <- lapply(targets, function(t) self$get_target(t)$dependencies())
       names(g) <- targets
       topological_sort(g)

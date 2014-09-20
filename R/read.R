@@ -36,10 +36,6 @@ validate_maker <- function(dat, filename) {
     stop("All target names must be unique")
   }
   dat$targets <- lnapply(dat$targets, validate_target)
-
-  for (t in dat$targets) {
-    t$initialise_depends(dat)
-   }
   dat
 }
 
@@ -57,9 +53,13 @@ target <- R6Class(
     rule=NULL,
     type=NULL,
     target_argument_name=NULL,
-    initialize=function(name, rule, depends=NULL, target_argument_name=NULL) {
+    implicit=NULL,
+    initialize=function(name, rule, depends=NULL,
+      target_argument_name=NULL, implicit=FALSE) {
+      #
       self$name <- name
       self$type <- if (target_is_file(name)) "file" else "object"
+      self$implicit <- implicit
 
       if (self$type == "object" && !is.null(target_argument_name)) {
         stop("'target_argument_name' is only allowed for file targets")
@@ -88,6 +88,10 @@ target <- R6Class(
     },
 
     initialise_depends=function(obj) {
+      if (length(self$depends) == 0L) {
+        return()
+      }
+
       sapply(self$depends, assert_scalar_character)
       depends_name <- sapply(self$depends, "[[", 1)
       if (any(duplicated(names(depends_name)))) {
@@ -96,37 +100,18 @@ target <- R6Class(
       if (any(duplicated(setdiff(names(self$depends), "")))) {
         stop("All named depends targets must be unique")
       }
-      i <- match(depends_name, names(obj$targets))
-      if (any(is.na(i))) {
-        ## These are all that are missing:
-        msg <- depends_name[is.na(i)]
-        ## Missing non-file dependencies is always an error:
-        if (any(!target_is_file(msg))) {
-          stop(sprintf("Unknown dependencies of %s: %s",
-                       self$name,
-                       paste(msg[!target_is_file(msg)], collapse=", ")))
-        }
-        ## Ones that are there are OK.
-        ok <- file.exists(msg)
-        ## But ones that are missing warrant a warning (?)
-        ## TODO: Decode on the logic here.  Possibly need a section
-        ## somewhere in the file indicating which of these are going
-        ## to be created by what.
-        if (!all(ok)) {
-          warning(sprintf("Missing file dependencies of %s: %s",
-                          self$name,
-                          paste(msg[!ok], collapse=", ")),
-                  immediate.=TRUE)
-        }
+
+      ## This section matches the dependencies with their location in
+      ## the database's set of targets. Missing file targets will be
+      ## created and added to the database (which being passed by
+      ## reference will propagate backwards).
+      msg <- setdiff(depends_name, obj$target_names())
+      if (length(msg) > 0L) {
+        obj$add_targets(lapply(msg, target$new, rule=NULL, implicit=TRUE))
       }
+
       ## This preserves the original names:
-      j <- !is.na(i)
-      self$depends <- as.list(self$depends)
-      self$depends[j] <- unname(obj$targets[i[j]])
-      if (!all(j)) {
-        k <- which(!j)
-        self$depends[k] <- lapply(depends_name[k], target$new, rule=NULL)
-      }
+      self$depends[] <- obj$get_targets(depends_name)
     },
 
     dependencies=function() {
