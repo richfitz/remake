@@ -6,10 +6,10 @@ create_environment <- function(sources, packages) {
   for (s in sources) {
     if (is_directory(s)) {
       for (f in dir(s, pattern="^.*\\.[Rr]$", full.names=TRUE)) {
-        source(f, e, chdir=TRUE)
+        sys.source(f, e, chdir=TRUE)
       }
     } else {
-      source(s, e, chdir=TRUE)
+      sys.source(s, e, chdir=TRUE)
     }
   }
   e
