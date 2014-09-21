@@ -37,7 +37,7 @@ target <- R6Class(
 
       ## These get wired up as actual maker::target objects on a
       ## second pass, but we need a full database to do that.
-      self$depends <- as.list(depends)
+      self$depends <- from_yaml_map_list(depends)
     },
 
     initialize_depends=function(obj) {

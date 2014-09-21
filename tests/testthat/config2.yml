@@ -8,7 +8,7 @@ packages:
 
 targets:
   processed:
-    depends: data.csv
+    depends: [filename: data.csv]
     rule: process_data
 
   plot.pdf:

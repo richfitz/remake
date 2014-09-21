@@ -57,3 +57,17 @@ match_value <- function(arg, choices, msg=NULL) {
   }
   arg
 }
+
+from_yaml_map_list <- function(x) {
+  if (length(x) == 0L || is.character(x)) {
+    x <- as.list(x)
+  } else if (is.list(x)) {
+    if (!all(sapply(x, length) == 1L)) {
+      stop("Expected all elements to be scalar")
+    }
+    x <- unlist(x, FALSE)
+  } else {
+    stop("Unexpected input")
+  }
+  x
+}
