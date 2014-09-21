@@ -96,15 +96,7 @@ maker <- R6Class(
 
     print_message=function(target_name, current, step, nsteps) {
       status <- self$status_string(target_name, current)
-      if (is.null(step)) {
-        msg <- sprintf("[ %5s ] %s", status, target_name)
-      } else {
-        w <- nchar(nsteps) - 1L
-        msg <- sprintf("(%s / %s) [ %5s ] %s",
-                       formatC(step, w), formatC(nsteps, w),
-                       status, target_name)
-      }
-      message(msg)
+      message(sprintf("[ %5s ] %s", status, target_name))
     },
 
     status_string=function(target_name, current=NULL) {
