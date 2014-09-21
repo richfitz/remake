@@ -24,7 +24,9 @@ maker <- R6Class(
     file=NULL,
     path=NULL,
     store=NULL,
-    config=NULL,
+    sources=NULL,
+    packages=NULL,
+    targets=NULL,
     env=NULL,
 
     initialize=function(maker_file="maker.yml", path=".") {
@@ -35,17 +37,20 @@ maker <- R6Class(
 
     reload=function() {
       self$store <- store$new(self$path)
-      self$config <- read_maker_file(self$file)
+      config <- read_maker_file(self$file)
+      self$sources <- config$sources
+      self$packages <- config$packages
+      self$targets <- config$targets
       private$initialise_cleanup_targets()
-      for (t in self$config$targets) {
+      for (t in self$targets) {
         t$initialise_depends(self)
       }
       self$build_environment()
     },
 
     build_environment=function() {
-      self$env <- create_environment(sources=self$config$sources,
-                                     packages=self$config$packages)
+      self$env <- create_environment(sources=self$sources,
+                                     packages=self$packages)
     },
 
     ## This *computes the current status*, which can be fetched later
@@ -155,7 +160,7 @@ maker <- R6Class(
       if (!(target_name %in% self$target_names())) {
         stop("No such target ", target_name)
       }
-      self$config$targets[[target_name]]
+      self$targets[[target_name]]
     },
 
     get_targets=function(target_names) {
@@ -163,7 +168,7 @@ maker <- R6Class(
         stop("No such target ",
              paste(setdiff(target_names, self$target_names()), collapse=", "))
       }
-      self$config$targets[target_names]
+      self$targets[target_names]
     },
 
     add_targets=function(x, force=FALSE) {
@@ -184,11 +189,11 @@ maker <- R6Class(
         }
       }
       names(x) <- target_names
-      self$config$targets <- c(self$config$targets, x)
+      self$targets <- c(self$targets, x)
     },
 
     target_names=function() {
-      names(self$config$targets)
+      names(self$targets)
     },
 
     dependency_graph=function() {
@@ -218,8 +223,7 @@ maker <- R6Class(
     },
 
     drop_targets=function(x) {
-      keep <- !(names(self$config$targets) %in% x)
-      self$config$targets <- self$config$targets[keep]
+      self$targets <- self$targets[!(names(self$targets) %in% x)]
     }
     ))
 
