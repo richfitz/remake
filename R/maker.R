@@ -36,6 +36,7 @@ maker <- R6Class(
     reload=function() {
       self$store <- store$new(self$path)
       self$config <- read_maker_file(self$file)
+      private$initialise_cleanup_targets()
       for (t in self$config$targets) {
         t$initialise_depends(self)
       }
@@ -57,6 +58,9 @@ maker <- R6Class(
 
     build=function(target_name) {
       target <- self$get_target(target_name)
+      if (target$type == "cleanup") {
+        self$cleanup(target$name)
+      }
       if (target$implicit) {
         stop("Can't build implicit targets")
       }
@@ -74,7 +78,9 @@ maker <- R6Class(
       if (target$type == "object") {
         self$store$objects$set(target_name, res)
       }
-      self$store$db$set(target_name, self$dependency_status(target_name))
+      if (target$type != "cleanup") {
+        self$store$db$set(target_name, self$dependency_status(target_name))
+      }
     },
 
     ## Really, when doing a dry_run, the status of a target is current
@@ -105,10 +111,13 @@ maker <- R6Class(
     },
 
     status_string=function(target_name, current=NULL) {
+      target <- self$get_target(target_name)
       if (is.null(current)) {
         current <- self$is_current(target_name)
       }
-      if (is.null(self$get_target(target_name)$rule)) {
+      if (target$type == "cleanup") {
+        "CLEAN"
+      } else if (is.null(target$rule)) {
         ""
       } else if (current) {
         "OK"
@@ -131,7 +140,7 @@ maker <- R6Class(
       level <- match(match_value(level, setdiff(levels, "never")), levels)
       targets <- self$get_targets(self$target_names())
       target_level <- match(sapply(targets, function(x) x$cleanup), levels)
-      self$remove_targets(names(targets)[target_level <= level], verbose)
+      self$remove_targets(names(targets)[target_level == level], verbose)
     },
 
     remove_targets=function(target_names, verbose=TRUE) {
@@ -168,7 +177,7 @@ maker <- R6Class(
       self$config$targets[target_names]
     },
 
-    add_targets=function(x) {
+    add_targets=function(x, force=FALSE) {
       if (!all(sapply(x, inherits, "target"))) {
         stop("All elements must be targets")
       }
@@ -177,9 +186,13 @@ maker <- R6Class(
         stop("All target names must be unique")
       }
       if (any(target_names %in% self$target_names())) {
-        stop("Targets already present: ",
-             paste(intersect(target_names, self$target_names()),
-                   collapse=", "))
+        if (force) {
+          private$drop_targets(intersect(target_names, self$target_names()))
+        } else {
+          stop("Targets already present: ",
+               paste(intersect(target_names, self$target_names()),
+                     collapse=", "))
+        }
       }
       names(x) <- target_names
       self$config$targets <- c(self$config$targets, x)
@@ -194,6 +207,30 @@ maker <- R6Class(
       g <- lapply(targets, function(t) self$get_target(t)$dependencies())
       names(g) <- targets
       topological_sort(g)
+    }),
+  private=list(
+    initialise_cleanup_targets=function() {
+      levels <- cleanup_target_names()
+      targets <- list()
+      for (i in seq_along(levels)) {
+        target_name <- levels[[i]]
+        if (target_name %in% self$target_names()) {
+          depends <- self$get_target(target_name)$depends
+          rule    <- self$get_target(target_name)$rule
+        } else {
+          depends <- rule <- NULL
+        }
+        if (i > 1L) {
+          depends <- c(depends, list(levels[[i - 1L]]))
+        }
+        targets[[i]] <- target$new(target_name, "cleanup", rule, depends)
+      }
+      self$add_targets(targets, force=TRUE)
+    },
+
+    drop_targets=function(x) {
+      keep <- !(names(self$config$targets) %in% x)
+      self$config$targets <- self$config$targets[keep]
     }
     ))
 
@@ -233,5 +270,9 @@ read_maker_file <- function(filename) {
 }
 
 cleanup_levels <- function() {
-  c("tidy", "clean", "deepclean", "never")
+  c("tidy", "clean", "purge", "never")
+}
+
+cleanup_target_names <- function() {
+  c("tidy", "clean", "purge")
 }

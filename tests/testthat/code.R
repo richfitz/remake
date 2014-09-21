@@ -20,3 +20,7 @@ do_plot <- function(dat, filename) {
   on.exit(dev.off())
   plot(kmpl ~ disp, dat)
 }
+
+clean_hook <- function() {
+  message("running post-cleanup hook")
+}

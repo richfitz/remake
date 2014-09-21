@@ -7,10 +7,13 @@ packages:
   - testthat
 
 targets:
+  all:
+    depends: plot.pdf
+
   data.csv:
     rule: download_data
     target_argument_name: dest
-    cleanup_level: deepclean
+    cleanup_level: purge
 
   processed:
     depends: data.csv
@@ -21,5 +24,5 @@ targets:
     rule: do_plot
     target_argument_name: filename
 
-  everything:
-    depends: plot.pdf
+  clean:
+    rule: clean_hook

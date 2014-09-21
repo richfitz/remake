@@ -8,7 +8,10 @@
 ##
 ## Otherwise unclean
 is_current <- function(target, store) {
-  if (!store$contains(target$name, target$type)) {
+  if (target$type == "cleanup") {
+    ## always run cleanup rules
+    return(FALSE)
+  } else if (!store$contains(target$name, target$type)) {
     return(FALSE)
   } else if (length(target$depends) == 0L) {
     return(TRUE)
@@ -34,6 +37,8 @@ is_current <- function(target, store) {
 }
 
 ## Orchestrate doing a run
+##
+## This needs some careful checking.
 do_run <- function(target, store, env) {
   get_dependency <- function(x) {
     if (x$type == "object") {
@@ -42,10 +47,18 @@ do_run <- function(target, store, env) {
       x$name
     }
   }
-  args <- lapply(target$depends, get_dependency)
-  names(args) <- names(target$depends)
-  if (!is.null(target$target_argument_name)) {
-    args[[target$target_argument_name]] <- target$name
+
+  if (target$type == "cleanup") {
+    args <- list()
+  } else {
+    ## Don't depend on rules that are of special types.
+    depends <- target$depends[sapply(target$depends, "[[", "type") %in%
+                              c("file", "object")]
+    args <- lapply(depends, get_dependency)
+    names(args) <- names(depends)
+    if (!is.null(target$target_argument_name)) {
+      args[[target$target_argument_name]] <- target$name
+    }
   }
 
   do.call(target$rule, args, envir=env)

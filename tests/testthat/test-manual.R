@@ -72,7 +72,7 @@ test_that("Fake targets", {
   expect_that(m$is_current("data.csv"), is_false())
   expect_that(m$is_current("processed"), is_false())
   expect_that(m$is_current("plot.pdf"), is_false())
-  m$make("everything")
+  m$make("all")
   expect_that(m$is_current("data.csv"),  is_true())
   expect_that(m$is_current("processed"), is_true())
   expect_that(m$is_current("plot.pdf"),  is_true())

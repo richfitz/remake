@@ -14,7 +14,7 @@ target <- R6Class(
       self$name <- name
       self$type <- type
       self$implicit <- implicit
-      if (is.null(rule)) {
+      if (is.null(rule) || type == "cleanup") {
         cleanup <- "never"
       }
       self$cleanup <- match_value(cleanup, cleanup_levels())
