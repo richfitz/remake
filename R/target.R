@@ -40,7 +40,7 @@ target <- R6Class(
       self$depends <- as.list(depends)
     },
 
-    initialise_depends=function(obj) {
+    initialize_depends=function(obj) {
       if (length(self$depends) == 0L) {
         return()
       }

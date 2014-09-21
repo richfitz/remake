@@ -41,9 +41,9 @@ maker <- R6Class(
       self$sources <- config$sources
       self$packages <- config$packages
       self$targets <- config$targets
-      private$initialise_cleanup_targets()
+      private$initialize_cleanup_targets()
       for (t in self$targets) {
-        t$initialise_depends(self)
+        t$initialize_depends(self)
       }
       self$build_environment()
     },
@@ -203,7 +203,7 @@ maker <- R6Class(
       topological_sort(g)
     }),
   private=list(
-    initialise_cleanup_targets=function() {
+    initialize_cleanup_targets=function() {
       levels <- cleanup_target_names()
       targets <- list()
       for (i in seq_along(levels)) {
