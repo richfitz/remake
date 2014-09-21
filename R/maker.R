@@ -131,9 +131,9 @@ maker <- R6Class(
 
     cleanup=function(level="tidy", verbose=TRUE) {
       levels <- cleanup_levels()
-      level <- match(match_value(level, setdiff(levels, "never")), levels)
+      level <- match_value(level, setdiff(levels, "never"))
       targets <- self$get_targets(self$target_names())
-      target_level <- match(sapply(targets, function(x) x$cleanup), levels)
+      target_level <- sapply(targets, function(x) x$cleanup_level)
       self$remove_targets(names(targets)[target_level == level], verbose)
     },
 
