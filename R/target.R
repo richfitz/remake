@@ -60,8 +60,10 @@ target <- R6Class(
       ## reference will propagate backwards).
       msg <- setdiff(depends_name, obj$target_names())
       if (length(msg) > 0L) {
-        obj$add_targets(lapply(msg, target$new, type=target_type(msg),
-                               rule=NULL, implicit=TRUE))
+        target_implicit <- function(name) {
+          target$new(name, target_type(name), NULL, implicit=TRUE)
+        }
+        obj$add_targets(lapply(msg, target_implicit))
       }
 
       ## This preserves the original names:

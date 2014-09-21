@@ -8,8 +8,7 @@
 ##
 ## Otherwise unclean
 is_current <- function(target, store) {
-  if (target$type == "cleanup") {
-    ## always run cleanup rules
+  if (target$type == "cleanup" || target$type == "fake") {
     return(FALSE)
   } else if (!store$contains(target$name, target$type)) {
     return(FALSE)
@@ -47,8 +46,9 @@ do_run <- function(target, store, env) {
       x$name
     }
   }
-
-  if (target$type == "cleanup") {
+  if (target$type == "fake" || is.null(target$rule)) {
+    return()
+  } else if (target$type == "cleanup") {
     args <- list()
   } else {
     ## Don't depend on rules that are of special types.

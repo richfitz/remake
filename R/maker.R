@@ -64,9 +64,6 @@ maker <- R6Class(
       if (target$implicit) {
         stop("Can't build implicit targets")
       }
-      if (is.null(target$rule)) {
-        return()
-      }
       ## This avoids either manually creating directories, or obscure
       ## errors when R can't save a file to a place.  Possibly this
       ## should be a configurable behaviour, but we're guaranteed to
@@ -259,9 +256,11 @@ read_maker_file <- function(filename) {
     warn_unknown(target_name, target,
                  c("rule", "depends", "target_argument_name",
                    "cleanup_level"))
-
-    target$new(target_name, target_type(target_name), obj$rule,
-               depends=obj$depends,
+    type <- target_type(target_name)
+    if (type == "object" && is.null(obj$rule)) {
+      type <- "fake"
+    }
+    target$new(target_name, type, obj$rule, depends=obj$depends,
                cleanup=with_default(obj$cleanup_level, "tidy"),
                target_argument_name=obj$target_argument_name)
   }
