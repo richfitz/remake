@@ -8,11 +8,11 @@ target <- R6Class(
     cleanup=NULL,
     target_argument_name=NULL,
     implicit=NULL,
-    initialize=function(name, rule, depends=NULL, cleanup="tidy",
+    initialize=function(name, type, rule, depends=NULL, cleanup="tidy",
       target_argument_name=NULL, implicit=FALSE) {
       #
       self$name <- name
-      self$type <- if (target_is_file(name)) "file" else "object"
+      self$type <- type
       self$implicit <- implicit
       if (is.null(rule)) {
         cleanup <- "never"
@@ -60,7 +60,8 @@ target <- R6Class(
       ## reference will propagate backwards).
       msg <- setdiff(depends_name, obj$target_names())
       if (length(msg) > 0L) {
-        obj$add_targets(lapply(msg, target$new, rule=NULL, implicit=TRUE))
+        obj$add_targets(lapply(msg, target$new, type=target_type(msg),
+                               rule=NULL, implicit=TRUE))
       }
 
       ## This preserves the original names:
@@ -103,4 +104,8 @@ extensions <- function() {
 target_is_file <- function(x) {
   ext_pattern <- sprintf("\\.(%s)$", paste(extensions(), collapse="|"))
   grepl("/", x) | grepl(ext_pattern, x, ignore.case=TRUE)
+}
+
+target_type <- function(x) {
+  ifelse(target_is_file(x), "file", "object")
 }

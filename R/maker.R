@@ -222,9 +222,11 @@ read_maker_file <- function(filename) {
     warn_unknown(target_name, target,
                  c("rule", "depends", "target_argument_name",
                    "cleanup_level"))
-    target$new(target_name, obj$rule, obj$depends,
-               with_default(obj$cleanup_level, "tidy"),
-               obj$target_argument_name)
+
+    target$new(target_name, target_type(target_name), obj$rule,
+               depends=obj$depends,
+               cleanup=with_default(obj$cleanup_level, "tidy"),
+               target_argument_name=obj$target_argument_name)
   }
   dat$targets <- lnapply(dat$targets, validate_target)
   dat
