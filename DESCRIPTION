@@ -13,6 +13,7 @@ Imports:
     R6 (>= 2.0.0),
     digest,
     rjson,
-    yaml
+    yaml,
+    optparse
 Suggests:
     testthat
