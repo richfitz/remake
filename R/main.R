@@ -10,7 +10,7 @@ main <- function(args=commandArgs(TRUE)) {
     stop("This is not meant to be used from an R session!")
   }
   args <- parse_args(OptionParser(option_list=maker_options()), args,
-                     positional_arguments=c(0, 1))
+                     positional_arguments=TRUE)
   opts <- args$options
   if (opts$version) {
     print_version()
@@ -21,11 +21,17 @@ main <- function(args=commandArgs(TRUE)) {
     print_targets(m)
     return(invisible())
   }
-  target <- args$args
-  if (length(target) != 1L) {
-    stop("Expected exactly most one target")
-  } else {
-    m$make(target, !opts$quiet, opts$dry_run)
+  targets <- args$args
+  if (length(targets) == 0L) {
+    pos <- m$target_names()
+    if (length(pos) == 0L) {
+      stop("No targets found")
+    } else {
+      targets <- pos[[1]]
+    }
+  }
+  for (t in targets) {
+    m$make(t, !opts$quiet, opts$dry_run)
   }
 }
 
