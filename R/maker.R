@@ -246,7 +246,7 @@ read_maker_file <- function(filename) {
   }
 
   validate_target <- function(target_name, obj) {
-    warn_unknown(target_name, target,
+    warn_unknown(target_name, obj,
                  c("rule", "depends", "target_argument_name",
                    "cleanup_level"))
     type <- target_type(target_name)
