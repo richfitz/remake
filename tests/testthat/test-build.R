@@ -34,3 +34,16 @@ test_that("Cleanup works", {
   expect_that(m$make("purge"), shows_message("running post-cleanup hook"))
   expect_that(file.exists("data.csv"), is_false())
 })
+
+test_that("Fake targets", {
+  cleanup()
+  m <- maker$new("config.yml")
+  expect_that(m$is_current("data.csv"), is_false())
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$is_current("plot.pdf"), is_false())
+  m$make("all")
+  expect_that(m$is_current("data.csv"),  is_true())
+  expect_that(m$is_current("processed"), is_true())
+  expect_that(m$is_current("plot.pdf"),  is_true())
+  cleanup()
+})

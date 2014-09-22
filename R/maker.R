@@ -45,12 +45,9 @@ maker <- R6Class(
       for (t in self$targets) {
         t$initialize_depends(self)
       }
-      self$build_environment()
-    },
-
-    build_environment=function() {
       self$env <- create_environment(sources=self$sources,
                                      packages=self$packages)
+      self$store$deps <- code_deps$new(self$env)
     },
 
     ## This *computes the current status*, which can be fetched later
@@ -80,7 +77,7 @@ maker <- R6Class(
       if (target$type == "object") {
         self$store$objects$set(target_name, res)
       }
-      if (target$type != "cleanup") {
+      if (!(target$type %in% c("cleanup", "fake"))) {
         self$store$db$set(target_name, self$dependency_status(target_name))
       }
     },

@@ -14,6 +14,7 @@ Imports:
     digest,
     rjson,
     yaml,
-    optparse
+    optparse,
+    codetools
 Suggests:
     testthat

@@ -20,20 +20,42 @@ test_that("simple run", {
   expect_that(m$is_current("plot.pdf"), is_false())
 
   ## This is possibly overkill:
-  expect_that(m$dependency_status("data.csv", TRUE),
-              equals(list(name="data.csv", depends=list())))
-  expect_that(m$dependency_status("processed", TRUE),
-              equals(list(name="processed",
-                          depends=list(list(
-                            name="data.csv",
-                            type="file",
-                            hash=NA_character_)))))
-  expect_that(m$dependency_status("plot.pdf", TRUE),
-              equals(list(name="plot.pdf",
-                          depends=list(list(
-                            name="processed",
-                            type="object",
-                            hash=NA_character_)))))
+  ## Hmm, this is *wrong*.  Should depend on all sorts of things that
+  ## generated data.csv?
+  cmp <- list(name="data.csv",
+              depends=list(),
+              code=list(
+                functions=list(download_data=hash_function(
+                                 m$env$download_data)),
+                packages=list(utils=as.character(
+                                packageVersion("utils")))))
+  expect_that(m$dependency_status("data.csv", TRUE), equals(cmp))
+
+  cmp <- list(name="processed",
+              depends=list(
+                list(name="data.csv", type="file", hash=NA_character_)),
+              code=list(
+                functions=list(process_data=hash_function(
+                                 m$env$process_data)),
+                packages=list(utils=as.character(
+                                packageVersion("utils")))))
+  expect_that(m$dependency_status("processed", TRUE), equals(cmp))
+
+  res <- m$dependency_status("plot.pdf", TRUE)
+  pkgs <- c("grDevices", "graphics")
+  expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
+  res$code$packages <- res$code$packages[pkgs]
+  cmp <- list(name="plot.pdf",
+              depends=list(
+                list(name="processed", type="object", hash=NA_character_)),
+              code=list(
+                functions=list(do_plot=hash_function(
+                                 m$env$do_plot)),
+                packages=list(
+                  grDevices=as.character(packageVersion("grDevices")),
+                  graphics=as.character(packageVersion("graphics"))
+                  )))
+  expect_that(res, equals(cmp))
 
   ## Run the build system manually:
   m$build("data.csv")
@@ -63,18 +85,5 @@ test_that("Depending on a file we don't make", {
   m$build("processed")
   m$build("plot.pdf")
 
-  cleanup()
-})
-
-test_that("Fake targets", {
-  cleanup()
-  m <- maker$new("config.yml")
-  expect_that(m$is_current("data.csv"), is_false())
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$is_current("plot.pdf"), is_false())
-  m$make("all")
-  expect_that(m$is_current("data.csv"),  is_true())
-  expect_that(m$is_current("processed"), is_true())
-  expect_that(m$is_current("plot.pdf"),  is_true())
   cleanup()
 })

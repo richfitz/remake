@@ -214,6 +214,7 @@ store <- R6Class(
     db=NULL,
     objects=NULL,
     files=NULL,
+    deps=NULL,
     path=NULL,
 
     initialize=function(path=".") {

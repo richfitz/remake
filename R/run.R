@@ -21,17 +21,8 @@ is_current <- function(target, store) {
     ## tell if it's up to date and assume not.
     return(FALSE)
   } else {
-    prev <- store$db$get(target$name)
-    curr <- dependency_status(target, store, TRUE)
-    ## In theory this is too harsh, as might also want to *remove* a
-    ## dependency.  So:
-    ##   i <- (sapply(prev$depends, "[[", "name") %in%
-    ##         sapply(curr$depends, "[[", "name"))
-    ##   prev$depends <- prev$depends[i]
-    ## would filter out dependencies that have been dropped.  But that
-    ## implies a change in function definition, whch should be
-    ## sufficient for a rebuild.
-    return(identical(prev, curr))
+    return(compare_status(store$db$get(target$name),
+                          dependency_status(target, store, missing_ok=TRUE)))
   }
 }
 
@@ -70,5 +61,24 @@ dependency_status <- function(target, store, missing_ok=FALSE) {
          type=x$type,
          hash=unname(store$get_hash(x$name, x$type, missing_ok)))
   }
-  list(name=target$name, depends=lapply(target$depends, status1))
+  list(name=target$name,
+       depends=lapply(target$depends, status1),
+       code=store$deps$info(target$rule))
+}
+
+## In theory this is too harsh, as might also want to *remove* a
+## dependency.  So:
+##   i <- (sapply(prev$depends, "[[", "name") %in%
+##         sapply(curr$depends, "[[", "name"))
+##   prev$depends <- prev$depends[i]
+## would filter out dependencies that have been dropped.  But that
+## implies a change in function definition, whch should be
+## sufficient for a rebuild.
+##
+## TODO: An update -- because we're loading JSON we can't rely on map
+## order.  Doing that with R is probably not safe anyway because these
+## were sorted according to the current locale.  We'll need to
+## establish a common ordering/name set for these.
+compare_status <- function(prev, curr) {
+  identical(prev, curr)
 }
