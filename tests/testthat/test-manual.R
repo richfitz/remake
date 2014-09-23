@@ -8,7 +8,7 @@ context("Manual run")
 
 test_that("simple run", {
   cleanup()
-  m <- maker$new("config.yml")
+  m <- maker$new("maker.yml")
 
   expect_that(m$is_current("data.csv"), is_false())
   expect_that(m$is_current("processed"), is_false())
@@ -81,9 +81,9 @@ test_that("Depending on a file we don't make", {
   e <- new.env()
   source("code.R", e)
   e$download_data("data.csv")
-  ## This configuration is the same as config.yml, but it does not
+  ## This configuration is the same as maker.yml, but it does not
   ## contain a rule for building data.csv
-  m <- maker$new("config2.yml")
+  m <- maker$new("maker2.yml")
 
   expect_that(m$build("data.csv"),
               throws_error("Can't build implicit targets"))

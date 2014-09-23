@@ -7,7 +7,7 @@ if (interactive()) {
 context("Diagrams")
 
 test_that("Can make diagram", {
-  m <- maker$new("config.yml")
+  m <- maker$new("maker.yml")
   expect_that(diagram(m), not(throws_error()))
   expect_that(m$diagram(), not(throws_error()))
 })
