@@ -90,6 +90,16 @@ target <- R6Class(
       }
     },
 
+    get_fake=function() {
+      if (self$type == "object") {
+        self$name
+      } else if (self$type == "file") {
+        sprintf('"%s"', self$name)
+      } else {
+        stop("Not a target that can be got")
+      }
+    },
+
     set=function(value) {
       if (self$type %in% c("cleanup", "fake")) {
         return()
@@ -132,7 +142,7 @@ target <- R6Class(
       dependency_status(self, self$maker$store, missing_ok=missing_ok)
     },
 
-    dependencies_as_args=function() {
+    dependencies_as_args=function(fake=FALSE) {
       if (self$type == "fake" || is.null(self$rule)) {
         NULL
       } else if (self$type == "cleanup") {
@@ -141,10 +151,15 @@ target <- R6Class(
         ## Don't depend on rules that are of special types.
         dep_type <- sapply(self$depends, "[[", "type")
         depends <- self$depends[dep_type %in% c("file", "object")]
-        args <- lapply(depends, function(x) x$get())
+        if (fake) {
+          args <- lapply(depends, function(x) x$get_fake())
+        } else {
+          args <- lapply(depends, function(x) x$get())
+        }
         names(args) <- names(depends)
         if (!is.null(self$target_argument_name)) {
-          args[[self$target_argument_name]] <- self$name
+          args[[self$target_argument_name]] <-
+            if (fake) self$get_fake() else self$get()
         }
         args
       }
@@ -163,6 +178,31 @@ target <- R6Class(
       res <- do.call(self$rule, args, envir=self$maker$env)
       self$set(res)
       invisible(res)
+    },
+
+    run_fake=function() {
+      if (self$dont_run()) {
+        return(character(0))
+      } else if (self$type == "cleanup") {
+        ## TODO: Will need to fill this in at some point
+        return(character(0))
+      } else {
+        args <- unlist(self$dependencies_as_args(fake=TRUE))
+        if (is.null(names(args))) {
+          args <- args
+        } else {
+          args <- ifelse(names(args) == "",
+                         args, paste(names(args), args, sep="="))
+        }
+        args <- paste(args, collapse=", ")
+        str <- sprintf("%s(%s)", self$rule, args)
+        if (self$type == "object") {
+          str <- paste(self$name, "<-", str)
+        } else if (!is.null(self$plot)) {
+          str <- paste(str, "==>", self$name)
+        }
+        str
+      }
     },
 
     build=function() {

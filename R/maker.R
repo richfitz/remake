@@ -78,7 +78,17 @@ maker <- R6Class(
     print_message=function(target_name, current, step, nsteps) {
       target <- self$get_target(target_name)
       status <- target$status_string(current)
-      message(sprintf("[ %5s ] %s", status, target_name))
+      str <- sprintf("[ %5s ] %s", status, target_name)
+      if (status == "BUILD") {
+        cmd <- target$run_fake()
+        ## TODO: This can be done at startup:
+        w1 <- max(nchar(self$target_names())) + 10 + 3
+        w2 <- ceiling(getOption("width") / 2)
+        w <- min(w1, w2)
+        pad <- paste(rep(" ", max(0, w - nchar(str))), collapse="")
+        str <- paste(str, pad, "| ", cmd)
+      }
+      message(str)
     },
 
     make=function(target_name=NULL, verbose=TRUE, dry_run=FALSE) {
