@@ -89,6 +89,10 @@ code_deps <- R6Class(
     ## starting at 'e' and then at least haul out the version
     ## information for that package.  We'll need to do that on the fly
     ## though.
+    ##
+    ## TODO: Plotting targets might want to depend on the maker
+    ## version, or check to see if they need to be upgraded based on
+    ## the maker version.
     info=function(x) {
       fns <- self$depends_functions(x)
       pkgs <- self$depends_packages(x)

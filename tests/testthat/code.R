@@ -18,6 +18,10 @@ process_data <- function(filename) {
 do_plot <- function(dat, filename) {
   pdf(filename)
   on.exit(dev.off())
+  myplot(dat)
+}
+
+myplot <- function(dat) {
   plot(kmpl ~ disp, dat)
 }
 

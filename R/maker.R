@@ -251,14 +251,37 @@ read_maker_file <- function(filename) {
   validate_target <- function(target_name, obj) {
     warn_unknown(target_name, obj,
                  c("rule", "depends", "target_argument_name",
-                   "cleanup_level"))
+                   "cleanup_level",
+                   # Special things
+                   "plot"))
     type <- target_type(target_name)
     if (type == "object" && is.null(obj$rule)) {
       type <- "fake"
     }
-    target$new(target_name, type, obj$rule, depends=obj$depends,
-               cleanup=with_default(obj$cleanup_level, "tidy"),
-               target_argument_name=obj$target_argument_name)
+    t <- target$new(target_name, type, obj$rule, depends=obj$depends,
+                    cleanup=with_default(obj$cleanup_level, "tidy"),
+                    target_argument_name=obj$target_argument_name)
+
+    ## NOTE: Undecided whether to put this into the target
+    ## initialize() method or not.  For now I'll just manually hammer
+    ## it in here.  Possibly better (though this really requires the
+    ## self-building targets to make much sense) is to make a new
+    ## class that inherits target that will take care of this stuff.
+    ## I think that's a better call.
+    if ("plot" %in% names(obj)) {
+      if (identical(obj$plot, TRUE) || is.null(obj$plot)) {
+        obj$plot <- list()
+      }
+      assert_list(obj$plot)
+      assert_named(obj$plot)
+      dev <- get_device(tools::file_ext(target_name))
+      ## This will not work well for cases where `...` is in the
+      ## device name (such as jpeg, bmp, etc)
+      warn_unknown(paste0(target_name, ":plot"), obj$plot,
+                   names(formals(dev)))
+      t$plot <- list(device=dev, args=obj$plot)
+    }
+    t
   }
   dat$targets <- lnapply(dat$targets, validate_target)
   dat

@@ -1,0 +1,30 @@
+# example configuration script for maker; using this to test out some
+# ideas.
+sources:
+  - code.R
+
+packages:
+  - testthat
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    rule: download_data
+    target_argument_name: dest
+    cleanup_level: purge
+
+  processed:
+    depends: data.csv
+    rule: process_data
+
+  plot.pdf:
+    depends: processed
+    rule: myplot
+    plot:
+      width: 8
+      height: 4
+
+  clean:
+    rule: clean_hook

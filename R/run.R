@@ -37,6 +37,7 @@ do_run <- function(target, store, env) {
       x$name
     }
   }
+
   if (target$type == "fake" || is.null(target$rule)) {
     return()
   } else if (target$type == "cleanup") {
@@ -52,6 +53,10 @@ do_run <- function(target, store, env) {
     }
   }
 
+  if (!is.null(target$plot)) {
+    open_device(target$name, target$plot$device, target$plot$args, env)
+    on.exit(dev.off())
+  }
   do.call(target$rule, args, envir=env)
 }
 

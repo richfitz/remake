@@ -1,15 +1,10 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
+  source("helper-maker.R")
 }
 
 context("Manual run")
-
-cleanup <- function() {
-  unlink(".maker", recursive=TRUE)
-  suppressWarnings(file.remove(c("data.csv", "plot.pdf")))
-  invisible(NULL)
-}
 
 test_that("simple run", {
   cleanup()
@@ -42,15 +37,25 @@ test_that("simple run", {
   expect_that(m$dependency_status("processed", TRUE), equals(cmp))
 
   res <- m$dependency_status("plot.pdf", TRUE)
+
+  ## TODO:: This horrible section gets simpler after we get code for
+  ## comparing different json output without being sensitive to
+  ## ordering.
   pkgs <- c("grDevices", "graphics")
   expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
   res$code$packages <- res$code$packages[pkgs]
+
+  fns <- c("do_plot", "myplot")
+  expect_that(sort(names(res$code$functions)), equals(sort(fns)))
+  res$code$functions <- res$code$functions[fns]
+
   cmp <- list(name="plot.pdf",
               depends=list(
                 list(name="processed", type="object", hash=NA_character_)),
               code=list(
-                functions=list(do_plot=hash_function(
-                                 m$env$do_plot)),
+                functions=list(
+                  do_plot=hash_function(m$env$do_plot),
+                  myplot=hash_function(m$env$myplot)),
                 packages=list(
                   grDevices=as.character(packageVersion("grDevices")),
                   graphics=as.character(packageVersion("graphics"))
