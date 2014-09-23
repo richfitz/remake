@@ -75,16 +75,6 @@ object_store <- R6Class(
       }
     },
 
-    ## This could be the inverse of export(), perhaps.
-    ## import=function(list=NULL, envir=.GlobalEnv) {
-    ##   if (is.null(list)) {
-    ##     list <- intersect(self$ls(), ls(envir))
-    ##   }
-    ##   for (i in list) {
-    ##     self$set(i, get(i, envir))
-    ##   }
-    ## },
-
     fullname=function(key) {
       file.path(self$path, key)
     },

@@ -163,6 +163,18 @@ maker <- R6Class(
       names(self$targets[1])
     },
 
+    ## Wrappers around the *object* store.  Not sure about the other
+    ## stores, really.
+    ls=function() {
+      self$store$objects$ls()
+    },
+    get=function(name) {
+      self$store$objects$get(name)
+    },
+    export=function(names, envir=.GlobalEnv) {
+      self$store$objects$export(names, envir)
+    },
+
     dependency_graph=function() {
       targets <- self$target_names()
       g <- lapply(targets, function(t) self$get_target(t)$dependencies())
