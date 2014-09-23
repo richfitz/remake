@@ -124,6 +124,9 @@ maker <- R6Class(
       for (i in seq_len(len)) {
         self$update(plan[[i]], verbose, dry_run, i, len)
       }
+      if (self$get_target(target_name)$type == "object") {
+        invisible(self$store$objects$get(target_name))
+      }
     },
 
     cleanup=function(level="tidy", verbose=TRUE) {
