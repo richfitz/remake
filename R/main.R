@@ -77,9 +77,13 @@ print_targets <- function(m) {
 ##' path, though the current directory may be useful to.
 ##' @export
 install_maker <- function(dest) {
+  ## TODO: Could be stdout(), could be a file?  Too much logic?  Be
+  ## careful with the chmod if doing that.
   if (!file.exists(dest) || !is_directory(dest)) {
     stop("Destination must be an existing directory")
   }
-  src <- system.file("maker", package="maker", mustWork=TRUE)
-  file.copy(src, dest)
+  code <- c("#!/usr/bin/env Rscript", "maker::main()")
+  file <- file.path(dest, "maker")
+  writeLines(code, file)
+  Sys.chmod(file, "0755")
 }
