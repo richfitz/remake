@@ -6,7 +6,8 @@ Make-like build management for R
 
 # The idea
 
-"make", when it works, is wonderful.  Being able to change part of a complicated system and the re-make, updating only the parts of the system that have changed is great.  It's very heavily tailored towards building software though.  While it's possible to repurpose it for other means, such as reproducible research, it's a challenge.
+"[make](http://en.wikipedia.org/wiki/Make_(software))",
+when it works, is wonderful.  Being able to change part of a complicated system and the re-make, updating only the parts of the system that have changed is great.  While it gets some use It's very heavily tailored towards building software though.  While make can be used to create reproducible research workflows (e.g. [here](http://www.bioinformaticszen.com/post/decomplected-workflows-makefiles/) and [here](http://kbroman.org/minimal_make/)), it is a challenge.
 
 The idea here is to re-imagine a set of ideas from make but built for R.  Rather than having a series of calls to different instances of R (as happens if you run make on R scripts), the idea is to define pieces of a pipeline within an R session.
 
