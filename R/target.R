@@ -11,6 +11,7 @@ target <- R6Class(
     ## TODO: the proliferation of similar cases here is not great.
     ## Think of a way of splitting the class into smaller pieces.
     plot=NULL,
+    maker=NULL,
 
     initialize=function(name, type, rule, depends=NULL, cleanup_level="tidy",
       target_argument_name=NULL, implicit=FALSE) {
@@ -44,7 +45,8 @@ target <- R6Class(
       self$depends <- from_yaml_map_list(depends)
     },
 
-    initialize_depends=function(obj) {
+    activate=function(maker) {
+      self$maker <- maker
       if (length(self$depends) == 0L) {
         return()
       }
@@ -62,20 +64,127 @@ target <- R6Class(
       ## the database's set of targets. Missing file targets will be
       ## created and added to the database (which being passed by
       ## reference will propagate backwards).
-      msg <- setdiff(depends_name, obj$target_names())
+      msg <- setdiff(depends_name, self$maker$target_names())
       if (length(msg) > 0L) {
         target_implicit <- function(name) {
           target$new(name, target_type(name), NULL, implicit=TRUE)
         }
-        obj$add_targets(lapply(msg, target_implicit))
+        self$maker$add_targets(lapply(msg, target_implicit))
       }
 
       ## This preserves the original names:
-      self$depends[] <- obj$get_targets(depends_name)
+      self$depends[] <- self$maker$get_targets(depends_name)
+    },
+
+    is_active=function() {
+      !is.null(self$maker)
+    },
+
+    get=function() {
+      if (self$type == "object") {
+        self$maker$store$objects$get(self$name)
+      } else if (self$type == "file") {
+        self$name
+      } else {
+        stop("Not a target that can be got")
+      }
+    },
+
+    set=function(value) {
+      if (self$type %in% c("cleanup", "fake")) {
+        return()
+      }
+      if (self$type == "object") {
+        self$maker$store$objects$set(self$name, value)
+      }
+      self$maker$store$db$set(self$name, self$dependency_status())
+    },
+
+    del=function(missing_ok=FALSE) {
+      ## This does also take care of cleaning out the daabase.
+      self$maker$store$del(self$name, self$type, missing_ok)
+    },
+
+    is_current=function() {
+      is_current(self, self$maker$store)
+    },
+
+    status_string=function(current=NULL) {
+      if (is.null(current)) {
+        current <- self$is_current()
+      }
+      if (self$type == "cleanup") {
+        "CLEAN"
+      } else if (is.null(self$rule)) {
+        ""
+      } else if (current) {
+        "OK"
+      } else {
+        "BUILD"
+      }
     },
 
     dependencies=function() {
       sapply(self$depends, function(x) x$name)
+    },
+
+    dependency_status=function(missing_ok=FALSE) {
+      dependency_status(self, self$maker$store, missing_ok=missing_ok)
+    },
+
+    dependencies_as_args=function() {
+      if (self$type == "fake" || is.null(self$rule)) {
+        NULL
+      } else if (self$type == "cleanup") {
+        list()
+      } else {
+        ## Don't depend on rules that are of special types.
+        dep_type <- sapply(self$depends, "[[", "type")
+        depends <- self$depends[dep_type %in% c("file", "object")]
+        args <- lapply(depends, function(x) x$get())
+        names(args) <- names(depends)
+        if (!is.null(self$target_argument_name)) {
+          args[[self$target_argument_name]] <- self$name
+        }
+        args
+      }
+    },
+
+    run=function() {
+      if (self$dont_run()) {
+        return()
+      }
+      args <- self$dependencies_as_args()
+      if (!is.null(self$plot)) {
+        open_device(self$name, self$plot$device, self$plot$args,
+                    self$maker$env)
+        on.exit(dev.off())
+      }
+      res <- do.call(self$rule, args, envir=self$maker$env)
+      self$set(res)
+      invisible(res)
+    },
+
+    build=function() {
+      ## TODO: This is an awkward callback:
+      if (self$type == "cleanup") {
+        self$maker$cleanup(self$name)
+      }
+      if (self$implicit) {
+        stop("Can't build implicit targets")
+      }
+      ## This avoids either manually creating directories, or obscure
+      ## errors when R can't save a file to a place.  Possibly this
+      ## should be a configurable behaviour, but we're guaranteed to
+      ## be working with genuine files so this should be harmless.
+      if (self$type == "file") {
+        dir.create(dirname(self$name), showWarnings=FALSE, recursive=TRUE)
+      }
+      self$run()
+    },
+
+    dont_run=function() {
+      self$type == "fake" || is.null(self$rule)
     }
     ))
 
@@ -114,4 +223,60 @@ target_is_file <- function(x) {
 
 target_type <- function(x) {
   ifelse(target_is_file(x), "file", "object")
+}
+
+## Determine if things are up to date.  That is the case if:
+##
+## If the file/object does not exist it's unclean (done)
+##
+## If it has no dependencies it is clean (done) (no phoney targets)
+##
+## If the hashes of all inputs are unchanged from last time, it is clean
+##
+## Otherwise unclean
+is_current <- function(target, store) {
+  if (target$type == "cleanup" || target$type == "fake") {
+    return(FALSE)
+  } else if (!store$contains(target$name, target$type)) {
+    return(FALSE)
+  } else if (length(target$depends) == 0L) {
+    return(TRUE)
+  } else if (!store$db$contains(target$name)) {
+    ## This happens when a file target exists, but there is no record
+    ## of it being created (such as when the .maker directory is
+    ## deleted or if it comes from elsewhere).  In which case we can't
+    ## tell if it's up to date and assume not.
+    return(FALSE)
+  } else {
+    return(compare_status(store$db$get(target$name),
+                          dependency_status(target, store, missing_ok=TRUE)))
+  }
+}
+
+dependency_status <- function(target, store, missing_ok=FALSE) {
+  status1 <- function(x) {
+    list(name=x$name,
+         type=x$type,
+         hash=unname(store$get_hash(x$name, x$type, missing_ok)))
+  }
+  list(name=target$name,
+       depends=lapply(target$depends, status1),
+       code=store$deps$info(target$rule))
+}
+
+## In theory this is too harsh, as might also want to *remove* a
+## dependency.  So:
+##   i <- (sapply(prev$depends, "[[", "name") %in%
+##         sapply(curr$depends, "[[", "name"))
+##   prev$depends <- prev$depends[i]
+## would filter out dependencies that have been dropped.  But that
+## implies a change in function definition, whch should be
+## sufficient for a rebuild.
+##
+## TODO: An update -- because we're loading JSON we can't rely on map
+## order.  Doing that with R is probably not safe anyway because these
+## were sorted according to the current locale.  We'll need to
+## establish a common ordering/name set for these.
+compare_status <- function(prev, curr) {
+  identical(prev, curr)
 }

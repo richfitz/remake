@@ -43,7 +43,7 @@ maker <- R6Class(
       self$targets <- config$targets
       private$initialize_cleanup_targets()
       for (t in self$targets) {
-        t$initialize_depends(self)
+        t$activate(self)
       }
       self$env <- create_environment(sources=self$sources,
                                      packages=self$packages)
@@ -54,32 +54,11 @@ maker <- R6Class(
     ## with:
     ##   self$store$db$get(target_name)
     dependency_status=function(target_name, missing_ok=FALSE) {
-      dependency_status(self$get_target(target_name), self$store,
-                        missing_ok=missing_ok)
+      self$get_target(target_name)$dependency_status(missing_ok)
     },
 
     build=function(target_name) {
-      target <- self$get_target(target_name)
-      if (target$type == "cleanup") {
-        self$cleanup(target$name)
-      }
-      if (target$implicit) {
-        stop("Can't build implicit targets")
-      }
-      ## This avoids either manually creating directories, or obscure
-      ## errors when R can't save a file to a place.  Possibly this
-      ## should be a configurable behaviour, but we're guaranteed to
-      ## be working with genuine files so this should be harmless.
-      if (target$type == "file") {
-        dir.create(dirname(target$name), showWarnings=FALSE, recursive=TRUE)
-      }
-      res <- do_run(self$get_target(target_name), self$store, self$env)
-      if (target$type == "object") {
-        self$store$objects$set(target_name, res)
-      }
-      if (!(target$type %in% c("cleanup", "fake"))) {
-        self$store$db$set(target_name, self$dependency_status(target_name))
-      }
+      self$get_target(target_name)$build()
     },
 
     ## Really, when doing a dry_run, the status of a target is current
@@ -97,24 +76,9 @@ maker <- R6Class(
     },
 
     print_message=function(target_name, current, step, nsteps) {
-      status <- self$status_string(target_name, current)
-      message(sprintf("[ %5s ] %s", status, target_name))
-    },
-
-    status_string=function(target_name, current=NULL) {
       target <- self$get_target(target_name)
-      if (is.null(current)) {
-        current <- self$is_current(target_name)
-      }
-      if (target$type == "cleanup") {
-        "CLEAN"
-      } else if (is.null(target$rule)) {
-        ""
-      } else if (current) {
-        "OK"
-      } else {
-        "BUILD"
-      }
+      status <- target$status_string(current)
+      message(sprintf("[ %5s ] %s", status, target_name))
     },
 
     make=function(target_name, verbose=TRUE, dry_run=FALSE) {
@@ -123,9 +87,6 @@ maker <- R6Class(
       len <- length(plan)
       for (i in seq_len(len)) {
         self$update(plan[[i]], verbose, dry_run, i, len)
-      }
-      if (self$get_target(target_name)$type == "object") {
-        invisible(self$store$objects$get(target_name))
       }
     },
 
@@ -144,16 +105,15 @@ maker <- R6Class(
     },
 
     remove_target=function(target_name, verbose=TRUE) {
-      target <- self$get_target(target_name)
-      did_remove <- self$store$del(target$name, target$type)
+      did_remove <- self$get_target(target_name)$del(missing_ok=TRUE)
       if (verbose) {
         status <- if (did_remove) "DEL" else ""
-        message(sprintf("[ %5s ] %s", status, target$name))
+        message(sprintf("[ %5s ] %s", status, target_name))
       }
     },
 
     is_current=function(target_name) {
-      is_current(self$get_target(target_name), self$store)
+      self$get_target(target_name)$is_current()
     },
 
     get_target=function(target_name) {
