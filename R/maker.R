@@ -81,7 +81,10 @@ maker <- R6Class(
       message(sprintf("[ %5s ] %s", status, target_name))
     },
 
-    make=function(target_name, verbose=TRUE, dry_run=FALSE) {
+    make=function(target_name=NULL, verbose=TRUE, dry_run=FALSE) {
+      if (is.null(target_name)) {
+        target_name <- self$target_default()
+      }
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph)
       len <- length(plan)
@@ -154,6 +157,10 @@ maker <- R6Class(
 
     target_names=function() {
       names(self$targets)
+    },
+
+    target_default=function() {
+      names(self$targets[1])
     },
 
     dependency_graph=function() {

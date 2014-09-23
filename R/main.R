@@ -27,7 +27,7 @@ main <- function(args=commandArgs(TRUE)) {
     if (length(pos) == 0L) {
       stop("No targets found")
     } else {
-      targets <- pos[[1]]
+      targets <- m$target_default()
     }
   }
   for (t in targets) {
