@@ -87,3 +87,17 @@ install_maker <- function(dest) {
   writeLines(code, file)
   Sys.chmod(file, "0755")
 }
+
+##' This is a convenience function that creates a maker object and
+##' builds a single target.  If that target is an object it will be
+##' invisibly returned.
+##' @title Make a single target
+##' @param target Name of a target to build
+##' @param maker_file Name of the makerfile (by default
+##' \code{maker.yml}).  This is passed to \code{maker$new()}.
+##' @param path Path to build in (by default the current directory).
+##' Probably safest to leave this as-is.
+##' @export
+make <- function(target, maker_file="maker.yml", path=".") {
+  maker$new(maker_file, path)$make(target)
+}

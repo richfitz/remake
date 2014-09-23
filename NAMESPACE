@@ -3,6 +3,7 @@
 export(extensions)
 export(install_maker)
 export(main)
+export(make)
 export(maker)
 export(store)
 export(target_is_file)
