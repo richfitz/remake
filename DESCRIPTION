@@ -17,4 +17,5 @@ Imports:
     optparse,
     codetools
 Suggests:
-    testthat
+    testthat,
+    igraph

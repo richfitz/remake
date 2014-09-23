@@ -201,7 +201,12 @@ maker <- R6Class(
       g <- lapply(targets, function(t) self$get_target(t)$dependencies())
       names(g) <- targets
       topological_sort(g)
-    }),
+    },
+
+    diagram=function() {
+      diagram(self)
+    }
+    ),
   private=list(
     initialize_cleanup_targets=function() {
       levels <- cleanup_target_names()
