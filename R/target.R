@@ -166,7 +166,7 @@ target <- R6Class(
     },
 
     run=function() {
-      if (self$dont_run()) {
+      if (self$type == "fake" || is.null(self$rule)) {
         return()
       }
       args <- self$dependencies_as_args()
@@ -181,7 +181,7 @@ target <- R6Class(
     },
 
     run_fake=function() {
-      if (self$dont_run()) {
+      if (self$type == "fake" || is.null(self$rule)) {
         return(character(0))
       } else if (self$type == "cleanup") {
         ## TODO: Will need to fill this in at some point
@@ -221,10 +221,6 @@ target <- R6Class(
         dir.create(dirname(self$name), showWarnings=FALSE, recursive=TRUE)
       }
       self$run()
-    },
-
-    dont_run=function() {
-      self$type == "fake" || is.null(self$rule)
     }
     ))
 
