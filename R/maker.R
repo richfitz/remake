@@ -13,6 +13,7 @@ maker <- R6Class(
     targets=NULL,
     env=NULL,
     verbose=NULL,
+    default=NULL,
 
     initialize=function(maker_file="maker.yml", path=".", verbose=TRUE) {
       self$file <- maker_file
@@ -27,6 +28,7 @@ maker <- R6Class(
       self$sources <- config$sources
       self$packages <- config$packages
       self$targets <- config$targets
+      self$default <- config$target_default
       private$initialize_cleanup_targets()
       for (t in self$targets) {
         t$activate(self)
@@ -151,7 +153,11 @@ maker <- R6Class(
     },
 
     target_default=function() {
-      names(self$targets[1])
+      if (is.null(self$default)) {
+        stop(self$file,
+             " does not define 'target_default' or have target 'all'")
+      }
+      self$default
     },
 
     ## Wrappers around the *object* store.  Not sure about the other
@@ -214,17 +220,14 @@ maker <- R6Class(
 read_maker_file <- function(filename) {
   dat <- yaml_read(filename)
 
-  warn_unknown(filename, dat, c("packages", "sources", "targets"))
+  warn_unknown(filename, dat, c("packages", "sources",
+                                "target_default", "targets"))
 
   dat$packages <- with_default(dat$packages, character(0))
   dat$sources  <- with_default(dat$sources,  character(0))
 
-  if (!is.character(dat$packages)) {
-    stop("'packages' must be a character vector")
-  }
-  if (!is.character(dat$sources)) {
-    stop("'sources' must be a character vector")
-  }
+  assert_character(dat$packages, "packages")
+  assert_character(dat$sources,  "sources")
   if (!all(file.exists(dat$sources))) {
     stop("All files in 'sources' must exist")
   }
@@ -233,6 +236,13 @@ read_maker_file <- function(filename) {
   }
 
   dat$targets <- lnapply(dat$targets, make_target)
+
+  if (is.null(dat$target_default) && "all" %in% names(dat$targets)) {
+    dat$target_default <- "all"
+  }
+  if (!is.null(dat$target_default)) {
+    assert_scalar_character(dat$target_default, "target_default")
+  }
   dat
 }
 

@@ -99,14 +99,12 @@ assert_scalar_integer <- function(x, strict=FALSE,
   assert_integer(x, strict, name)
 }
 
-assert_scalar_logical <- function(x, strict=FALSE,
-                                  name=deparse(substitute(x))) {
+assert_scalar_logical <- function(x, name=deparse(substitute(x))) {
   assert_scalar(x, name)
   assert_logical(x, name)
 }
 
-assert_scalar_character <- function(x, strict=FALSE,
-                                    name=deparse(substitute(x))) {
+assert_scalar_character <- function(x, name=deparse(substitute(x))) {
   assert_scalar(x, name)
   assert_character(x, name)
 }
