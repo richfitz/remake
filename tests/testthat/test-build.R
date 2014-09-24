@@ -47,3 +47,20 @@ test_that("Fake targets", {
   expect_that(m$is_current("plot.pdf"),  is_true())
   cleanup()
 })
+
+test_that("Depending on a file we don't make", {
+  ## Manually run the download step from before -- now we have a file
+  ## that maker wants to depend on, but does not generate:
+  e <- new.env()
+  source("code.R", e)
+  e$download_data("data.csv")
+  expect_that(file.exists("data.csv"), is_true())
+  m <- maker$new("maker2.yml")
+  expect_that(file.exists("plot.pdf"), is_false())
+  expect_that(m$make("plot.pdf"), not(throws_error()))
+  expect_that(file.exists("plot.pdf"), is_true())
+  m$make("purge")
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(file.exists("plot.pdf"), is_false())
+  cleanup()
+})

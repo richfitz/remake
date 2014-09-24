@@ -71,3 +71,16 @@ from_yaml_map_list <- function(x) {
   }
   x
 }
+
+abbreviate <- function(str, width, cutoff="...") {
+  assert_scalar_character(str)
+  nc <- nchar(str)
+  if (nc <= width) {
+    str
+  } else if (width < nchar(cutoff)) {
+    character(0)
+  } else {
+    w <- nchar(cutoff)
+    paste0(substr(str, 1, width - w), cutoff)
+  }
+}

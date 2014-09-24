@@ -224,11 +224,12 @@ store <- R6Class(
       self$files <- NULL
     },
 
-    contains=function(name, type=NULL) {
+    contains=function(name, type) {
       private$right_store(type)$contains(name)
     },
 
     del=function(name, type, missing_ok=FALSE) {
+      stop("Please don't call me") # TODO: remove function?
       did_delete_obj <- private$right_store(type)$del(name, missing_ok)
       did_delete_db  <- self$db$del(name, missing_ok)
       invisible(did_delete_obj || did_delete_db)

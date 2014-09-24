@@ -81,6 +81,8 @@ test_that("Depending on a file we don't make", {
   e <- new.env()
   source("code.R", e)
   e$download_data("data.csv")
+  expect_that(file.exists("data.csv"), is_true())
+
   ## This configuration is the same as maker.yml, but it does not
   ## contain a rule for building data.csv
   m <- maker$new("maker2.yml")
@@ -89,6 +91,5 @@ test_that("Depending on a file we don't make", {
               throws_error("Can't build implicit targets"))
   m$build("processed")
   m$build("plot.pdf")
-
   cleanup()
 })
