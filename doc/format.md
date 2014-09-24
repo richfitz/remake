@@ -7,6 +7,7 @@ There are currently three sections to the makerfile, though this is subject to c
 ```
 packages: <list of packages to include>
 sources: <list of files to include>
+target_default: <name of a target>
 targets: <see below>
 ```
 
@@ -33,6 +34,10 @@ sources:
 ```
 
 Will load all the R code in the directory `mydirectory` and the code in `mycode.R`.  All objects in these files will be available to `maker`, but ideally they'll just contain functions and not data.
+
+## Default target
+
+The `target_default` key is the "default target", if maker is run without a target name (similar to the way that `make` runs).  This key is optional, but if present the target *must* be included in the targets below.  If it is missing, but there is a target `all` within the `targets` section, then that is the default target (but `target_default` overrides this).  If neither is present then there is no default target, and a target must be provided for `maker` to run.
 
 ## Targets
 
