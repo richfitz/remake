@@ -15,10 +15,8 @@ test_that("simple run", {
   expect_that(m$is_current("plot.pdf"), is_false())
 
   ## This is possibly overkill:
-  ## Hmm, this is *wrong*.  Should depend on all sorts of things that
-  ## generated data.csv?
   cmp <- list(name="data.csv",
-              depends=list(),
+              depends=empty_named_list(),
               code=list(
                 functions=list(download_data=hash_function(
                                  m$env$download_data)),
@@ -27,8 +25,7 @@ test_that("simple run", {
   expect_that(m$dependency_status("data.csv", TRUE), equals(cmp))
 
   cmp <- list(name="processed",
-              depends=list(
-                list(name="data.csv", type="file", hash=NA_character_)),
+              depends=list("data.csv"=NA_character_),
               code=list(
                 functions=list(process_data=hash_function(
                                  m$env$process_data)),
@@ -36,22 +33,16 @@ test_that("simple run", {
                                 packageVersion("utils")))))
   expect_that(m$dependency_status("processed", TRUE), equals(cmp))
 
+  ## TODO: I don't really understand why we're sensitive to order
+  ## here, differently from the command line and within R.  It seems
+  ## to be how grDevices/graphics sort on lower/uppercase -- setting
+  ## different locales perhaps?
   res <- m$dependency_status("plot.pdf", TRUE)
-
-  ## TODO:: This horrible section gets simpler after we get code for
-  ## comparing different json output without being sensitive to
-  ## ordering.
   pkgs <- c("grDevices", "graphics")
   expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
   res$code$packages <- res$code$packages[pkgs]
-
-  fns <- c("do_plot", "myplot")
-  expect_that(sort(names(res$code$functions)), equals(sort(fns)))
-  res$code$functions <- res$code$functions[fns]
-
   cmp <- list(name="plot.pdf",
-              depends=list(
-                list(name="processed", type="object", hash=NA_character_)),
+              depends=list(processed=NA_character_),
               code=list(
                 functions=list(
                   do_plot=hash_function(m$env$do_plot),

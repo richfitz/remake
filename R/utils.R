@@ -84,3 +84,7 @@ abbreviate <- function(str, width, cutoff="...") {
     paste0(substr(str, 1, width - w), cutoff)
   }
 }
+
+empty_named_list <- function() {
+  structure(list(), names=character(0))
+}

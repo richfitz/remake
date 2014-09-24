@@ -141,7 +141,6 @@ file_store <- R6Class(
 
 ## This one holds the database information.
 ##' @importFrom digest digest
-##' @importFrom rjson toJSON fromJSON
 maker_db <- R6Class(
   "maker_db",
   public=list(
@@ -153,14 +152,13 @@ maker_db <- R6Class(
     },
 
     get=function(key) {
-      fromJSON(file=self$fullname(key))
+      readRDS(file=self$fullname(key))
     },
 
     ## TODO: Possibly useful to check for a 'name' key here or we'll
     ## corrupt the database.
     set=function(key, value) {
-      str <- toJSON(value)
-      writeLines(str, self$fullname(key))
+      saveRDS(value, self$fullname(key))
     },
 
     del=function(key, missing_ok=FALSE) {
@@ -178,8 +176,8 @@ maker_db <- R6Class(
     },
 
     ls=function() {
-      files <- dir(self$path, pattern="\\.json$", full.names=TRUE)
-      sapply(files, function(x) fromJSON(x)$name)
+      files <- dir(self$path, pattern="\\.rds$", full.names=TRUE)
+      sapply(files, function(x) readRDS(x)$name)
     },
 
     ## We hash keys here so that things like file paths (with slashes,
@@ -188,7 +186,7 @@ maker_db <- R6Class(
     ## better.  People should never directly interact with the files
     ## in the directory, so it's OK.
     fullname=function(key) {
-      file.path(self$path, paste0(digest(key), ".json"))
+      file.path(self$path, paste0(digest(key), ".rds"))
     }
     ))
 

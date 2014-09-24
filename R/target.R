@@ -132,15 +132,16 @@ target <- R6Class(
     },
 
     dependency_status=function(missing_ok=FALSE) {
-      store <- self$maker$store
-      status1 <- function(x) {
-        list(name=x$name,
-             type=x$type,
-             hash=unname(store$get_hash(x$name, x$type, missing_ok)))
-      }
+      depends <- self$dependencies_real()
+      names(depends) <- sapply(depends, function(x) x$name)
+      depends <- lapply(depends, function(x) x$get_hash(missing_ok))
       list(name=self$name,
-           depends=lapply(self$dependencies_real(), status1),
-           code=store$deps$info(self$rule))
+           depends=depends,
+           code=self$maker$store$deps$info(self$rule))
+    },
+
+    get_hash=function(missing_ok=FALSE) {
+      self$maker$store$get_hash(self$name, self$type, missing_ok)
     },
 
     dependencies_as_args=function(fake=FALSE) {
@@ -438,26 +439,15 @@ is_current <- function(target, store) {
     ## tell if it's up to date and assume not.
     return(FALSE)
   } else {
-    return(compare_status(store$db$get(target$name),
-                          target$dependency_status(missing_ok=TRUE)))
+    return(identical(store$db$get(target$name),
+                     target$dependency_status(missing_ok=TRUE)))
   }
 }
 
-## In theory this is too harsh, as might also want to *remove* a
-## dependency.  So:
-##   i <- (sapply(prev$depends, "[[", "name") %in%
-##         sapply(curr$depends, "[[", "name"))
-##   prev$depends <- prev$depends[i]
-## would filter out dependencies that have been dropped.  But that
-## implies a change in function definition, whch should be
-## sufficient for a rebuild.
-##
-## TODO: An update -- because we're loading JSON we can't rely on map
-## order.  Doing that with R is probably not safe anyway because these
-## were sorted according to the current locale.  We'll need to
-## establish a common ordering/name set for these.
-compare_status <- function(prev, curr) {
-  identical(prev, curr)
+## Not recursive:
+identical_map <- function(x, y) {
+  nms <- names(x)
+  length(x) == length(y) && all(nms %in% names(y)) && identical(y[nms], x)
 }
 
 format_fake_args <- function(args) {
