@@ -12,10 +12,12 @@ maker <- R6Class(
     packages=NULL,
     targets=NULL,
     env=NULL,
+    verbose=NULL,
 
-    initialize=function(maker_file="maker.yml", path=".") {
+    initialize=function(maker_file="maker.yml", path=".", verbose=TRUE) {
       self$file <- maker_file
       self$path <- path
+      self$verbose <- verbose
       self$reload()
     },
 
@@ -34,21 +36,21 @@ maker <- R6Class(
       self$store$deps <- code_deps$new(self$env)
     },
 
-    make=function(target_name=NULL, verbose=TRUE, dry_run=FALSE) {
+    make=function(target_name=NULL, dry_run=FALSE) {
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph)
       for (i in plan) {
-        self$update(i, verbose, dry_run)
+        self$update(i, dry_run)
       }
     },
 
-    update=function(target_name, verbose=TRUE, dry_run=FALSE) {
+    update=function(target_name, dry_run=FALSE) {
       target <- self$get_target(target_name)
       current <- target$is_current()
-      if (verbose) {
+      if (self$verbose) {
         status <- target$status_string(current)
         str <- sprintf("[ %5s ] %s", status, target_name)
         cmd <- target$run_fake()
@@ -59,7 +61,7 @@ maker <- R6Class(
       }
     },
 
-    cleanup=function(level="tidy", verbose=TRUE) {
+    cleanup=function(level="tidy") {
       level <- match_value(level, setdiff(cleanup_levels(), "never"))
       self$get_target(level)$run()
     },
@@ -83,16 +85,16 @@ maker <- R6Class(
       message(str)
     },
 
-    remove_targets=function(target_names, verbose=TRUE) {
+    remove_targets=function(target_names) {
       for (t in target_names) {
-        self$remove_target(t, verbose)
+        self$remove_target(t)
       }
     },
 
-    remove_target=function(target_name, verbose=TRUE) {
+    remove_target=function(target_name) {
       target <- self$get_target(target_name)
       did_remove <- target$del(missing_ok=TRUE)
-      if (verbose) {
+      if (self$verbose) {
         if (did_remove) {
           status <- "DEL"
           fn <- if (target$type == "object") "rm" else "file.remove"

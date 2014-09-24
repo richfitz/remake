@@ -16,7 +16,7 @@ main <- function(args=commandArgs(TRUE)) {
     print_version()
     return(invisible())
   }
-  m <- maker$new(opts$file)
+  m <- maker$new(opts$file, verbose=!opts$quiet)
   if (opts$print_targets) {
     print_targets(m)
     return(invisible())
@@ -31,7 +31,7 @@ main <- function(args=commandArgs(TRUE)) {
     }
   }
   for (t in targets) {
-    m$make(t, !opts$quiet, opts$dry_run)
+    m$make(t, opts$dry_run)
   }
 }
 
