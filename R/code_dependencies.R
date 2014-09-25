@@ -47,15 +47,13 @@ functions_in_environment <- function(env) {
 code_deps <- R6Class(
   "code_deps",
   public=list(
-    env=NULL,
     packages=NULL,
     functions=NULL,
     function_hashes=NULL,
     package_versions=NULL,
 
     initialize=function(env) {
-      self$env <- env
-      fns <- functions_in_environment(self$env)
+      fns <- functions_in_environment(env)
       deps <- lapply(fns, code_dependencies)
       self$functions <- lapply(deps, "[[", "functions")
       self$packages  <- lapply(deps, "[[", "packages")

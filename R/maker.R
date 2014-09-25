@@ -32,14 +32,17 @@ maker <- R6Class(
       for (t in self$targets) {
         t$activate(self)
       }
-      self$store$env <- create_environment(sources=self$sources,
-                                           packages=self$packages)
-      self$store$deps <- code_deps$new(self$store$env)
+      self$store$env <- managed_environment$new(self$packages, self$sources)
+      self$store$deps <- code_deps$new(self$store$env$env)
     },
 
     make=function(target_name=NULL, dry_run=FALSE) {
       if (is.null(target_name)) {
         target_name <- self$target_default()
+      }
+      reloaded <- self$store$env$reload()
+      if (reloaded) {
+        self$print_message("READ", "", "# reloading sources")
       }
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph)

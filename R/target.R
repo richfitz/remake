@@ -158,7 +158,7 @@ target <- R6Class(
         return()
       }
       args <- self$dependencies_as_args()
-      do.call(self$rule, args, envir=self$store$env)
+      do.call(self$rule, args, envir=self$store$env$env)
     },
 
     run_fake=function() {
@@ -382,7 +382,7 @@ target_plot <- R6Class(
 
     run=function() {
       open_device(self$name, self$plot$device, self$plot$args,
-                  self$store$env)
+                  self$store$env$env)
       on.exit(dev.off())
       super$run()
     },
