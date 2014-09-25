@@ -36,7 +36,8 @@ maker <- R6Class(
       self$store$deps <- code_deps$new(self$store$env$env)
     },
 
-    make=function(target_name=NULL, dry_run=FALSE) {
+    make=function(target_name=NULL, dry_run=FALSE, force=FALSE,
+      force_all=FALSE) {
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
@@ -47,13 +48,13 @@ maker <- R6Class(
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph)
       for (i in plan) {
-        self$update(i, dry_run)
+        self$update(i, dry_run, force_all || (force && i == target_name))
       }
     },
 
-    update=function(target_name, dry_run=FALSE) {
+    update=function(target_name, dry_run=FALSE, force=FALSE) {
       target <- self$get_target(target_name)
-      current <- target$is_current()
+      current <- !force && target$is_current()
       if (self$verbose) {
         status <- target$status_string(current)
         cmd <- target$run_fake()
