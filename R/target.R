@@ -135,7 +135,8 @@ target <- R6Class(
       depends <- self$dependencies_real()
       names(depends) <- sapply(depends, function(x) x$name)
       depends <- lapply(depends, function(x) x$get_hash(missing_ok))
-      list(name=self$name,
+      list(version=self$maker$store$version,
+           name=self$name,
            depends=depends,
            code=self$maker$store$deps$info(self$rule))
     },
@@ -439,9 +440,28 @@ is_current <- function(target, store) {
     ## tell if it's up to date and assume not.
     return(FALSE)
   } else {
-    return(identical(store$db$get(target$name),
-                     target$dependency_status(missing_ok=TRUE)))
+    return(compare_dependency_status(
+      store$db$get(target$name),
+      target$dependency_status(missing_ok=TRUE)))
   }
+}
+
+compare_dependency_status <- function(prev, curr) {
+  ## Here, if we need to deal with different version information we
+  ## can.  One option will be to deprecate previous versions.  So say
+  ## we change the format, or hash algorithms, or something and no
+  ## longer allow version 0.1.  We'd say:
+  ##
+  ##   expire <- package_version("0.0")
+  ##   if (prev$version <= expire) {
+  ##     warning(sprintf("Expiring object %s (version: %s)",
+  ##                     prev$name, prev$version))
+  ##     return(FALSE)
+  ##   }
+
+  ## These make the comparisons insensitive to ordering.
+  (identical_map(prev$depends, curr$depends) &&
+   identical_map(prev$code,    curr$code))
 }
 
 ## Not recursive:

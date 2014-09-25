@@ -204,6 +204,7 @@ store <- R6Class(
     files=NULL,
     deps=NULL,
     path=NULL,
+    version=NULL,
 
     initialize=function(path=".") {
       dir.create(path, FALSE, TRUE)
@@ -212,6 +213,7 @@ store <- R6Class(
       self$db <- maker_db$new(file.path(self$path, "db"))
       self$objects <- object_store$new(file.path(self$path, "objects"))
       self$files <- file_store$new()
+      self$version <- packageVersion(.packageName)
     },
 
     destroy=function() {

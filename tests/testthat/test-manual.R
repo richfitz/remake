@@ -15,7 +15,8 @@ test_that("simple run", {
   expect_that(m$is_current("plot.pdf"), is_false())
 
   ## This is possibly overkill:
-  cmp <- list(name="data.csv",
+  cmp <- list(version=m$store$version,
+              name="data.csv",
               depends=empty_named_list(),
               code=list(
                 functions=list(download_data=hash_function(
@@ -24,7 +25,8 @@ test_that("simple run", {
                                 packageVersion("utils")))))
   expect_that(m$dependency_status("data.csv", TRUE), equals(cmp))
 
-  cmp <- list(name="processed",
+  cmp <- list(version=m$store$version,
+              name="processed",
               depends=list("data.csv"=NA_character_),
               code=list(
                 functions=list(process_data=hash_function(
@@ -33,15 +35,17 @@ test_that("simple run", {
                                 packageVersion("utils")))))
   expect_that(m$dependency_status("processed", TRUE), equals(cmp))
 
-  ## TODO: I don't really understand why we're sensitive to order
+  ## NOTE: I don't really understand why we're sensitive to order
   ## here, differently from the command line and within R.  It seems
   ## to be how grDevices/graphics sort on lower/uppercase -- setting
-  ## different locales perhaps?
+  ## different locales perhaps?  This is dealt with by the
+  ## identical_map() function within the package
   res <- m$dependency_status("plot.pdf", TRUE)
   pkgs <- c("grDevices", "graphics")
   expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
   res$code$packages <- res$code$packages[pkgs]
-  cmp <- list(name="plot.pdf",
+  cmp <- list(version=m$store$version,
+              name="plot.pdf",
               depends=list(processed=NA_character_),
               code=list(
                 functions=list(
