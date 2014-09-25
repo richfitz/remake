@@ -98,7 +98,7 @@ maker <- R6Class(
           status <- ""
           cmd <- NULL
         }
-        self$print_message(status, target_name, cmd)
+        self$print_message(status, target_name, cmd, TRUE)
       }
     },
 
