@@ -84,6 +84,17 @@ maker <- R6Class(
       message(str)
     },
 
+    expire=function(target_name, recursive=FALSE) {
+      if (recursive) {
+        graph <- self$dependency_graph()
+        for (t in dependencies(target_name, graph)) {
+          self$expire(t)
+        }
+      } else {
+        self$store$db$del(target_name, missing_ok=TRUE)
+      }
+    },
+
     remove_targets=function(target_names) {
       for (t in target_names) {
         self$remove_target(t)

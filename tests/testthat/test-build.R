@@ -64,3 +64,43 @@ test_that("Depending on a file we don't make", {
   expect_that(file.exists("plot.pdf"), is_false())
   cleanup()
 })
+
+test_that("Expiring targets", {
+  devtools::load_all("../../")
+  cleanup()
+  m <- maker$new()
+  m$make("plot.pdf")
+
+  ## Sanity check:
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$is_current("plot.pdf"), is_true())
+
+  m$expire("plot.pdf")
+  ## Still there:
+  expect_that(file.exists("plot.pdf"), is_true())
+  ## But not current:
+  expect_that(m$is_current("plot.pdf"), is_false())
+
+  ## Recursively expire:
+  m$expire("plot.pdf", recursive=TRUE)
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(m$is_current("data.csv"), is_false())
+
+  ## There's no easy way of catching this, but this has now rebuild
+  ## everything, despite the files still being there.
+  m$make()
+
+  ## Works for objects as well as files:
+  m$expire("processed")
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$get("processed"), is_a("data.frame"))
+  ## Because the *actual* R object is still there, the plot.pdf is
+  ## considered current, but it would be rebuild because processed
+  ## would be rebuilt.
+  expect_that(m$is_current("plot.pdf"), is_true())
+  m$make()
+
+  cleanup()
+})

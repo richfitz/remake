@@ -440,7 +440,7 @@ is_current <- function(target, store) {
     return(FALSE)
   } else if (!store$contains(target$name, target$type)) {
     return(FALSE)
-  } else if (length(target$depends) == 0L) {
+  } else if (is.null(target$rule)) {
     return(TRUE)
   } else if (!store$db$contains(target$name)) {
     ## This happens when a file target exists, but there is no record
