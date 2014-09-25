@@ -47,7 +47,7 @@ target <- R6Class(
     rule=NULL,
     type=NULL,
     cleanup_level=NULL,
-    maker=NULL,
+    store=NULL,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy") {
       self$name <- name
@@ -63,7 +63,7 @@ target <- R6Class(
     },
 
     activate=function(maker) {
-      self$maker <- maker
+      self$store <- maker$store
       if (length(self$depends) == 0L) {
         return()
       }
@@ -81,24 +81,24 @@ target <- R6Class(
       ## the database's set of targets. Missing file targets will be
       ## created and added to the database (which being passed by
       ## reference will propagate backwards).
-      msg <- setdiff(depends_name, self$maker$target_names())
+      msg <- setdiff(depends_name, maker$target_names())
       if (length(msg) > 0L) {
         if (!all(target_is_file(msg))) {
           stop("Implicitly created targets must all be files")
         }
         implicit <- lapply(msg, target_file$new, rule=NULL)
         for (t in implicit) {
-          t$activate(self$maker)
+          t$activate(maker)
         }
-        self$maker$add_targets(implicit)
+        maker$add_targets(implicit)
       }
 
       ## This preserves the original names:
-      self$depends[] <- self$maker$get_targets(depends_name)
+      self$depends[] <- maker$get_targets(depends_name)
     },
 
     is_active=function() {
-      !is.null(self$maker)
+      !is.null(self$store)
     },
 
     get=function(fake=FALSE) {
@@ -113,7 +113,7 @@ target <- R6Class(
     },
 
     is_current=function() {
-      is_current(self, self$maker$store)
+      is_current(self, self$store)
     },
 
     status_string=function(current=NULL) {
@@ -135,14 +135,14 @@ target <- R6Class(
       depends <- self$dependencies_real()
       names(depends) <- sapply(depends, function(x) x$name)
       depends <- lapply(depends, function(x) x$get_hash(missing_ok))
-      list(version=self$maker$store$version,
+      list(version=self$store$version,
            name=self$name,
            depends=depends,
-           code=self$maker$store$deps$info(self$rule))
+           code=self$store$deps$info(self$rule))
     },
 
     get_hash=function(missing_ok=FALSE) {
-      self$maker$store$get_hash(self$name, self$type, missing_ok)
+      self$store$get_hash(self$name, self$type, missing_ok)
     },
 
     dependencies_as_args=function(fake=FALSE) {
@@ -158,7 +158,7 @@ target <- R6Class(
         return()
       }
       args <- self$dependencies_as_args()
-      do.call(self$rule, args, envir=self$maker$env)
+      do.call(self$rule, args, envir=self$store$env)
     },
 
     run_fake=function() {
@@ -215,12 +215,12 @@ target_file <- R6Class(
 
     ## NOTE: this ignores the value.
     set=function(value) {
-      self$maker$store$db$set(self$name, self$dependency_status())
+      self$store$db$set(self$name, self$dependency_status())
     },
 
     del=function(missing_ok=FALSE) {
-      did_delete_obj <- self$maker$store$files$del(self$name, missing_ok)
-      did_delete_db  <- self$maker$store$db$del(self$name, missing_ok)
+      did_delete_obj <- self$store$files$del(self$name, missing_ok)
+      did_delete_db  <- self$store$db$del(self$name, missing_ok)
       invisible(did_delete_obj || did_delete_db)
     },
 
@@ -274,18 +274,18 @@ target_object <- R6Class(
       if (fake) {
         self$name
       } else {
-        self$maker$store$objects$get(self$name)
+        self$store$objects$get(self$name)
       }
     },
 
     set=function(value) {
-      self$maker$store$objects$set(self$name, value)
-      self$maker$store$db$set(self$name, self$dependency_status())
+      self$store$objects$set(self$name, value)
+      self$store$db$set(self$name, self$dependency_status())
     },
 
     del=function(missing_ok=FALSE) {
-      did_delete_obj <- self$maker$store$objects$del(self$name, missing_ok)
-      did_delete_db  <- self$maker$store$db$del(self$name, missing_ok)
+      did_delete_obj <- self$store$objects$del(self$name, missing_ok)
+      did_delete_db  <- self$store$db$del(self$name, missing_ok)
       invisible(did_delete_obj || did_delete_db)
     },
 
@@ -309,9 +309,18 @@ target_cleanup <- R6Class(
   "target_cleanup",
   inherit=target,
   public=list(
+    ## Special cleanup target needs a reference back to the original
+    ## maker object, as we call back to that for the actual removal.
+    maker=NULL,
+
     initialize=function(name, rule, depends=NULL) {
       super$initialize(name, rule, depends, "never")
       self$type <- "cleanup"
+    },
+
+    activate=function(maker) {
+      super$activate(maker)
+      self$maker <- maker
     },
 
     status_string=function(current) {
@@ -373,7 +382,7 @@ target_plot <- R6Class(
 
     run=function() {
       open_device(self$name, self$plot$device, self$plot$args,
-                  self$maker$env)
+                  self$store$env)
       on.exit(dev.off())
       super$run()
     },
@@ -440,6 +449,10 @@ is_current <- function(target, store) {
     ## tell if it's up to date and assume not.
     return(FALSE)
   } else {
+    ## TODO: This is all being done at once.  However, if targets
+    ## offer a $compare_dependency_status() method, we can do this
+    ## incrementally, returning FALSE as soon as the first failure is
+    ## found.
     return(compare_dependency_status(
       store$db$get(target$name),
       target$dependency_status(missing_ok=TRUE)))

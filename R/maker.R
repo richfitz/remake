@@ -11,7 +11,6 @@ maker <- R6Class(
     sources=NULL,
     packages=NULL,
     targets=NULL,
-    env=NULL,
     verbose=NULL,
     default=NULL,
 
@@ -33,9 +32,9 @@ maker <- R6Class(
       for (t in self$targets) {
         t$activate(self)
       }
-      self$env <- create_environment(sources=self$sources,
-                                     packages=self$packages)
-      self$store$deps <- code_deps$new(self$env)
+      self$store$env <- create_environment(sources=self$sources,
+                                           packages=self$packages)
+      self$store$deps <- code_deps$new(self$store$env)
     },
 
     make=function(target_name=NULL, dry_run=FALSE) {
@@ -54,18 +53,12 @@ maker <- R6Class(
       current <- target$is_current()
       if (self$verbose) {
         status <- target$status_string(current)
-        str <- sprintf("[ %5s ] %s", status, target_name)
         cmd <- target$run_fake()
         self$print_message(status, target_name, cmd)
       }
       if (!current && !dry_run) {
         target$build()
       }
-    },
-
-    cleanup=function(level="tidy") {
-      level <- match_value(level, setdiff(cleanup_levels(), "never"))
-      self$get_target(level)$run()
     },
 
     print_message=function(status, target_name, cmd, round=FALSE) {

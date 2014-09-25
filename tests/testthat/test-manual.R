@@ -20,7 +20,7 @@ test_that("simple run", {
               depends=empty_named_list(),
               code=list(
                 functions=list(download_data=hash_function(
-                                 m$env$download_data)),
+                                 m$store$env$download_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
   expect_that(m$dependency_status("data.csv", TRUE), equals(cmp))
@@ -30,7 +30,7 @@ test_that("simple run", {
               depends=list("data.csv"=NA_character_),
               code=list(
                 functions=list(process_data=hash_function(
-                                 m$env$process_data)),
+                                 m$store$env$process_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
   expect_that(m$dependency_status("processed", TRUE), equals(cmp))
@@ -49,8 +49,8 @@ test_that("simple run", {
               depends=list(processed=NA_character_),
               code=list(
                 functions=list(
-                  do_plot=hash_function(m$env$do_plot),
-                  myplot=hash_function(m$env$myplot)),
+                  do_plot=hash_function(m$store$env$do_plot),
+                  myplot=hash_function(m$store$env$myplot)),
                 packages=list(
                   grDevices=as.character(packageVersion("grDevices")),
                   graphics=as.character(packageVersion("graphics"))

@@ -202,6 +202,7 @@ store <- R6Class(
     db=NULL,
     objects=NULL,
     files=NULL,
+    env=NULL,
     deps=NULL,
     path=NULL,
     version=NULL,
