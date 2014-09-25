@@ -138,7 +138,7 @@ target <- R6Class(
       list(version=self$store$version,
            name=self$name,
            depends=depends,
-           code=self$store$deps$info(self$rule))
+           code=self$store$env$deps$info(self$rule))
     },
 
     get_hash=function(missing_ok=FALSE) {

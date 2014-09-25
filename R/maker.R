@@ -33,7 +33,6 @@ maker <- R6Class(
         t$activate(self)
       }
       self$store$env <- managed_environment$new(self$packages, self$sources)
-      self$store$deps <- code_deps$new(self$store$env$env)
     },
 
     make=function(target_name=NULL, dry_run=FALSE, force=FALSE,

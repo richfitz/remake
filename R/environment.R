@@ -6,11 +6,16 @@ managed_environment <- R6Class(
     source_files=NULL,
     source_files_hash=NULL,
     env=NULL,
+    deps=NULL,
 
     initialize=function(packages, sources) {
+      assert_character(packages, "packages")
+      assert_character(sources,  "sources")
+      if (!all(file.exists(sources))) {
+        stop("All files in 'sources' must exist")
+      }
       self$packages <- packages
       self$sources <- sources
-      self$reload()
     },
 
     reload=function(force=FALSE) {
@@ -18,14 +23,14 @@ managed_environment <- R6Class(
       source_files_hash <- tools::md5sum(source_files)
       reload <- (force
                  || is.null(self$env)
-                 || !identical(source_files,      self$source_files)
-                 || !identical(source_files_hash, self$source_files_hash))
+                 || !identical_map(source_files_hash, self$source_files_hash))
       if (reload) {
         self$env <- new.env(parent=.GlobalEnv)
         self$source_files <- source_files
         self$source_files_hash <- source_files_hash
         self$load_packages()
         self$load_sources()
+        self$deps <- code_deps$new(self$env)
       }
       invisible(reload)
     },
