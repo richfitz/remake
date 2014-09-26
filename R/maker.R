@@ -44,15 +44,13 @@ maker <- R6Class(
       ## that the sources are not loaded before it is run, because it
       ## exists to install required packages.  So it needs to be
       ## picked up here specially.
-      if (target_name == "deps") {
-        self$get_target("deps")$utility(self)
-      } else {
+      if (target_name != "deps") {
         self$load_sources(show_message=!is.null(self$store$env$env))
-        graph <- self$dependency_graph()
-        plan <- dependencies(target_name, graph)
-        for (i in plan) {
-          self$update(i, dry_run, force_all || (force && i == target_name))
-        }
+      }
+      graph <- self$dependency_graph()
+      plan <- dependencies(target_name, graph)
+      for (i in plan) {
+        self$update(i, dry_run, force_all || (force && i == target_name))
       }
     },
 
@@ -72,7 +70,7 @@ maker <- R6Class(
       current <- !force && target$is_current()
       if (self$verbose) {
         status <- target$status_string(current)
-        cmd <- target$run_fake()
+        cmd <- if (current) NULL else target$run_fake()
         self$print_message(status, target_name, cmd)
       }
       if (!current && !dry_run) {
@@ -148,7 +146,7 @@ maker <- R6Class(
     },
 
     get_targets_by_type=function(types) {
-      filter_targets_by_type(self$targets, type)
+      filter_targets_by_type(self$targets, types)
     },
 
     add_targets=function(x, force=FALSE) {
@@ -244,8 +242,8 @@ maker <- R6Class(
     },
 
     initialize_utility_targets=function() {
-      add <- list(target_utility$new("deps", utility_deps),
-                  target_utility$new("gitignore", utility_gitignore))
+      add <- list(target_utility$new("deps", utility_deps, self),
+                  target_utility$new("gitignore", utility_gitignore, self))
       self$add_targets(add)
     },
 

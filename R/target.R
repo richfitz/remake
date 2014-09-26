@@ -359,16 +359,12 @@ target_utility <- R6Class(
   inherit=target,
   public=list(
     utility=NULL,
-    maker=maker,
+    maker=NULL,
 
-    initialize=function(name, utility) {
+    initialize=function(name, utility, maker) {
       super$initialize(name, NULL, NULL, "never")
       self$type <- "utility"
       self$utility <- utility
-    },
-
-    ## Shared with target_clean
-    activate=function(maker) {
       self$maker <- maker
     },
 

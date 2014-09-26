@@ -4,9 +4,8 @@ utility_deps <- function(m) {
 }
 
 utility_gitignore <- function(m) {
-  is_file <- sapply(m$targets, function(x) x$type == "file")
-  files <- sapply(m$targets[is_file], function(x) x$name)
-  add_to_gitignore(c(".maker", unname(files)))
+  files <- names(m$get_targets_by_type("file"))
+  add_to_gitignore(c(".maker", files))
 }
 
 ## This is super basic for now: don't try and do anything clever with
