@@ -1,4 +1,7 @@
 make_target <- function(name, dat, type=NULL) {
+  if (name %in% target_reserved_names()) {
+    stop(sprintf("Target name %s is reserved", name))
+  }
   warn_unknown(name, dat,
                c("rule", "depends", "target_argument_name",
                  "cleanup_level",
@@ -127,8 +130,7 @@ target <- R6Class(
     ## Bad name, but the idea is simple: We want to return a list with
     ## only dependencies that are interesting (i.e, file/plot/object
     dependencies_real=function() {
-      dep_type <- sapply(self$depends, function(x) x$type)
-      self$depends[dep_type %in% c("file", "plot", "object")]
+      filter_targets_by_type(self$depends, c("file", "plot", "object"))
     },
 
     dependency_status=function(missing_ok=FALSE) {
@@ -352,6 +354,33 @@ target_fake <- R6Class(
     }
     ))
 
+target_utility <- R6Class(
+  "target_utility",
+  inherit=target,
+  public=list(
+    utility=NULL,
+    maker=maker,
+
+    initialize=function(name, utility) {
+      super$initialize(name, NULL, NULL, "never")
+      self$type <- "utility"
+      self$utility <- utility
+    },
+
+    ## Shared with target_clean
+    activate=function(maker) {
+      self$maker <- maker
+    },
+
+    run=function() {
+      self$utility(self$maker)
+    },
+
+    status_string=function(current=NULL) {
+      "UTIL"
+    }
+    ))
+
 target_plot <- R6Class(
   "target_plot",
   inherit=target_file,
@@ -436,7 +465,7 @@ target_is_file <- function(x) {
 ##
 ## Otherwise unclean
 is_current <- function(target, store) {
-  if (target$type == "cleanup" || target$type == "fake") {
+  if (target$type %in% c("cleanup", "fake", "utility")) {
     return(FALSE)
   } else if (!store$contains(target$name, target$type)) {
     return(FALSE)
@@ -491,4 +520,15 @@ format_fake_args <- function(args) {
     args <- ifelse(nms == "", args, paste(nms, args, sep="="))
   }
   paste(args, collapse=", ")
+}
+
+## There aren't many of these yet; might end up with more over time
+## though.
+target_reserved_names <- function() {
+  c("deps", "gitignore")
+}
+
+filter_targets_by_type <- function(targets, types) {
+  target_types <- sapply(targets, function(x) x$type)
+  targets[target_types %in% types]
 }

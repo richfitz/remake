@@ -88,3 +88,7 @@ abbreviate <- function(str, width, cutoff="...") {
 empty_named_list <- function() {
   structure(list(), names=character(0))
 }
+
+strip_whitespace <- function(str) {
+  gsub("(^\\s+|\\s+$)", "", str)
+}

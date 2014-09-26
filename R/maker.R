@@ -26,12 +26,12 @@ maker <- R6Class(
       config <- read_maker_file(self$file)
       self$sources <- config$sources
       self$packages <- config$packages
-      self$targets <- config$targets
-      self$default <- config$target_default
+      self$targets <- NULL
+      self$add_targets(config$targets)
       private$initialize_cleanup_targets()
-      for (t in self$targets) {
-        t$activate(self)
-      }
+      private$initialize_targets_activate()
+      private$initialize_default_target(config$target_default)
+      private$initialize_utility_targets() # last; nothing depends on these
       self$store$env <- managed_environment$new(self$packages, self$sources)
     },
 
@@ -40,14 +40,30 @@ maker <- R6Class(
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
-      reloaded <- self$store$env$reload()
-      if (reloaded) {
-        self$print_message("READ", "", "# reloading sources")
+      ## NOTE: Not 100% sure about this.  The "deps" target requires
+      ## that the sources are not loaded before it is run, because it
+      ## exists to install required packages.  So it needs to be
+      ## picked up here specially.
+      if (target_name == "deps") {
+        self$get_target("deps")$utility(self)
+      } else {
+        self$load_sources(show_message=!is.null(self$store$env$env))
+        graph <- self$dependency_graph()
+        plan <- dependencies(target_name, graph)
+        for (i in plan) {
+          self$update(i, dry_run, force_all || (force && i == target_name))
+        }
       }
-      graph <- self$dependency_graph()
-      plan <- dependencies(target_name, graph)
-      for (i in plan) {
-        self$update(i, dry_run, force_all || (force && i == target_name))
+    },
+
+    load_sources=function(show_message=TRUE) {
+      force(show_message) # stupid delayed evaluation
+      first <- is.null(self$store$env$env)
+      reloaded <- self$store$env$reload()
+      if (show_message && reloaded) {
+        cmd <- sprintf("# %s sources",
+                       if (first) "loading" else "reloading")
+        self$print_message("READ", "", cmd)
       }
     },
 
@@ -129,6 +145,10 @@ maker <- R6Class(
              paste(setdiff(target_names, self$target_names()), collapse=", "))
       }
       self$targets[target_names]
+    },
+
+    get_targets_by_type=function(types) {
+      filter_targets_by_type(self$targets, type)
     },
 
     add_targets=function(x, force=FALSE) {
@@ -221,35 +241,44 @@ maker <- R6Class(
                                     "cleanup")
       }
       self$add_targets(targets, force=TRUE)
+    },
+
+    initialize_utility_targets=function() {
+      add <- list(target_utility$new("deps", utility_deps),
+                  target_utility$new("gitignore", utility_gitignore))
+      self$add_targets(add)
+    },
+
+    ## NOTE: The logic here seems remarkably clumsy.
+    initialize_default_target=function(default) {
+      if (is.null(default)) {
+        if ("all" %in% self$target_names()) {
+          self$default <- "all"
+        }
+      } else {
+        assert_scalar_character(default, "target_default")
+        if (default %in% self$target_names()) {
+          stop(sprintf("Default target %s not found in makerfile"),
+               default)
+        }
+        self$default <- default
+      }
+    },
+
+    initialize_targets_activate=function() {
+      for (t in self$targets) {
+        t$activate(self)
+      }
     }
     ))
 
 read_maker_file <- function(filename) {
   dat <- yaml_read(filename)
-
-  warn_unknown(filename, dat, c("packages", "sources",
-                                "target_default", "targets"))
-
+  warn_unknown(filename, dat,
+               c("packages", "sources", "target_default", "targets"))
   dat$packages <- with_default(dat$packages, character(0))
   dat$sources  <- with_default(dat$sources,  character(0))
-
-  assert_character(dat$packages, "packages")
-  assert_character(dat$sources,  "sources")
-  if (!all(file.exists(dat$sources))) {
-    stop("All files in 'sources' must exist")
-  }
-  if (any(duplicated(names(dat$targets)))) {
-    stop("All target names must be unique")
-  }
-
   dat$targets <- lnapply(dat$targets, make_target)
-
-  if (is.null(dat$target_default) && "all" %in% names(dat$targets)) {
-    dat$target_default <- "all"
-  }
-  if (!is.null(dat$target_default)) {
-    assert_scalar_character(dat$target_default, "target_default")
-  }
   dat
 }
 

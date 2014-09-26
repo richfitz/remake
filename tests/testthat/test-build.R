@@ -66,7 +66,6 @@ test_that("Depending on a file we don't make", {
 })
 
 test_that("Expiring targets", {
-  devtools::load_all("../../")
   cleanup()
   m <- maker$new()
   m$make("plot.pdf")
