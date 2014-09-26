@@ -37,7 +37,7 @@ managed_environment <- R6Class(
 
     load_packages=function() {
       for (p in self$packages) {
-        library(p, character.only=TRUE)
+        suppressMessages(library(p, character.only=TRUE, quietly=TRUE))
       }
     },
 
