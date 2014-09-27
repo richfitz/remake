@@ -92,3 +92,38 @@ empty_named_list <- function() {
 strip_whitespace <- function(str) {
   gsub("(^\\s+|\\s+$)", "", str)
 }
+
+strrep <- function (str, n) {
+  paste(rep_len(str, n), collapse = "")
+}
+
+brackets <- function(text, style="square", pad=1) {
+  styles <- list(square = c("[", "]"),
+                 round  = c("(", ")"),
+                 brace  = c("{", "}"),
+                 pipe   = c("|", "|"),
+                 star   = c("*", "*"),
+                 none   = c(" ", " "))
+  style <- styles[[match_value(style, names(styles))]]
+  pad <- strrep(" ", pad)
+  paste0(style[[1]], pad, text, pad, style[[2]])
+}
+
+## This is just to avoid dealing with .onLoad
+painter <- R6Class(
+  public=list(
+    do_paint=NULL,
+    normal_is_bright=NULL,
+    initialize=function(normal_is_bright=FALSE) {
+      has_rainbowrite <- requireNamespace("rainbowrite", quietly=TRUE)
+      self$normal_is_bright <- normal_is_bright
+      if (has_rainbowrite) {
+        self$do_paint <- rainbowrite::paint
+      } else {
+        self$do_paint <- function(x, ...) x
+      }
+    },
+    paint=function(..., normal_is_bright=self$normal_is_bright) {
+      self$do_paint(..., normal_is_bright=normal_is_bright)
+    }
+    ))

@@ -17,4 +17,5 @@ Imports:
     codetools
 Suggests:
     testthat,
-    igraph
+    igraph,
+    rainbowrite

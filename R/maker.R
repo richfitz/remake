@@ -32,6 +32,7 @@ maker <- R6Class(
       private$initialize_targets_activate()
       private$initialize_default_target(config$target_default)
       private$initialize_utility_targets() # last; nothing depends on these
+      private$initialize_message_format()
       self$store$env <- managed_environment$new(self$packages, self$sources)
     },
 
@@ -78,21 +79,19 @@ maker <- R6Class(
       }
     },
 
-    print_message=function(status, target_name, cmd, round=FALSE) {
-      fmt <- if (round) "( %5s ) %s" else "[ %5s ] %s"
-      str <- sprintf(fmt, status, target_name)
+    print_message=function(status, target_name, cmd=NULL, style="square") {
+      paint <- private$fmt$p$paint
+      col <- status_colour(status)
+      status <- brackets(paint(sprintf("%5s", status), col), style)
       if (!is.null(cmd)) {
-        width <- getOption("width")
-        w1 <- max(nchar(self$target_names())) + 10
-        w2 <- ceiling(width / 2)
-        w <- max(0, min(w1, w2) - nchar(str))
-        pos <- width - (nchar(str) + w)
-        join <- " |  "
-        cmd <- abbreviate(cmd, pos - nchar(join))
-        if (length(cmd) == 1) {
-          pad <- paste(rep(" ", w), collapse="")
-          str <- paste0(str, pad, join, cmd)
-        }
+        w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
+        cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+      }
+      if (is.null(cmd)) {
+        str <- sprintf(private$fmt$no_cmd, status, target_name)
+      } else {
+        str <- sprintf(private$fmt$with_cmd, status, target_name,
+                       private$fmt$p$paint(cmd, "grey"))
       }
       message(str)
     },
@@ -126,7 +125,7 @@ maker <- R6Class(
           status <- ""
           cmd <- NULL
         }
-        self$print_message(status, target_name, cmd, TRUE)
+        self$print_message(status, target_name, cmd, "round")
       }
     },
 
@@ -220,6 +219,8 @@ maker <- R6Class(
     }
     ),
   private=list(
+    fmt=NULL,
+
     initialize_cleanup_targets=function() {
       levels <- cleanup_target_names()
       targets <- list()
@@ -267,6 +268,19 @@ maker <- R6Class(
       for (t in self$targets) {
         t$activate(self)
       }
+    },
+
+    initialize_message_format=function() {
+      width <- getOption("width")
+      w0 <- 10 # nchar("[ BUILD ] ")
+      target_width <- min(max(nchar(self$target_names())) + w0,
+                      ceiling(width / 2))
+      private$fmt <- list(
+        no_cmd="%s %s",
+        with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),
+        target_width=target_width,
+        max_cmd_width=width - (w0 + 1 + target_width + 4),
+        p=painter$new(interactive()))
     }
     ))
 
@@ -286,4 +300,15 @@ cleanup_levels <- function() {
 
 cleanup_target_names <- function() {
   c("tidy", "clean", "purge")
+}
+
+## Not sure I have a full list of these yet:
+status_colour <- function(str) {
+  switch(str,
+         BUILD="steelblue4",
+         OK="green3",
+         CLEAN="orange",
+         DEL="red",
+         UTIL="darkorchid3",
+         NULL)
 }
