@@ -310,5 +310,6 @@ status_colour <- function(str) {
          CLEAN="orange",
          DEL="red",
          UTIL="darkorchid3",
+         READ="yellow",
          NULL)
 }
