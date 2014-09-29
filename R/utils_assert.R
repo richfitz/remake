@@ -16,6 +16,12 @@ assert_function <- function(x, name=deparse(substitute(x))) {
   }
 }
 
+assert_null <- function(x, name=deparse(substitute(x))) {
+  if (!is.null(x)) {
+    stop(sprintf("%s must be NULL", name), call.=FALSE)
+  }
+}
+
 assert_list <- function(x, name=deparse(substitute(x))) {
   if (!is.list(x)) {
     stop(sprintf("%s must be a list", name), call.=FALSE)

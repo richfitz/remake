@@ -97,10 +97,23 @@ strrep <- function (str, n) {
   paste(rep_len(str, n), collapse = "")
 }
 
+last <- function(x) {
+  x[[length(x)]]
+}
+`last<-` <- function(x, value) {
+  x[[length(x)]] <- value
+  x
+}
+
+isFALSE <- function(x) {
+  identical(x, FALSE)
+}
+
 brackets <- function(text, style="square", pad=1) {
   styles <- list(square = c("[", "]"),
                  round  = c("(", ")"),
-                 brace  = c("{", "}"),
+                 curly  = c("{", "}"),
+                 angle  = c("<", ">"),
                  pipe   = c("|", "|"),
                  star   = c("*", "*"),
                  none   = c(" ", " "))
