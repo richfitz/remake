@@ -51,8 +51,10 @@ maker <- R6Class(
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph)
       for (i in plan) {
-        self$update(i, dry_run, force_all || (force && i == target_name))
+        last <- self$update(i, dry_run,
+                            force_all || (force && i == target_name))
       }
+      invisible(last)
     },
 
     load_sources=function(show_message=TRUE) {
@@ -74,8 +76,12 @@ maker <- R6Class(
         cmd <- if (current) NULL else target$run_fake()
         self$print_message(status, target_name, cmd)
       }
-      if (!current && !dry_run) {
-        target$build()
+      if (!dry_run) {
+        if (current) {
+          invisible(target$get())
+        } else {
+          target$build()
+        }
       }
     },
 
