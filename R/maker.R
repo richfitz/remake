@@ -319,6 +319,11 @@ read_maker_file <- function(filename, included=FALSE) {
       dat$packages <- unique(c(dat$packages, dat_sub$packages))
       dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
 
+      if ("all" %in% names(dat_sub$targets)) {
+        warning(f, " contains target 'all', which I am removing")
+        dat_sub$targets$all <- NULL
+      }
+
       dups <- intersect(names(dat_sub$targets), names(dat$targets))
       if (length(dups) > 0L) {
         ## This will throw an error later on, but a warning here will
