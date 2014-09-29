@@ -105,10 +105,7 @@ target <- R6Class(
           stop("Implicitly created targets must all be files")
         }
         implicit <- lapply(msg, target_file$new, rule=NULL)
-        for (t in implicit) {
-          t$activate(maker)
-        }
-        maker$add_targets(implicit)
+        maker$add_targets(implicit, activate=TRUE)
       }
 
       ## This preserves the original names:
