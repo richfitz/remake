@@ -313,6 +313,11 @@ maker <- R6Class(
     ))
 
 read_maker_file <- function(filename, included=FALSE) {
+  ## TODO: Sort out the logic here:
+  if (dirname(filename) != "." && dirname(filename) != getwd()) {
+    stop("Logic around paths in out-of-directory maker files not decided")
+  }
+
   dat <- yaml_read(filename)
   warn_unknown(filename, dat,
                c("packages", "sources", "include", "target_default",
@@ -328,11 +333,11 @@ read_maker_file <- function(filename, included=FALSE) {
 
   if (!is.null(dat$include)) {
     assert_character(dat$include)
-    ## TODO: This is going to be hard to get right.  Could rewrite
-    ## file-based rules to adjust relative paths, or leave relative
-    ## paths going against the main file.  Not sure what the right
-    ## answer here is, so requiring new files to be in the current
-    ## working directory.
+    ## TODO: Even after sorting out main file restriction, this one
+    ## may need some work. Could rewrite file-based rules to adjust
+    ## relative paths, or leave relative paths going against the main
+    ## file.  Not sure what the right answer here is, so requiring new
+    ## files to be in the current working directory.
     if (any(dirname(dat$include) != ".")) {
       stop("All included makerfiles must be in the current directory")
     }
