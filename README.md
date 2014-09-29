@@ -4,6 +4,41 @@
 
 Make-like build management for R
 
+# Installation
+
+Install using [devtools](https://github.com/hadley/devtools):
+
+```r
+devtools::install_github("richfitz/maker")
+```
+
+If you don't have devtools installed you will see an error "there is no package called 'devtools'"; if that happens install devtools with `install.packages("devtools")`.
+
+If you work at the terminal (not Rstudio or Rgui) and would like coloured output, you might like to install [rainbowrite](https://github.com/richfitz/rainbowrite) with
+
+```r
+devtools::install_github("richfitz/rainbowrite")
+```
+
+maker depends on several R packages, all of which can be installed from CRAN.  The required packages are:
+
+* `[R6](http://cran.r-project.org/web/packages/R6)` for holding things together
+* `[yaml](http://cran.r-project.org/web/packages/yaml)` for reading the configuration
+* `[digest](http://cran.r-project.org/web/packages/digest)` for efficiently hashing objects
+
+```r
+install.packages(c("R6, "yaml", "digest"))
+```
+
+In addition, there are several optional packages:
+
+* `[optparse](http://cran.r-project.org/web/packages/optparse)` for a command line version (run from outside of an R session)
+* `[igraph](http://cran.r-project.org/web/packages/igraph)` for creating a plots of the dependency graph
+
+```r
+install.packages(c("optparse", "igraph"))
+```
+
 # The idea
 
 "[make](http://en.wikipedia.org/wiki/Make_(software))",
@@ -85,3 +120,7 @@ processed:
 ```
 
 with the idea that we'd end up evaluating `process_data(filename="data.csv")`.
+
+# Examples
+
+Real world examples coming soon.  In the meantime [this example](tests/testthat/maker3.yml) gives a flavour of what maker tries to enable.
