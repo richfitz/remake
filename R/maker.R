@@ -290,13 +290,46 @@ maker <- R6Class(
     }
     ))
 
-read_maker_file <- function(filename) {
+read_maker_file <- function(filename, included=FALSE) {
   dat <- yaml_read(filename)
   warn_unknown(filename, dat,
-               c("packages", "sources", "target_default", "targets"))
+               c("packages", "sources", "include", "target_default",
+                 "targets"))
+
+  if (included) {
+    dat$target_default <- NULL
+  }
+
   dat$packages <- with_default(dat$packages, character(0))
   dat$sources  <- with_default(dat$sources,  character(0))
   dat$targets <- lnapply(dat$targets, make_target)
+
+  if (!is.null(dat$include)) {
+    assert_character(dat$include)
+    ## TODO: This is going to be hard to get right.  Could rewrite
+    ## file-based rules to adjust relative paths, or leave relative
+    ## paths going against the main file.  Not sure what the right
+    ## answer here is, so requiring new files to be in the current
+    ## working directory.
+    if (any(dirname(dat$include) != ".")) {
+      stop("All included makerfiles must be in the current directory")
+    }
+    for (f in dat$include) {
+      dat_sub <- read_maker_file(f, included=TRUE)
+      dat$packages <- unique(c(dat$packages, dat_sub$packages))
+      dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
+
+      dups <- intersect(names(dat_sub$targets), names(dat$targets))
+      if (length(dups) > 0L) {
+        ## This will throw an error later on, but a warning here will
+        ## make that easier to diagnose.
+        warning(sprintf("%s contains duplicate targets %s",
+                        f, paste(dups, collapse=", ")))
+      }
+      dat$targets  <- c(dat$targets, dat_sub$targets)
+    }
+  }
+
   dat
 }
 

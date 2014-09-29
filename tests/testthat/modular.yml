@@ -1,0 +1,23 @@
+sources:
+  - code.R
+
+packages:
+  - testthat
+
+include:
+  - modular_module.yml
+
+targets:
+  all:
+    depends: plot.pdf
+
+  processed:
+    depends: data.csv
+    rule: process_data
+
+  plot.pdf:
+    depends: processed
+    rule: myplot
+    plot:
+      width: 8
+      height: 4

@@ -1,0 +1,10 @@
+sources:
+  - code.R
+
+target_default: data.csv
+
+targets:
+  data.csv:
+    rule: download_data
+    target_argument_name: dest
+    cleanup_level: purge
