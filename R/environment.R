@@ -12,7 +12,8 @@ managed_environment <- R6Class(
       assert_character(packages, "packages")
       assert_character(sources,  "sources")
       if (!all(file.exists(sources))) {
-        stop("All files in 'sources' must exist")
+        msg <- paste(sources[!file.exists(sources)], collapse=", ")
+        stop("All files in 'sources' must exist.  Missing: ", msg)
       }
       self$packages <- packages
       self$sources <- sources
@@ -43,7 +44,7 @@ managed_environment <- R6Class(
 
     load_sources=function() {
       for (f in self$source_files) {
-        sys.source(f, self$env, chdir=TRUE)
+        sys.source(f, self$env, chdir=TRUE, keep.source=TRUE)
       }
     },
 
