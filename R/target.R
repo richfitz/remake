@@ -5,11 +5,22 @@ make_target <- function(name, dat, type=NULL) {
   warn_unknown(name, dat,
                c("rule", "depends", "target_argument_name",
                  "cleanup_level",
+                 "chain",
                  # Special things
                  "plot"))
+  chained <- !is.null(dat$chain)
+  if (chained) {
+    err <- intersect(c("depends", "rule", "target_argument_name"),
+                     names(dat))
+    if (length(err) > 0L) {
+      stop(sprintf("Cannot specify %d when using chained rules",
+                   paste(dQuote(err), collapse=" or ")))
+    }
+    dat$rule <- dat$chain
+  }
   if (is.null(type)) {
     type <- if (target_is_file(name)) "file" else  "object"
-    if (type == "object" && is.null(dat$rule)) {
+    if (type == "object" && is.null(dat$rule) && is.null(dat$chain)) {
       type <- "fake"
     } else if (type == "file" && "plot" %in% names(dat)) {
       type <- "plot"
@@ -26,17 +37,16 @@ make_target <- function(name, dat, type=NULL) {
   if ("target_argument_name" %in% names(dat) && type != "file") {
     stop("'target_argument_name' field invalid for arguments of type ", type)
   }
-
   rule <- dat$rule
   depends <- dat$depends
   cleanup_level <- with_default(dat$cleanup_level, "tidy")
 
   switch(type,
          file=target_file$new(name, rule, depends, cleanup_level,
-           dat$target_argument_name),
+           dat$target_argument_name, chained),
          plot=target_plot$new(name, rule, depends, cleanup_level,
-           dat$target_argument_name, dat$plot),
-         object=target_object$new(name, rule, depends, cleanup_level),
+           dat$target_argument_name, chained, dat$plot),
+         object=target_object$new(name, rule, depends, cleanup_level, chained),
          fake=target_fake$new(name, depends),
          cleanup=target_cleanup$new(name, rule, depends),
          stop("Unsupported type ", type))
@@ -51,22 +61,27 @@ target <- R6Class(
     type=NULL,
     cleanup_level=NULL,
     store=NULL,
+    chain=NULL,      # does this rule contain chained things
+    chain_job=FALSE, # does this rule exist because of a chain?
 
-    initialize=function(name, rule, depends=NULL, cleanup_level="tidy") {
+    initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
+      chained=FALSE) {
+      #
       self$name <- name
-      if (!is.null(rule)) {
-        assert_scalar_character(rule)
+      if (chained) {
+        private$initialize_chain(rule, depends, cleanup_level)
+      } else {
+        private$initialize_single(rule, depends, cleanup_level)
       }
-      self$rule <- rule
-      self$cleanup_level <- match_value(cleanup_level, cleanup_levels())
-
-      ## These get wired up as actual maker::target objects on a
-      ## second pass, but we need a full database to do that.
-      self$depends <- from_yaml_map_list(depends)
     },
 
     activate=function(maker) {
       self$store <- maker$store
+
+      if (!is.null(self$chain)) {
+        maker$add_targets(self$chain, activate=TRUE)
+      }
+
       if (length(self$depends) == 0L) {
         return()
       }
@@ -84,7 +99,7 @@ target <- R6Class(
       ## the database's set of targets. Missing file targets will be
       ## created and added to the database (which being passed by
       ## reference will propagate backwards).
-      msg <- setdiff(depends_name, maker$target_names())
+      msg <- setdiff(depends_name, maker$target_names(all=TRUE))
       if (length(msg) > 0L) {
         if (!all(target_is_file(msg))) {
           stop("Implicitly created targets must all be files")
@@ -178,6 +193,44 @@ target <- R6Class(
     build=function() {
       self$run()
     }
+    ),
+  private=list(
+    initialize_single=function(rule, depends, cleanup_level) {
+      if (!is.null(rule)) {
+        assert_scalar_character(rule)
+      }
+      self$rule <- rule
+      self$cleanup_level <- match_value(cleanup_level, cleanup_levels())
+      ## These get wired up as actual maker::target objects on a
+      ## second pass, but we need a full database to do that.
+      self$depends <- from_yaml_map_list(depends)
+    },
+
+    initialize_chain=function(chain, depends, cleanup_level) {
+      assert_list(chain)
+      if (!is.null(names(chain))) {
+        stop("Chained rules must be unnamed")
+      }
+      assert_null(depends)
+
+      len <- length(chain)
+      for (i in seq_len(len)) {
+        x <- chain[[i]]
+        dep <- c(if (i > 1L) chain[[i-1L]]$name, x$depends)
+        cln <- with_default(x$cleanup_level, cleanup_level)
+        if (i < len) {
+          name <- chained_rule_name(self$name, i)
+          ## TODO: More care will be needed for intermediates that
+          ## aren't objects.  Going via files should actually be OK.
+          t <- target_object$new(name, x$rule, dep, cln, FALSE)
+          t$chain_job <- TRUE
+          chain[[i]] <- t
+        } else {
+          private$initialize_single(x$rule, dep, cln)
+        }
+      }
+      self$chain <- chain[-len]
+    }
     ))
 
 target_file <- R6Class(
@@ -188,7 +241,7 @@ target_file <- R6Class(
     target_argument_name=NULL,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument_name=NULL) {
+      target_argument_name=NULL, chained=FALSE) {
       if (is.null(rule)) {
         if (!missing(cleanup_level) && cleanup_level != "never") {
           stop("Don't do that")
@@ -264,11 +317,12 @@ target_object <- R6Class(
   "target_object",
   inherit=target,
   public=list(
-    initialize=function(name, rule, depends=NULL, cleanup_level="tidy") {
+    initialize=function(name, rule, depends=NULL,
+      cleanup_level="tidy", chained=FALSE) {
       if (is.null(rule)) {
         stop("Must not have a NULL rule")
       }
-      super$initialize(name, rule, depends, cleanup_level)
+      super$initialize(name, rule, depends, cleanup_level, chained)
       self$type <- "object"
     },
 
@@ -330,7 +384,7 @@ target_cleanup <- R6Class(
     },
 
     build=function() {
-      self$maker$remove_targets(self$will_remove())
+      self$maker$remove_targets(self$will_remove(), chain=FALSE)
       super$build() # runs any clean hooks
     },
 
@@ -384,7 +438,7 @@ target_plot <- R6Class(
     plot=NULL,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument_name=NULL, plot=NULL) {
+      target_argument_name=NULL, chained=FALSE, plot=NULL) {
       if (is.null(rule)) {
         stop("Cannot have a NULL rule")
       }
@@ -392,7 +446,7 @@ target_plot <- R6Class(
         stop("Plot targets cannot use target_argument_name")
       }
       super$initialize(name, rule, depends, cleanup_level,
-                       target_argument_name)
+                       target_argument_name, chain)
       if (identical(plot, TRUE) || is.null(plot)) {
         plot <- list()
       }
@@ -527,4 +581,8 @@ target_reserved_names <- function() {
 filter_targets_by_type <- function(targets, types) {
   target_types <- sapply(targets, function(x) x$type)
   targets[target_types %in% types]
+}
+
+chained_rule_name <- function(name, i) {
+  sprintf("%s{%d}", name, i)
 }

@@ -74,7 +74,8 @@ maker <- R6Class(
       if (self$verbose) {
         status <- target$status_string(current)
         cmd <- if (current) NULL else target$run_fake()
-        self$print_message(status, target_name, cmd)
+        style <- if (isTRUE(target$chain_job)) "curly" else "square"
+        self$print_message(status, target_name, cmd, style)
       }
       if (!dry_run) {
         if (current) {
@@ -113,14 +114,18 @@ maker <- R6Class(
       }
     },
 
-    remove_targets=function(target_names) {
+    remove_targets=function(target_names, chain=TRUE) {
       for (t in target_names) {
-        self$remove_target(t)
+        self$remove_target(t, chain)
       }
     },
 
-    remove_target=function(target_name) {
+    remove_target=function(target_name, chain=TRUE) {
       target <- self$get_target(target_name)
+      if (chain && !is.null(target$chain)) {
+        chain_names <- sapply(target$chain, function(x) x$name)
+        self$remove_targets(chain_names, chain=FALSE)
+      }
       did_remove <- target$del(missing_ok=TRUE)
       if (self$verbose) {
         if (did_remove) {
@@ -136,25 +141,27 @@ maker <- R6Class(
     },
 
     get_target=function(target_name) {
-      if (!(target_name %in% self$target_names())) {
+      if (!(target_name %in% names(self$targets))) {
         stop("No such target ", target_name)
       }
       self$targets[[target_name]]
     },
 
     get_targets=function(target_names) {
-      if (!all(target_names %in% self$target_names())) {
+      if (!all(target_names %in% names(self$targets))) {
         stop("No such target ",
-             paste(setdiff(target_names, self$target_names()), collapse=", "))
+             paste(setdiff(target_names, names(self$targets)),
+                   collapse=", "))
       }
       self$targets[target_names]
     },
 
+    ## TODO: Filter chained targets from this set?
     get_targets_by_type=function(types) {
       filter_targets_by_type(self$targets, types)
     },
 
-    add_targets=function(x, force=FALSE) {
+    add_targets=function(x, force=FALSE, activate=FALSE) {
       if (!all(sapply(x, inherits, "target"))) {
         stop("All elements must be targets")
       }
@@ -176,10 +183,25 @@ maker <- R6Class(
       }
       names(x) <- target_names
       self$targets <- c(self$targets, x)
+      if (activate) {
+        for (t in x) {
+          t$activate(self)
+        }
+      }
     },
 
-    target_names=function() {
-      names(self$targets)
+    ## TODO:
+    ## * all=FALSE (excludes chain jobs, and/or all rules starting with
+    ##   a period)
+    ## * type=whatever
+    target_names=function(all=FALSE) {
+      if (!all) {
+        ok <- as.logical(sapply(self$targets, function(x)
+                                isFALSE(x$chain_job)))
+        names(self$targets[ok])
+      } else {
+        names(self$targets)
+      }
     },
 
     target_default=function() {
@@ -214,7 +236,7 @@ maker <- R6Class(
     },
 
     dependency_graph=function() {
-      targets <- self$target_names()
+      targets <- self$target_names(all=TRUE)
       g <- lapply(targets, function(t) self$get_target(t)$dependencies())
       names(g) <- targets
       topological_sort(g)

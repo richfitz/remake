@@ -1,0 +1,20 @@
+sources: chain.R
+targets:
+  # This is a chain of targets, expressed manually
+  manual:
+    rule: f3
+    depends: manual_pt2
+
+  manual_pt2:
+    rule: f2
+    depends: manual_pt1
+
+  manual_pt1:
+    rule: f1
+
+  # And this is the same set, expressed as a chain
+  chained:
+    chain:
+      - rule: f1
+      - rule: f2
+      - rule: f3
