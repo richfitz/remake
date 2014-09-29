@@ -262,9 +262,9 @@ maker <- R6Class(
         }
       } else {
         assert_scalar_character(default, "target_default")
-        if (default %in% self$target_names()) {
-          stop(sprintf("Default target %s not found in makerfile"),
-               default)
+        if (!(default %in% self$target_names())) {
+          stop(sprintf("Default target %s not found in makerfile",
+                       default))
         }
         self$default <- default
       }
