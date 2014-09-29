@@ -4,13 +4,13 @@
 ##' @title Command line interface to maker
 ##' @export
 ##' @param args Arguments to pass to
-##' @import optparse
 main <- function(args=commandArgs(TRUE)) {
   if (interactive()) {
     stop("This is not meant to be used from an R session!")
   }
-  args <- parse_args(OptionParser(option_list=maker_options()), args,
-                     positional_arguments=TRUE)
+  loadNamespace("optparse")
+  parser <- optparse::OptionParser(option_list=maker_options())
+  args <- optparse::parse_args(parser, args, positional_arguments=TRUE)
   opts <- args$options
   if (opts$version) {
     print_version()
@@ -36,6 +36,7 @@ main <- function(args=commandArgs(TRUE)) {
 }
 
 maker_options <- function() {
+  make_option <- optparse::make_option
   ## TODO: make help the default option.
   option_list <- list(
     make_option(c("-f", "--file"), type="character", default="maker.yml",

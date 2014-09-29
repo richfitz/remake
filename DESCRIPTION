@@ -13,9 +13,9 @@ Imports:
     R6 (>= 2.0.0),
     digest,
     yaml,
-    optparse,
     codetools
 Suggests:
     testthat,
     igraph,
+    optparse,
     rainbowrite
