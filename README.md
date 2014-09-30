@@ -27,7 +27,7 @@ maker depends on several R packages, all of which can be installed from CRAN.  T
 * `[digest](http://cran.r-project.org/web/packages/digest)` for efficiently hashing objects
 
 ```r
-install.packages(c("R6, "yaml", "digest"))
+install.packages(c("R6", "yaml", "digest"))
 ```
 
 In addition, there are several optional packages:
