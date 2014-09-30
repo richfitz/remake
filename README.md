@@ -22,9 +22,9 @@ devtools::install_github("richfitz/rainbowrite")
 
 maker depends on several R packages, all of which can be installed from CRAN.  The required packages are:
 
-* `[R6](http://cran.r-project.org/web/packages/R6)` for holding things together
-* `[yaml](http://cran.r-project.org/web/packages/yaml)` for reading the configuration
-* `[digest](http://cran.r-project.org/web/packages/digest)` for efficiently hashing objects
+* [`R6`](http://cran.r-project.org/web/packages/R6) for holding things together
+* [`yaml`](http://cran.r-project.org/web/packages/yaml) for reading the configuration
+* [`digest`](http://cran.r-project.org/web/packages/digest) for efficiently hashing objects
 
 ```r
 install.packages(c("R6", "yaml", "digest"))
@@ -32,8 +32,8 @@ install.packages(c("R6", "yaml", "digest"))
 
 In addition, there are several optional packages:
 
-* `[optparse](http://cran.r-project.org/web/packages/optparse)` for a command line version (run from outside of an R session)
-* `[igraph](http://cran.r-project.org/web/packages/igraph)` for creating a plots of the dependency graph
+* [`optparse`](http://cran.r-project.org/web/packages/optparse) for a command line version (run from outside of an R session)
+* [`igraph`](http://cran.r-project.org/web/packages/igraph) for creating a plots of the dependency graph
 
 ```r
 install.packages(c("optparse", "igraph"))
