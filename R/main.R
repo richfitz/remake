@@ -23,15 +23,17 @@ main <- function(args=commandArgs(TRUE)) {
   }
   targets <- args$args
   if (length(targets) == 0L) {
-    pos <- m$target_names()
-    if (length(pos) == 0L) {
-      stop("No targets found")
-    } else {
-      targets <- m$target_default()
-    }
+    targets <- m$target_default()
   }
-  for (t in targets) {
-    m$make(t, opts$dry_run)
+  if (opts$script) {
+    if (length(targets) != 1L) {
+      stop("Expected exactly one target with --script")
+    }
+    writeLines(m$script(targets))
+  } else {
+    for (t in targets) {
+      m$make(t, opts$dry_run)
+    }
   }
 }
 
@@ -50,6 +52,11 @@ maker_options <- function() {
     make_option(c("-n", "--dry-run"), type="logical",
                 default=FALSE, action="store_true", dest="dry_run",
                 help="Dry run (don't actually run anything)"),
+    ## Not sure how to have this dump to a file when given with an
+    ## argument but dump to stdout without.  Going with stdout.
+    make_option(c("-s", "--script"), type="logical", default=FALSE,
+                action="store_true", dest="script",
+                help="Print R script to standard output"),
     make_option(c("-v", "--version"), type="logical", default=FALSE,
                 action="store_true", help="Version information"))
 }
