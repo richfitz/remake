@@ -39,10 +39,9 @@ object_store <- R6Class(
     del=function(key, missing_ok=FALSE) {
       ## TODO: Generalise this pattern (see also get_hash)
       exists <- self$contains(key)
-      if (exists) {
-        file.remove(self$fullname(key))
-        file.remove(self$hashname(key))
-      } else if (!missing_ok) {
+      file_remove(self$fullname(key))
+      file_remove(self$hashname(key))
+      if (!exists && !missing_ok) {
         stop(sprintf("key %s not found in object store", key))
       }
       invisible(exists)
@@ -254,3 +253,149 @@ store <- R6Class(
              object=self$objects,
              stop("Invalid type ", dQuote(type)))
     }))
+
+## Another little class, for lists that are stored on disk (or,
+## eventually, in a db).  This will remove a lot of the crap that
+## accumulates in the object_store, I think.
+##
+## This is still totally oriented around hashing objects.
+##
+## These aren't really designed to be used in a general way.  They're
+## going to be fairly slow.  But they should be safeish.  The payoff
+## for using these is going to be in jobs that take many
+## seconds/minutes to run, so there's no point fretting about
+## microseconds here.
+##
+## There are two types of operation here: things on elements and
+## things on the full "object".  The idea is to optimise for
+## operations on elements because they'll be the most common.
+##
+## We want to get hashes for indiviual elements as well as a hash for
+## the whole object.
+list_store <- R6Class(
+  "list_store",
+  public=list(
+    path=NULL,
+
+    initialize=function(path) {
+      self$path <- path
+      dir.create(self$path, FALSE)
+      if (!file.exists(self$lenname())) {
+        self$set_len(0L)
+      }
+    },
+    ## Often this will happen next:
+    set_len=function(n) {
+      self$reset()
+      writeLines(as.character(n), self$lenname())
+    },
+
+    ## Very basic interrogation:
+    len=function() {
+      as.integer(readLines(self$lenname()))
+    },
+    complete=function() {
+      all(self$contains(seq_len(self$len())))
+    },
+    contains=function(i) {
+      file.exists(self$fullname(i))
+    },
+
+    ## Extract elements, or the whole list:
+    get=function(i, check_bounds=TRUE) {
+      if (check_bounds) {
+        self$check_bounds(i)
+      }
+      readRDS(self$fullname(i))
+    },
+
+    get_list=function() {
+      value <- lapply(seq_len(self$len()), self$get, check_bounds=FALSE)
+      attributes(value) <- readRDS(self$attrname())
+      value
+    },
+
+    set=function(i, value, check_bounds=TRUE) {
+      if (check_bounds) {
+        self$check_bounds(i)
+      }
+      hash <- digest::digest(value)
+      saveRDS(value, self$fullname(i))
+      writeLines(hash, self$hashname(i))
+    },
+    set_list=function(value) {
+      if (!is.list(value)) {
+        warning("Saving non-list targets as lists is nontransitive")
+        value <- as.list(value)
+      }
+      self$reset()
+      self$set_len(length(value))
+      for (i in seq_along(value)) {
+        self$set(i, value[[i]], check_bounds=FALSE)
+      }
+      saveRDS(attributes(value), self$attrname())
+    },
+
+    del=function(i, missing_ok=FALSE, check_bounds=TRUE) {
+      if (check_bounds) {
+        self$check_bounds(i)
+      }
+      exists <- self$contains(i)
+      file_remove(self$fullname(i))
+      file_remove(self$hashname(i))
+      if (!exists && !missing_ok) {
+        stop(sprintf("index %s not found in list object store", i))
+      }
+      invisible(exists)
+    },
+    del_list=function(missing_ok=FALSE) {
+      exists <- self$complete()
+      file_remove(self$path, recursive=TRUE)
+      if (!exists && !missing_ok) {
+        stop("List was missing/incomplete")
+      }
+      invisible(exists)
+    },
+
+    reset=function() {
+      file_remove(self$path, recursive=TRUE)
+      dir.create(self$path)
+    },
+
+    check_bounds=function(i) {
+      len <- self$len()
+      if (i < 1L || i > len) {
+        stop(sprintf("Bounds must be on [0, %d]", len))
+      }
+    },
+
+    ## Hashes are interesting:
+    get_hash=function(i, missing_ok=FALSE) {
+      exists <- self$contains(i)
+      if (exists) {
+        readLines(self$hashname(i))
+      } else if (missing_ok) {
+        NA_character_
+      } else {
+        stop(sprintf("index %d not found in list object store", i))
+      }
+    },
+
+    get_hash_list=function(i, missing_ok=FALSE) {
+      vapply(self$len(), function(i) self$get_hash(i, missing_ok),
+             character(1L))
+    },
+
+    fullname=function(i) {
+      file.path(self$path, i)
+    },
+    hashname=function(i) {
+      paste0(self$fullname(i), "__hash")
+    },
+    lenname=function() {
+      file.path(self$path, "length")
+    },
+    attrname=function() {
+      file.path(self$path, "attrs.rds")
+    }
+    ))

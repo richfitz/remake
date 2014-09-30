@@ -109,6 +109,22 @@ isFALSE <- function(x) {
   identical(x, FALSE)
 }
 
+file_remove <- function(path, recursive=FALSE) {
+  exists <- file.exists(path)
+  if (exists) {
+    if (is_directory(path)) {
+      if (recursive) {
+        unlink(path, recursive)
+      } else {
+        stop("Use 'recursive=TRUE' to delete directories")
+      }
+    } else {
+      file.remove(path)
+    }
+  }
+  invisible(exists)
+}
+
 brackets <- function(text, style="square", pad=1) {
   styles <- list(square = c("[", "]"),
                  round  = c("(", ")"),
