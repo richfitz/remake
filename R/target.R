@@ -175,12 +175,14 @@ target <- R6Class(
       do.call(self$rule, args, envir=self$store$env$env)
     },
 
-    run_fake=function() {
+    run_fake=function(for_script=FALSE) {
       if (is.null(self$rule)) {
         NULL
       } else {
-        args <- format_fake_args(self$dependencies_as_args(fake=TRUE))
-        sprintf("%s(%s)", self$rule, args)
+        if (for_script && self$chain_job) {
+          stop("This needs some work still")
+        }
+        do_call_fake(self$rule, self$dependencies_as_args(fake=TRUE))
       }
     },
 
@@ -352,10 +354,9 @@ target_object <- R6Class(
       invisible(res)
     },
 
-    run_fake=function() {
-      paste(self$name, "<-", super$run_fake())
+    run_fake=function(for_script=FALSE) {
+      paste(self$name, "<-", super$run_fake(for_script))
     }
-
     ))
 
 target_cleanup <- R6Class(
@@ -385,7 +386,7 @@ target_cleanup <- R6Class(
       super$build() # runs any clean hooks
     },
 
-    run_fake=function() {
+    run_fake=function(for_script=FALSE) {
       NULL
     },
 
@@ -457,15 +458,28 @@ target_plot <- R6Class(
     },
 
     run=function() {
-      open_device(self$name, self$plot$device, self$plot$args,
-                  self$store$env$env)
+      open_device(self$plot$device, self$plot_args(), self$store$env$env)
       on.exit(dev.off())
       super$run()
     },
 
-    run_fake=function() {
-      ## Need a bit more here for the real fake case.
-      paste(super$run_fake(), "# ==>", self$name)
+    run_fake=function(for_script=FALSE) {
+      cmd <- super$run_fake(for_script)
+      if (for_script) {
+        open <- do_call_fake(self$plot$device,
+                             format_fake_args(self$plot_args(fake=TRUE)))
+        c(open, cmd, "dev.off()")
+      } else {
+        paste(cmd, "# ==>", self$name)
+      }
+    },
+
+    plot_args=function(fake=FALSE) {
+      ## TODO: If nonscalar arguments are passed into the plotting
+      ## (not sure what takes them, but it's totally possible) then
+      ## some care will be needed here.  It might be better to pick
+      ## that up in `format_fake_args` though.
+      c(list(self$get(fake)), self$plot$args)
     }
     ))
 
@@ -567,6 +581,11 @@ format_fake_args <- function(args) {
     args <- ifelse(nms == "", args, paste(nms, args, sep="="))
   }
   paste(args, collapse=", ")
+}
+
+do_call_fake <- function(cmd, args) {
+  assert_scalar_character(cmd)
+  sprintf("%s(%s)", cmd, format_fake_args(args))
 }
 
 ## There aren't many of these yet; might end up with more over time

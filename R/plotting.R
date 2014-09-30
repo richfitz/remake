@@ -10,8 +10,8 @@
 get_device <- function(name) {
   name <- tolower(name)
   switch(name,
-         pdf=pdf,
-         png=png,
+         pdf="pdf",
+         png="png",
          stop("Unsupported device ", name))
 }
 
@@ -19,9 +19,9 @@ get_device <- function(name) {
 ## actually open.  This is because any function `dev` can be passed
 ## through and there is no way of determining that this is actually a
 ## plotting device.
-open_device <- function(filename, dev, args, envir=.GlobalEnv) {
+open_device <- function(dev, args, envir=.GlobalEnv) {
   prev <- dev.cur()
-  do.call(dev, c(list(filename), args), envir=envir)
+  do.call(dev, args, envir=envir)
   if (identical(dev.cur(), prev)) {
     stop("Failed to open a plotting device")
   }

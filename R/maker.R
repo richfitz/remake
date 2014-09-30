@@ -57,6 +57,32 @@ maker <- R6Class(
       invisible(last)
     },
 
+    script=function(target_name=NULL) {
+      if (is.null(target_name)) {
+        target_name <- self$target_default()
+      }
+      ## This is repeated from make()
+      graph <- self$dependency_graph()
+      plan <- dependencies(target_name, graph)
+
+      pkgs <- lapply(self$store$env$packages,
+                     function(x) sprintf('library("%s")', x))
+      srcs <- lapply(self$store$env$sources,
+                     function(x) sprintf('source("%s")', x))
+      ## Probably best to filter by "real" here?
+      cmds <- lapply(plan, function(i)
+                     self$get_target(i)$run_fake(for_script=TRUE))
+
+      c(unlist(pkgs),
+        unlist(srcs),
+        unlist(cmds))
+    },
+
+    script_entry=function(target_name) {
+      target <- self$get_target(target_name)$run_fake()
+      target$run_fake()
+    },
+
     load_sources=function(show_message=TRUE) {
       force(show_message) # stupid delayed evaluation
       first <- is.null(self$store$env$env)
