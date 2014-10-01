@@ -52,7 +52,9 @@ make_target <- function(name, dat, type=NULL) {
               cleanup=target_cleanup$new(name, rule, depends),
               stop("Unsupported type ", type))
 
-  ## NOTE: This might not be the most sustainable way of doing this:
+  ## NOTE: This might not be the most sustainable way of doing this.
+  ## This also means that chain jobs that are created do not
+  ## immediately see this.
   if ("quiet" %in% names(dat)) {
     assert_scalar_logical(dat$quiet)
     t$quiet <- dat$quiet
@@ -72,6 +74,7 @@ target <- R6Class(
     store=NULL,
     chain=NULL,      # does this rule contain chained things
     chain_job=FALSE, # does this rule exist because of a chain?
+    chain_parent=NULL,
     quiet=FALSE,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
@@ -184,7 +187,8 @@ target <- R6Class(
       args <- self$dependencies_as_args()
 
       ## Setting quiet in a target always overrides any runtime option.
-      quiet <- quiet || self$quiet
+      quiet <- quiet || self$quiet ||
+        (self$chain_job && self$chain_parent$quiet)
       ## Suppressing cat() is hard:
       if (quiet) {
         temp <- file()
@@ -254,7 +258,7 @@ target <- R6Class(
           ## store the parent in chain_parent and test
           ## is.null(self$chain_parent)
           t$chain_job <- TRUE
-          t$quiet <- self$quiet
+          t$chain_parent <- self
           chain[[i]] <- t
         } else {
           private$initialize_single(x$rule, dep, cln)

@@ -3,6 +3,11 @@ noisy_message <- function() {
   1
 }
 
+noisy_message2 <- function(x) {
+  message("make some more noise")
+  1
+}
+
 noisy_cat <- function() {
   cat("make some noise\n")
   1

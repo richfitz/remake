@@ -112,3 +112,34 @@ test_that("Quiet maker", {
   expect_that(m$make("noisy_cat", quiet_target=FALSE),
               prints_text(msg))
 })
+
+test_that("Quiet chain", {
+  cleanup()
+  m <- maker$new("quiet.yml", verbose=FALSE)
+  m$load_sources(FALSE)
+
+  msg <- "make some noise"
+  msg2 <- "make some more noise"
+  msg_chain <- paste(msg, msg2, sep="\n")
+  msg_chain <- c(msg, msg2)
+
+  ## Shows both messages:
+  m$remove_target("noisy_chain")
+  expect_that(m$make("noisy_chain"), shows_message(msg))
+  m$remove_target("noisy_chain")
+  expect_that(m$make("noisy_chain"), shows_message(msg2))
+  m$remove_target("noisy_chain")
+  expect_that(m$make("noisy_chain", quiet_target=TRUE), not(shows_message()))
+  m$remove_target("noisy_chain")
+  expect_that(m$make("noisy_chain", quiet_target=FALSE), shows_message(msg))
+  m$remove_target("noisy_chain")
+  expect_that(m$make("noisy_chain", quiet_target=FALSE), shows_message(msg2))
+
+  ## Shows no message
+  m$remove_target("quiet_chain")
+  expect_that(m$make("quiet_chain"), not(shows_message()))
+  m$remove_target("quiet_chain")
+  expect_that(m$make("quiet_chain", quiet_target=FALSE), not(shows_message()))
+  m$remove_target("quiet_chain")
+  expect_that(m$make("quiet_chain", quiet_target=TRUE), not(shows_message()))
+})
