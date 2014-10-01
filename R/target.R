@@ -4,7 +4,7 @@ make_target <- function(name, dat, type=NULL) {
   }
   warn_unknown(name, dat,
                c("rule", "depends", "target_argument_name",
-                 "cleanup_level",
+                 "cleanup_level", "quiet",
                  "chain",
                  # Special things
                  "plot"))
@@ -41,15 +41,24 @@ make_target <- function(name, dat, type=NULL) {
   depends <- dat$depends
   cleanup_level <- with_default(dat$cleanup_level, "tidy")
 
-  switch(type,
-         file=target_file$new(name, rule, depends, cleanup_level,
-           dat$target_argument_name, chained),
-         plot=target_plot$new(name, rule, depends, cleanup_level,
-           dat$target_argument_name, chained, dat$plot),
-         object=target_object$new(name, rule, depends, cleanup_level, chained),
-         fake=target_fake$new(name, depends),
-         cleanup=target_cleanup$new(name, rule, depends),
-         stop("Unsupported type ", type))
+  t <- switch(type,
+              file=target_file$new(name, rule, depends, cleanup_level,
+                dat$target_argument_name, chained),
+              plot=target_plot$new(name, rule, depends, cleanup_level,
+                dat$target_argument_name, chained, dat$plot),
+              object=target_object$new(name, rule, depends, cleanup_level,
+                chained),
+              fake=target_fake$new(name, depends),
+              cleanup=target_cleanup$new(name, rule, depends),
+              stop("Unsupported type ", type))
+
+  ## NOTE: This might not be the most sustainable way of doing this:
+  if ("quiet" %in% names(dat)) {
+    assert_scalar_logical(dat$quiet)
+    t$quiet <- dat$quiet
+  }
+
+  t
 }
 
 target <- R6Class(
@@ -173,6 +182,9 @@ target <- R6Class(
         return()
       }
       args <- self$dependencies_as_args()
+
+      ## Setting quiet in a target always overrides any runtime option.
+      quiet <- quiet || self$quiet
       ## Suppressing cat() is hard:
       if (quiet) {
         temp <- file()
@@ -235,7 +247,14 @@ target <- R6Class(
           ## TODO: More care will be needed for intermediates that
           ## aren't objects.  Going via files should actually be OK.
           t <- target_object$new(name, x$rule, dep, cln, FALSE)
+          ## TODO: Better here would be have a target_object_chain and
+          ## to link up this job as parent.
+          ##
+          ## TODO: Better than that would be to compose this, or to
+          ## store the parent in chain_parent and test
+          ## is.null(self$chain_parent)
           t$chain_job <- TRUE
+          t$quiet <- self$quiet
           chain[[i]] <- t
         } else {
           private$initialize_single(x$rule, dep, cln)

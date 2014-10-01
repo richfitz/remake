@@ -10,3 +10,16 @@ targets:
     rule: noisy_warning
   noisy_error:
     rule: noisy_error
+
+  quiet_message:
+    rule: noisy_message
+    quiet: true
+  quiet_cat:
+    rule: noisy_cat
+    quiet: true
+  quiet_warning:
+    rule: noisy_warning
+    quiet: true
+  quiet_error:
+    rule: noisy_error
+    quiet: true
