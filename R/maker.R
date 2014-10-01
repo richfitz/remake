@@ -11,13 +11,18 @@ maker <- R6Class(
     sources=NULL,
     packages=NULL,
     targets=NULL,
+    ## NOTE: *verbose* applies to maker, while *quiet_target* applies
+    ## to targets.  I might move to quiet here, instead.
     verbose=NULL,
+    quiet_target=NULL,
     default=NULL,
 
-    initialize=function(maker_file="maker.yml", path=".", verbose=TRUE) {
+    initialize=function(maker_file="maker.yml", path=".",
+      verbose=TRUE, quiet_target=FALSE) {
       self$file <- maker_file
       self$path <- path
       self$verbose <- verbose
+      self$quiet_target <- quiet_target
       self$reload()
     },
 
@@ -36,8 +41,9 @@ maker <- R6Class(
       self$store$env <- managed_environment$new(self$packages, self$sources)
     },
 
+    ## TODO: Not sure if verbose should also be an option here?
     make=function(target_name=NULL, dry_run=FALSE, force=FALSE,
-      force_all=FALSE) {
+      force_all=FALSE, quiet_target=self$quiet_target) {
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
@@ -52,7 +58,8 @@ maker <- R6Class(
       plan <- dependencies(target_name, graph)
       for (i in plan) {
         last <- self$update(i, dry_run,
-                            force_all || (force && i == target_name))
+                            force_all || (force && i == target_name),
+                            quiet_target=quiet_target)
       }
       invisible(last)
     },
@@ -87,14 +94,16 @@ maker <- R6Class(
       force(show_message) # stupid delayed evaluation
       first <- is.null(self$store$env$env)
       reloaded <- self$store$env$reload()
-      if (show_message && reloaded) {
+      if (self$verbose && show_message && reloaded) {
         cmd <- sprintf("# %s sources",
                        if (first) "loading" else "reloading")
         self$print_message("READ", "", cmd)
       }
     },
 
-    update=function(target_name, dry_run=FALSE, force=FALSE) {
+    update=function(target_name, dry_run=FALSE, force=FALSE,
+      quiet_target=self$quiet_target) {
+      #
       target <- self$get_target(target_name)
       current <- !force && target$is_current()
       if (self$verbose) {
@@ -107,7 +116,7 @@ maker <- R6Class(
         if (current) {
           invisible(target$get())
         } else {
-          target$build()
+          target$build(quiet=quiet_target)
         }
       }
     },
@@ -257,8 +266,8 @@ maker <- R6Class(
     dependency_status=function(target_name, missing_ok=FALSE) {
       self$get_target(target_name)$dependency_status(missing_ok)
     },
-    build=function(target_name) {
-      self$get_target(target_name)$build()
+    build=function(target_name, quiet_target=self$quiet_target) {
+      self$get_target(target_name)$build(quiet=quiet_target)
     },
 
     dependency_graph=function() {

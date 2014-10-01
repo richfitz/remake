@@ -43,6 +43,9 @@ maker_options <- function() {
   option_list <- list(
     make_option(c("-f", "--file"), type="character", default="maker.yml",
                 help="maker file to load"),
+    ## TODO: Rename this to avoid confusion with quiet_target?
+    ## Probably do that at the same time as making verbose an integer
+    ## with values 0, 1, ...
     make_option(c("-q", "--quiet"), type="logical", default=FALSE,
                 action="store_true", help="Run quietly"),
     make_option(c("-p", "--print-targets"), type="logical",
