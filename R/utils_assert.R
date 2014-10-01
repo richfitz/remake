@@ -134,3 +134,9 @@ assert_named <- function(x,
     stop(sprintf("%s must have unique names", name))
   }
 }
+
+assert_file_exists <- function(x, name=deparse(substitute(x))) {
+  if (!file.exists(x)) {
+    stop(sprintf("The file '%s' does not exist", x), call.=FALSE)
+  }
+}

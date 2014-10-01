@@ -1,6 +1,7 @@
 ## Copied from RcppR6
-read_file <- function(...) {
-  paste(readLines(...), collapse="\n")
+read_file <- function(filename, ...) {
+  assert_file_exists(filename)
+  paste(readLines(filename), collapse="\n")
 }
 
 ## https://github.com/viking/r-yaml/issues/5#issuecomment-16464325
@@ -15,7 +16,12 @@ yaml_load <- function(string) {
 }
 
 yaml_read <- function(filename) {
-  yaml_load(read_file(filename))
+  catch_yaml <- function(e) {
+    stop(sprintf("while reading '%s'\n%s", filename, e$message),
+         call.=FALSE)
+  }
+  tryCatch(yaml_load(read_file(filename)),
+           error=catch_yaml)
 }
 
 with_default <- function(x, default=NULL) {
