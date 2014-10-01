@@ -109,7 +109,7 @@ maker <- R6Class(
       if (self$verbose) {
         status <- target$status_string(current)
         cmd <- if (current) NULL else target$run_fake()
-        style <- if (isTRUE(target$chain_job)) "curly" else "square"
+        style <- if (is.null(target$chain_parent)) "square" else "curly"
         self$print_message(status, target_name, cmd, style)
       }
       if (!dry_run) {
@@ -232,7 +232,7 @@ maker <- R6Class(
     target_names=function(all=FALSE) {
       if (!all) {
         ok <- as.logical(sapply(self$targets, function(x)
-                                isFALSE(x$chain_job)))
+                                is.null(x$chain_parent)))
         names(self$targets[ok])
       } else {
         names(self$targets)

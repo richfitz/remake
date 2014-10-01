@@ -72,9 +72,8 @@ target <- R6Class(
     type=NULL,
     cleanup_level=NULL,
     store=NULL,
-    chain=NULL,      # does this rule contain chained things
-    chain_job=FALSE, # does this rule exist because of a chain?
-    chain_parent=NULL,
+    chain=NULL,        # does this rule contain chained things
+    chain_parent=NULL, # final job in a chain (i.e. user visible)
     quiet=FALSE,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
@@ -187,8 +186,7 @@ target <- R6Class(
       args <- self$dependencies_as_args()
 
       ## Setting quiet in a target always overrides any runtime option.
-      quiet <- quiet || self$quiet ||
-        (self$chain_job && self$chain_parent$quiet)
+      quiet <- quiet || self$quiet || isTRUE(self$chain_parent$quiet)
       ## Suppressing cat() is hard:
       if (quiet) {
         temp <- file()
@@ -251,13 +249,6 @@ target <- R6Class(
           ## TODO: More care will be needed for intermediates that
           ## aren't objects.  Going via files should actually be OK.
           t <- target_object$new(name, x$rule, dep, cln, FALSE)
-          ## TODO: Better here would be have a target_object_chain and
-          ## to link up this job as parent.
-          ##
-          ## TODO: Better than that would be to compose this, or to
-          ## store the parent in chain_parent and test
-          ## is.null(self$chain_parent)
-          t$chain_job <- TRUE
           t$chain_parent <- self
           chain[[i]] <- t
         } else {
@@ -363,10 +354,8 @@ target_object <- R6Class(
 
     get=function(fake=FALSE, for_script=FALSE) {
       if (fake) {
-        if (for_script && self$chain_job) {
-          ## TODO: this will be heaps nicer if we store the true
-          ## target name, perhaps as a reference?
-          sub("\\{.+$", "", self$name)
+        if (for_script && !is.null(self$chain_parent)) {
+          self$chain_parent$name
         } else {
           self$name
         }

@@ -13,7 +13,7 @@ test_that("Chained rules", {
   res <- m$make("manual")
   expect_that(res, equals(6))
 
-  ## There are two chain_job rules created:
+  ## There are two chain rules created:
   expect_that(c("chained{1}", "chained{2}") %in% m$target_names(),
               equals(c(FALSE, FALSE)))
   expect_that(c("chained{1}", "chained{2}") %in% m$target_names(all=TRUE),
@@ -21,12 +21,12 @@ test_that("Chained rules", {
 
   t1 <- m$get_target("chained{1}")
   expect_that(t1, is_a("target"))
-  expect_that(t1$chain_job, is_true())
+  expect_that(is.null(t1$chain_parent), is_false())
   expect_that(t1$depends, equals(list()))
 
   t2 <- m$get_target("chained{2}")
   expect_that(t2, is_a("target"))
-  expect_that(t2$chain_job, is_true())
+  expect_that(is.null(t2$chain_parent), is_false())
   expect_that(t2$depends, equals(list(t1)))
 
   res <- m$make("chained")
