@@ -1,0 +1,12 @@
+sources:
+  quiet.R
+
+targets:
+  noisy_message:
+    rule: noisy_message
+  noisy_cat:
+    rule: noisy_cat
+  noisy_warning:
+    rule: noisy_warning
+  noisy_error:
+    rule: noisy_error

@@ -63,6 +63,7 @@ target <- R6Class(
     store=NULL,
     chain=NULL,      # does this rule contain chained things
     chain_job=FALSE, # does this rule exist because of a chain?
+    quiet=FALSE,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
       chained=FALSE) {
@@ -167,12 +168,25 @@ target <- R6Class(
       }
     },
 
-    run=function() {
+    run=function(quiet=FALSE) {
       if (is.null(self$rule)) {
         return()
       }
       args <- self$dependencies_as_args()
-      do.call(self$rule, args, envir=self$store$env$env)
+      ## Suppressing cat() is hard:
+      if (quiet) {
+        temp <- file()
+        sink(temp)
+        on.exit(sink())
+        on.exit(close(temp), add=TRUE)
+      }
+      ## NOTE: it's actually pretty easy here to print the output
+      ## later if needed (e.g. if we catch errors in this bit).
+      ## However it will not be possible to interleave the message
+      ## stream and the output stream.
+      withCallingHandlers(
+        do.call(self$rule, args, envir=self$store$env$env),
+        message=function(e) if (quiet) invokeRestart("muffleMessage"))
     },
 
     ## TODO: Merge into run?
@@ -188,8 +202,8 @@ target <- R6Class(
     ## This method exists so that classes can define methods to run
     ## things before or after the run function.  See target_clean and
     ## target_file, which both do this.
-    build=function() {
-      self$run()
+    build=function(quiet=FALSE) {
+      self$run(quiet=quiet)
     }
     ),
   private=list(
@@ -295,7 +309,7 @@ target_file <- R6Class(
       args
     },
 
-    build=function() {
+    build=function(quiet=FALSE) {
       ## These are implicit, and can't be built directly:
       if (is.null(self$rule)) {
         stop("Can't build implicit targets")
@@ -353,8 +367,8 @@ target_object <- R6Class(
       if (current) "OK" else "BUILD"
     },
 
-    build=function() {
-      res <- super$build()
+    build=function(quiet=FALSE) {
+      res <- super$build(quiet=quiet)
       self$set(res)
       invisible(res)
     },
@@ -386,9 +400,9 @@ target_cleanup <- R6Class(
       "CLEAN"
     },
 
-    build=function() {
+    build=function(quiet=FALSE) {
       self$maker$remove_targets(self$will_remove(), chain=FALSE)
-      super$build() # runs any clean hooks
+      super$build(quiet=quiet) # runs any clean hooks
     },
 
     run_fake=function(for_script=FALSE) {
@@ -425,7 +439,7 @@ target_utility <- R6Class(
       self$maker <- maker
     },
 
-    run=function() {
+    run=function(quiet=FALSE) {
       self$utility(self$maker)
     },
 
@@ -462,10 +476,10 @@ target_plot <- R6Class(
       self$plot <- list(device=dev, args=plot)
     },
 
-    run=function() {
+    run=function(quiet=FALSE) {
       open_device(self$plot$device, self$plot_args(), self$store$env$env)
       on.exit(dev.off())
-      super$run()
+      super$run(quiet=quiet)
     },
 
     run_fake=function(for_script=FALSE) {
