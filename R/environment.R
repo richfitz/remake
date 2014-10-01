@@ -28,9 +28,9 @@ managed_environment <- R6Class(
       if (reload) {
         self$env <- new.env(parent=.GlobalEnv)
         self$source_files <- source_files
-        self$source_files_hash <- source_files_hash
         self$load_packages()
         self$load_sources()
+        self$source_files_hash <- source_files_hash
         self$deps <- code_deps$new(self$env)
       }
       invisible(reload)
@@ -43,8 +43,13 @@ managed_environment <- R6Class(
     },
 
     load_sources=function() {
+      catch_source <- function(e) {
+        stop(sprintf("while sourcing '%s':\n%s", f, e$message),
+             call.=FALSE)
+      }
       for (f in self$source_files) {
-        sys.source(f, self$env, chdir=TRUE, keep.source=TRUE)
+        tryCatch(sys.source(f, self$env, chdir=TRUE, keep.source=TRUE),
+                 error=catch_source)
       }
     },
 
