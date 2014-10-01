@@ -4,6 +4,15 @@ if (interactive()) {
   source("helper-maker.R")
 }
 
+source_from_text <- function(src) {
+  dest <- tempfile()
+  writeLines(src, dest)
+  on.exit(file.remove(dest))
+  e <- new.env(parent=.GlobalEnv)
+  source(dest, e)
+  e
+}
+
 context("Script")
 
 test_that("Build works", {
@@ -34,9 +43,18 @@ test_that("Build works with plotting target", {
   cleanup()
 })
 
-## I know that these need special care, so are disallowed at present:
 test_that("Chained targets", {
+  cleanup()
   m <- maker$new("chain.yml")
-  expect_that(m$script("chained"),
-              throws_error("This needs some work still"))
+
+  src <- m$script("chained")
+  e <- source_from_text(src)
+  expect_that(ls(e), equals("chained"))
+  expect_that(e$chained, equals(6))
+
+  src <- m$script("manual")
+  e <- source_from_text(src)
+  expect_that(ls(e), equals(c("manual", "manual_pt1", "manual_pt2")))
+  expect_that(e$manual, equals(6))
+  cleanup()
 })

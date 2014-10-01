@@ -116,7 +116,7 @@ target <- R6Class(
       !is.null(self$store)
     },
 
-    get=function(fake=FALSE) {
+    get=function(fake=FALSE, for_script=FALSE) {
       stop("Not a target that can be got")
     },
     set=function(value) {
@@ -159,11 +159,11 @@ target <- R6Class(
       self$store$get_hash(self$name, self$type, missing_ok)
     },
 
-    dependencies_as_args=function(fake=FALSE) {
+    dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
       if (is.null(self$rule)) {
         list()
       } else {
-        lapply(self$dependencies_real(), function(x) x$get(fake))
+        lapply(self$dependencies_real(), function(x) x$get(fake, for_script))
       }
     },
 
@@ -175,14 +175,13 @@ target <- R6Class(
       do.call(self$rule, args, envir=self$store$env$env)
     },
 
+    ## TODO: Merge into run?
     run_fake=function(for_script=FALSE) {
       if (is.null(self$rule)) {
         NULL
       } else {
-        if (for_script && self$chain_job) {
-          stop("This needs some work still")
-        }
-        do_call_fake(self$rule, self$dependencies_as_args(fake=TRUE))
+        fake <- TRUE
+        do_call_fake(self$rule, self$dependencies_as_args(fake, for_script))
       }
     },
 
@@ -259,7 +258,7 @@ target_file <- R6Class(
       }
     },
 
-    get=function(fake=FALSE) {
+    get=function(fake=FALSE, for_script=FALSE) {
       if (fake) {
         sprintf('"%s"', self$name)
       } else {
@@ -288,10 +287,10 @@ target_file <- R6Class(
       }
     },
 
-    dependencies_as_args=function(fake=FALSE) {
-      args <- super$dependencies_as_args(fake)
+    dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
+      args <- super$dependencies_as_args(fake, for_script)
       if (!is.null(self$rule) && !is.null(self$target_argument_name)) {
-        args[[self$target_argument_name]] <- self$get(fake)
+        args[[self$target_argument_name]] <- self$get(fake, for_script)
       }
       args
     },
@@ -325,9 +324,15 @@ target_object <- R6Class(
       self$type <- "object"
     },
 
-    get=function(fake=FALSE) {
+    get=function(fake=FALSE, for_script=FALSE) {
       if (fake) {
-        self$name
+        if (for_script && self$chain_job) {
+          ## TODO: this will be heaps nicer if we store the true
+          ## target name, perhaps as a reference?
+          sub("\\{.+$", "", self$name)
+        } else {
+          self$name
+        }
       } else {
         self$store$objects$get(self$name)
       }
@@ -355,7 +360,7 @@ target_object <- R6Class(
     },
 
     run_fake=function(for_script=FALSE) {
-      paste(self$name, "<-", super$run_fake(for_script))
+      paste(self$get(TRUE, for_script), "<-", super$run_fake(for_script))
     }
     ))
 
@@ -474,12 +479,12 @@ target_plot <- R6Class(
       }
     },
 
-    plot_args=function(fake=FALSE) {
+    plot_args=function(fake=FALSE, for_script=FALSE) {
       ## TODO: If nonscalar arguments are passed into the plotting
       ## (not sure what takes them, but it's totally possible) then
       ## some care will be needed here.  It might be better to pick
       ## that up in `format_fake_args` though.
-      c(list(self$get(fake)), self$plot$args)
+      c(list(self$get(fake, for_script)), self$plot$args)
     }
     ))
 
