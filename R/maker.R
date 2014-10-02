@@ -10,6 +10,7 @@ maker <- R6Class(
     store=NULL,
     sources=NULL,
     packages=NULL,
+    plot_options=NULL,
     targets=NULL,
     ## NOTE: *verbose* applies to maker, while *quiet_target* applies
     ## to targets.  I might move to quiet here, instead.
@@ -31,6 +32,7 @@ maker <- R6Class(
       config <- read_maker_file(self$file)
       self$sources <- config$sources
       self$packages <- config$packages
+      self$plot_options <- config$plot_options
       self$targets <- NULL
       self$add_targets(config$targets)
       private$initialize_cleanup_targets()
@@ -347,6 +349,8 @@ maker <- R6Class(
     }
     ))
 
+## TODO: There is far too much going on in here: split this into
+## logical chunks.
 read_maker_file <- function(filename, included=FALSE) {
   ## TODO: Sort out the logic here:
   if (dirname(filename) != "." && dirname(filename) != getwd()) {
@@ -355,8 +359,9 @@ read_maker_file <- function(filename, included=FALSE) {
 
   dat <- yaml_read(filename)
   warn_unknown(filename, dat,
-               c("packages", "sources", "include", "target_default",
-                 "targets"))
+               c("packages", "sources", "include",
+                 "plot_options",
+                 "target_default", "targets"))
 
   if (included) {
     dat$target_default <- NULL
@@ -364,6 +369,18 @@ read_maker_file <- function(filename, included=FALSE) {
 
   dat$packages <- with_default(dat$packages, character(0))
   dat$sources  <- with_default(dat$sources,  character(0))
+
+  ## TODO: checking plot options (as done by make_target) will have to
+  ## wait until after all includes have been read (i.e. at activate)
+  ## once includes are supported.
+  if (!is.null(dat$plot_options)) {
+    assert_named_list(dat$plot_options)
+    for (i in names(dat$plot_options)) {
+      assert_named_list(dat$plot_options[[i]],
+                        name=paste("plot_options: ", i))
+    }
+  }
+
   dat$targets <- lnapply(dat$targets, make_target)
 
   if (!is.null(dat$include)) {
@@ -381,11 +398,19 @@ read_maker_file <- function(filename, included=FALSE) {
       dat$packages <- unique(c(dat$packages, dat_sub$packages))
       dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
 
+      dups <- intersect(names(dat_sub$plot_options), names(dat$plot_options))
+      if (length(dups) > 0L) {
+        stop(sprintf("%s contains duplicate plot_options %s",
+                     f, paste(dups, collapse=", ")))
+      }
+
       if ("all" %in% names(dat_sub$targets)) {
         warning(f, " contains target 'all', which I am removing")
         dat_sub$targets$all <- NULL
       }
 
+      ## TODO: This will be a repeated pattern for plot_options
+      ## TODO: Should track which files have duplicates
       dups <- intersect(names(dat_sub$targets), names(dat$targets))
       if (length(dups) > 0L) {
         ## This will throw an error later on, but a warning here will
@@ -394,6 +419,13 @@ read_maker_file <- function(filename, included=FALSE) {
                         f, paste(dups, collapse=", ")))
       }
       dat$targets  <- c(dat$targets, dat_sub$targets)
+
+      ## TODO :THis is easy to add, but the logic around duplicates
+      ## will proliferate unpleasantly.  Fix this for targets *first*,
+      ## and then add this complication.
+      if ("plot_options" %in% names(dat_sub)) {
+        stop("plot_options in included makerfiles not yet supported")
+      }
     }
   }
 

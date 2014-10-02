@@ -476,12 +476,28 @@ target_plot <- R6Class(
       }
       super$initialize(name, rule, depends, cleanup_level,
                        target_argument_name, chain)
+      ## This gets sanitised during activate:
+      self$plot <- plot
+    },
+
+    activate=function(maker) {
+      super$activate(maker)
+      dev <- get_device(tools::file_ext(self$name))
+
+      plot <- self$plot
       if (identical(plot, TRUE) || is.null(plot)) {
         plot <- list()
+      } else if (is.character(plot) && length(plot) == 1) {
+        if (plot %in% names(maker$plot_options)) {
+          plot <- maker$plot_options[[plot]]
+        } else {
+          stop(sprintf("Unknown plot_options '%s' in target '%s'",
+                       plot, self$name))
+        }
+      } else {
+        assert_list(plot)
+        assert_named(plot)
       }
-      assert_list(plot)
-      assert_named(plot)
-      dev <- get_device(tools::file_ext(self$name))
       ## This will not work well for cases where `...` is in the
       ## device name (such as jpeg, bmp, etc)
       warn_unknown(paste0(name, ":plot"), plot, names(formals(dev)))

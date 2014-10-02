@@ -135,6 +135,13 @@ assert_named <- function(x,
   }
 }
 
+assert_named_list <- function(x, empty_can_be_unnamed=TRUE,
+                              unique_names=TRUE,
+                              name=deparse(substitute(x))) {
+  assert_named(x, empty_can_be_unnamed, unique_names, name)
+  assert_list(x, name)
+}
+
 assert_file_exists <- function(x, name=deparse(substitute(x))) {
   if (!file.exists(x)) {
     stop(sprintf("The file '%s' does not exist", x), call.=FALSE)
