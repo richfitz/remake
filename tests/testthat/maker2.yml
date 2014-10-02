@@ -14,4 +14,4 @@ targets:
   plot.pdf:
     depends: processed
     rule: do_plot
-    target_argument_name: filename
+    target_argument: filename

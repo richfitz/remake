@@ -111,6 +111,20 @@ last <- function(x) {
   x
 }
 
+insert_at <- function(x, value, pos) {
+  assert_scalar_integer(pos)
+  len <- length(x)
+  if (pos > 0 && pos <= len) {
+    i <- seq_along(x)
+    x <- c(x[i < pos], value, x[i >= pos])
+  } else if (pos == len + 1L) {
+    x[pos] <- value
+  } else {
+    stop("Invalid position to insert")
+  }
+  x
+}
+
 isFALSE <- function(x) {
   identical(x, FALSE)
 }

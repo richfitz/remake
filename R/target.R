@@ -3,14 +3,16 @@ make_target <- function(name, dat, type=NULL) {
     stop(sprintf("Target name %s is reserved", name))
   }
   warn_unknown(name, dat,
-               c("rule", "depends", "target_argument_name",
+               c("rule", "depends", "target_argument", "command",
                  "cleanup_level", "quiet",
                  "chain",
                  # Special things
                  "plot"))
+
+  ## TODO: This *might* be possible, no?  Would just affect 1st rule?
   chained <- !is.null(dat$chain)
   if (chained) {
-    err <- intersect(c("depends", "rule", "target_argument_name"),
+    err <- intersect(c("depends", "rule", "target_argument"),
                      names(dat))
     if (length(err) > 0L) {
       stop(sprintf("Cannot specify %d when using chained rules",
@@ -18,6 +20,7 @@ make_target <- function(name, dat, type=NULL) {
     }
     dat$rule <- dat$chain
   }
+
   if (is.null(type)) {
     type <- if (target_is_file(name)) "file" else  "object"
     if (type == "object" && is.null(dat$rule) && is.null(dat$chain)) {
@@ -34,18 +37,20 @@ make_target <- function(name, dat, type=NULL) {
   if ("plot" %in% names(dat) && type != "plot") {
     stop("'plot' field invalid for targets of type ", type)
   }
-  if ("target_argument_name" %in% names(dat) && type != "file") {
-    stop("'target_argument_name' field invalid for arguments of type ", type)
+
+  if ("target_argument" %in% names(dat) && type != "file") {
+    stop("'target_argument' field invalid for arguments of type ", type)
   }
+
   rule <- dat$rule
   depends <- dat$depends
   cleanup_level <- with_default(dat$cleanup_level, "tidy")
 
   t <- switch(type,
               file=target_file$new(name, rule, depends, cleanup_level,
-                dat$target_argument_name, chained),
+                dat$target_argument, chained),
               plot=target_plot$new(name, rule, depends, cleanup_level,
-                dat$target_argument_name, chained, dat$plot),
+                dat$target_argument, chained, dat$plot),
               object=target_object$new(name, rule, depends, cleanup_level,
                 chained),
               fake=target_fake$new(name, depends),
@@ -264,10 +269,10 @@ target_file <- R6Class(
   inherit=target,
   public=list(
     ## Additional data field:
-    target_argument_name=NULL,
+    target_argument=NULL,
 
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument_name=NULL, chained=FALSE) {
+      target_argument=NULL, chained=FALSE) {
       if (is.null(rule)) {
         if (!missing(cleanup_level) && cleanup_level != "never") {
           stop("Don't do that")
@@ -276,11 +281,11 @@ target_file <- R6Class(
       }
       super$initialize(name, rule, depends, cleanup_level)
       self$type <- "file"
-      if (!is.null(target_argument_name) &&
-          target_argument_name %in% names(depends)) {
-        stop("target_argument_name clashes with named dependency")
+      if (!is.null(target_argument) && is.character(target_argument) &&
+          target_argument %in% names(depends)) {
+        stop("target_argument clashes with named dependency")
       }
-      self$target_argument_name <- target_argument_name
+      self$target_argument <- target_argument
       if (is.null(rule) && !file.exists(name)) {
         warning("Creating implicit target for nonexistant file ", name)
       }
@@ -317,8 +322,14 @@ target_file <- R6Class(
 
     dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
       args <- super$dependencies_as_args(fake, for_script)
-      if (!is.null(self$rule) && !is.null(self$target_argument_name)) {
-        args[[self$target_argument_name]] <- self$get(fake, for_script)
+      if (!is.null(self$rule) && !is.null(self$target_argument)) {
+        if (is.character(self$target_argument)) {
+          val <- self$get(fake, for_script)
+          args[[self$target_argument]] <- self$get(fake, for_script)
+        } else {
+          args <- insert_at(args, self$get(fake, for_script),
+                            self$target_argument)
+        }
       }
       args
     },
@@ -466,16 +477,17 @@ target_plot <- R6Class(
   public=list(
     plot=NULL,
 
+    ## TODO: This should just not take target_argument?!
     initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument_name=NULL, chained=FALSE, plot=NULL) {
+      target_argument=NULL, chained=FALSE, plot=NULL) {
       if (is.null(rule)) {
         stop("Cannot have a NULL rule")
       }
-      if (!is.null(target_argument_name)) {
-        stop("Plot targets cannot use target_argument_name")
+      if (!is.null(target_argument)) {
+        stop("Plot targets cannot use target_argument")
       }
       super$initialize(name, rule, depends, cleanup_level,
-                       target_argument_name, chain)
+                       target_argument, chain)
       ## This gets sanitised during activate:
       self$plot <- plot
     },

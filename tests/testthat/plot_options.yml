@@ -17,7 +17,7 @@ targets:
 
   data.csv:
     rule: download_data
-    target_argument_name: dest
+    target_argument: dest
     cleanup_level: purge
 
   processed:

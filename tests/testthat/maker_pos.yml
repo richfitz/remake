@@ -12,7 +12,7 @@ targets:
 
   data.csv:
     rule: download_data
-    target_argument: dest
+    target_argument: 1
     cleanup_level: purge
 
   processed:
@@ -22,7 +22,7 @@ targets:
   plot.pdf:
     depends: processed
     rule: do_plot
-    target_argument: filename
+    target_argument: 2
 
   clean:
     rule: clean_hook

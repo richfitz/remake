@@ -130,3 +130,10 @@ test_that("Error in yaml", {
               throws_error("while reading 'maker_error.yml'"))
   cleanup()
 })
+
+test_that("Positional target_argument", {
+  cleanup()
+  m <- maker$new("maker_pos.yml")
+  m$make()
+  expect_that(file.exists("plot.pdf"), is_true())
+})
