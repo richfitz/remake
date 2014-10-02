@@ -1,122 +1,129 @@
+## TODO: Elsewhere run a tryCatch over this to uniformly add the
+## target name to the error.
 make_target <- function(name, dat, type=NULL) {
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
   }
-  warn_unknown(name, dat,
-               c("rule", "depends", "target_argument", "command",
-                 "cleanup_level", "quiet",
-                 "chain",
-                 # Special things
-                 "plot"))
 
-  ## TODO: Elsewhere run a tryCatch over this to uniformly add the
-  ## target name to the error.
+  dat <- process_target_command(name, dat)
+
+  if (is.null(type)) {
+    type <- if (target_is_file(name)) "file" else  "object"
+    if (type == "object" && is.null(dat$command$rule)) {
+      type <- "fake"
+    } else if (type == "file" && "plot" %in% names(dat$opts)) {
+      type <- "plot"
+    }
+  }
+
+  ## TODO: Get utility into this?  Possibly not as they're pretty
+  ## different really having no command/deps
+  generators <- list(object=target_object,
+                     file=target_file,
+                     plot=target_plot,
+                     fake=target_fake,
+                     cleanup=target_cleanup)
+  type <- match_value(type, names(generators))
+  generators[[type]]$new(name, dat$command, dat$opts)
+}
+
+## Will change name soon, but the basic idea is to sort out what it is
+## that we have to run:
+##
+## TODO: Need some tests here, throughout
+process_target_command <- function(name, dat) {
+  core <- c("rule", "depends", "target_argument")
   if ("command" %in% names(dat)) {
-    ## This does not allow rule/depends/target_argument
-    err <- intersect(c("rule", "depends", "target_argument"), names(dat))
+    ## TODO: indicate on output that this was generated with command
+    ## TODO: track entries that were given with/without quotes
+    err <- intersect(core, names(dat))
     if (length(err)) {
       stop(sprintf("When using 'command', cannot specify %s (target: %s)",
                    paste(err, collapse=" or "), name))
     }
     tmp <- parse_target_command(name, dat$command)
-    dat[names(tmp)] <- tmp
-  }
-
-  ## TODO: This *might* be possible, no?  Would just affect 1st rule?
-  chained <- !is.null(dat$chain)
-  if (chained) {
-    err <- intersect(c("depends", "rule", "target_argument"),
-                     names(dat))
-    if (length(err) > 0L) {
-      stop(sprintf("Cannot specify %d when using chained rules",
-                   paste(dQuote(err), collapse=" or ")))
-    }
-    dat$rule <- dat$chain
-  }
-
-  if (is.null(type)) {
-    type <- if (target_is_file(name)) "file" else  "object"
-    if (type == "object" && is.null(dat$rule) && is.null(dat$chain)) {
-      type <- "fake"
-    } else if (type == "file" && "plot" %in% names(dat)) {
-      type <- "plot"
+    dat[intersect(names(tmp), core)] <- tmp
+  } else {
+    ## TODO: this needs a test if it is to stay.
+    ## TODO: this should also apply in the with-command case?
+    if (!is.null(dat$target_argument) &&
+        is.character(dat$target_argument) &&
+        dat$target_argument %in% names(dat$depends)) {
+      stop("target_argument clashes with named dependency")
     }
   }
-  type <- match_value(type, c("file", "plot", "object", "fake", "cleanup"))
-  ## TODO: This would be better if we simply passed along "extra"
-  ## perhaps, allowing fields in addition to
-  ## rule/depends/cleanup_level to be checked?  But we ignore
-  ## cleanup_level for fake and cleanup, so they're problematic too.
-  if ("plot" %in% names(dat) && type != "plot") {
-    stop("'plot' field invalid for targets of type ", type)
-  }
 
-  if ("target_argument" %in% names(dat) && type != "file") {
-    stop("'target_argument' field invalid for arguments of type ", type)
-  }
-
-  rule <- dat$rule
-  depends <- dat$depends
-  cleanup_level <- with_default(dat$cleanup_level, "tidy")
-
-  t <- switch(type,
-              file=target_file$new(name, rule, depends, cleanup_level,
-                dat$target_argument, chained),
-              plot=target_plot$new(name, rule, depends, cleanup_level,
-                dat$target_argument, chained, dat$plot),
-              object=target_object$new(name, rule, depends, cleanup_level,
-                chained),
-              fake=target_fake$new(name, depends),
-              cleanup=target_cleanup$new(name, rule, depends),
-              stop("Unsupported type ", type))
-
-  ## NOTE: This might not be the most sustainable way of doing this.
-  ## This also means that chain jobs that are created do not
-  ## immediately see this.
-  if ("quiet" %in% names(dat)) {
-    assert_scalar_logical(dat$quiet)
-    t$quiet <- dat$quiet
-  }
-
-  t
+  is_command <- names(dat) %in% c(core, "command")
+  list(command=dat[is_command], opts=dat[!is_command])
 }
 
-target <- R6Class(
-  "target",
+target_base <- R6Class(
+  "target_base",
   public=list(
     name=NULL,
     depends=NULL,
     rule=NULL,
     type=NULL,
-    cleanup_level=NULL,
+    cleanup_level="never",
     store=NULL,
-    chain=NULL,        # does this rule contain chained things
-    chain_parent=NULL, # final job in a chain (i.e. user visible)
     quiet=FALSE,
 
-    initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      chained=FALSE) {
-      #
+    initialize=function(name, command, opts, type="base") {
       self$name <- name
-      if (chained) {
-        private$initialize_chain(rule, depends, cleanup_level)
-      } else {
-        private$initialize_single(rule, depends, cleanup_level)
+      ## TODO: move into private
+      opts <- self$check_opts(opts)
+
+      if (!is.null(command$rule)) {
+        assert_scalar_character(command$rule,
+                                paste(name, "rule", sep=": "))
       }
+      self$rule <- command$rule
+
+      self$depends <- from_yaml_map_list(command$depends)
+      sapply(self$depends, assert_scalar_character)
+
+      if ("target_argument" %in% names(command) && type != "file") {
+        stop("'target_argument' field invalid for arguments of type ", type)
+      }
+
+      if (!is.null(opts$cleanup_level)) {
+        self$cleanup_level <-
+          match_value(opts$cleanup_level, cleanup_levels(),
+                      paste(name, "cleanup_level", sep=": "))
+      }
+
+      assert_scalar_character(type)
+      self$type <- type
+
+      if ("quiet" %in% names(opts)) {
+        assert_scalar_logical(opts$quiet, paste(name, "quiet", sep=": "))
+        self$quiet <- opts$quiet
+        if (is.null(self$rule)) {
+          warning("Using 'quiet' on a rule-less target has no effect")
+        }
+      }
+    },
+
+    valid_options=function() {
+      "quiet"
+    },
+
+    check_opts=function(opts) {
+      err <- setdiff(names(opts), self$valid_options())
+      if (length(err) > 0) {
+        stop(sprintf("Invalid options for %s: %s",
+                     self$name, paste(err, collapse=", ")))
+      }
+      opts
     },
 
     activate=function(maker) {
       self$store <- maker$store
-
-      if (!is.null(self$chain)) {
-        maker$add_targets(self$chain, activate=TRUE)
-      }
-
       if (length(self$depends) == 0L) {
         return()
       }
 
-      sapply(self$depends, assert_scalar_character)
+      ## TODO: Need to get some good testing in here:
       depends_name <- sapply(self$depends, "[[", 1)
       if (any(duplicated(names(depends_name)))) {
         stop("Dependency listed more than once")
@@ -134,10 +141,9 @@ target <- R6Class(
         if (!all(target_is_file(msg))) {
           stop("Implicitly created targets must all be files")
         }
-        implicit <- lapply(msg, target_file$new, rule=NULL)
+        implicit <- lapply(msg, target_file$new, NULL, NULL)
         maker$add_targets(implicit, activate=TRUE)
       }
-
       ## This preserves the original names:
       self$depends[] <- maker$get_targets(depends_name)
     },
@@ -146,6 +152,7 @@ target <- R6Class(
       !is.null(self$store)
     },
 
+    ## These basically prevent using target_base
     get=function(fake=FALSE, for_script=FALSE) {
       stop("Not a target that can be got")
     },
@@ -153,7 +160,6 @@ target <- R6Class(
       stop("Not a target that can be got")
     },
     del=function(missing_ok=FALSE) {
-      ## Or return()?
       stop("Not something that can be deleted")
     },
 
@@ -204,7 +210,7 @@ target <- R6Class(
       args <- self$dependencies_as_args()
 
       ## Setting quiet in a target always overrides any runtime option.
-      quiet <- quiet || self$quiet || isTRUE(self$chain_parent$quiet)
+      quiet <- quiet || self$quiet
       ## Suppressing cat() is hard:
       if (quiet) {
         temp <- file()
@@ -221,7 +227,7 @@ target <- R6Class(
         message=function(e) if (quiet) invokeRestart("muffleMessage"))
     },
 
-    ## TODO: Merge into run?
+    ## TODO: Compute on initialise
     run_fake=function(for_script=FALSE) {
       if (is.null(self$rule)) {
         NULL
@@ -239,69 +245,37 @@ target <- R6Class(
     }
     ),
   private=list(
-    initialize_single=function(rule, depends, cleanup_level) {
-      if (!is.null(rule)) {
-        assert_scalar_character(rule)
-      }
-      self$rule <- rule
-      self$cleanup_level <- match_value(cleanup_level, cleanup_levels())
-      ## These get wired up as actual maker::target objects on a
-      ## second pass, but we need a full database to do that.
-      self$depends <- from_yaml_map_list(depends)
-    },
-
-    initialize_chain=function(chain, depends, cleanup_level) {
-      assert_list(chain)
-      if (!is.null(names(chain))) {
-        stop("Chained rules must be unnamed")
-      }
-      assert_null(depends)
-
-      len <- length(chain)
-      for (i in seq_len(len)) {
-        x <- chain[[i]]
-        dep <- c(if (i > 1L) chain[[i-1L]]$name, x$depends)
-        cln <- with_default(x$cleanup_level, cleanup_level)
-        if (i < len) {
-          name <- chained_rule_name(self$name, i)
-          ## TODO: More care will be needed for intermediates that
-          ## aren't objects.  Going via files should actually be OK.
-          t <- target_object$new(name, x$rule, dep, cln, FALSE)
-          t$chain_parent <- self
-          chain[[i]] <- t
-        } else {
-          private$initialize_single(x$rule, dep, cln)
-        }
-      }
-      self$chain <- chain[-len]
-    }
     ))
 
 target_file <- R6Class(
   "target_file",
-  inherit=target,
+  inherit=target_base,
   public=list(
     ## Additional data field:
     target_argument=NULL,
 
-    initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument=NULL, chained=FALSE) {
-      if (is.null(rule)) {
-        if (!missing(cleanup_level) && cleanup_level != "never") {
-          stop("Don't do that")
+    initialize=function(name, command, opts) {
+      if (is.null(command$rule)) {
+        ## NOTE: If the a rule is null (probably an implicit file)
+        ## then we should never clean it up.  It's not clear that this
+        ## should necessarily be an error but that will avoid
+        ## accidentally deleting something important.
+        opts$cleanup_level <- with_default(opts$cleanup_level, "never")
+        if (opts$cleanup_level != "never") {
+          stop("Probably unsafe to delete files we can't recreate")
         }
-        cleanup_level <- "never"
+        if (!file.exists(name)) {
+          warning("Creating implicit target for nonexistant file ", name)
+        }
+      } else {
+        opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
       }
-      super$initialize(name, rule, depends, cleanup_level)
-      self$type <- "file"
-      if (!is.null(target_argument) && is.character(target_argument) &&
-          target_argument %in% names(depends)) {
-        stop("target_argument clashes with named dependency")
-      }
-      self$target_argument <- target_argument
-      if (is.null(rule) && !file.exists(name)) {
-        warning("Creating implicit target for nonexistant file ", name)
-      }
+      super$initialize(name, command, opts, "file")
+      self$target_argument <- command$target_argument
+    },
+
+    valid_options=function() {
+      c(super$valid_options(), "cleanup_level")
     },
 
     get=function(fake=FALSE, for_script=FALSE) {
@@ -365,24 +339,23 @@ target_file <- R6Class(
 
 target_object <- R6Class(
   "target_object",
-  inherit=target,
+  inherit=target_base,
   public=list(
-    initialize=function(name, rule, depends=NULL,
-      cleanup_level="tidy", chained=FALSE) {
-      if (is.null(rule)) {
+    initialize=function(name, command, opts=NULL) {
+      if (is.null(command$rule)) {
         stop("Must not have a NULL rule")
       }
-      super$initialize(name, rule, depends, cleanup_level, chained)
-      self$type <- "object"
+      opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
+      super$initialize(name, command, opts, "object")
+    },
+
+    valid_options=function() {
+      c(super$valid_options(), "cleanup_level")
     },
 
     get=function(fake=FALSE, for_script=FALSE) {
       if (fake) {
-        if (for_script && !is.null(self$chain_parent)) {
-          self$chain_parent$name
-        } else {
-          self$name
-        }
+        self$name
       } else {
         self$store$objects$get(self$name)
       }
@@ -416,15 +389,14 @@ target_object <- R6Class(
 
 target_cleanup <- R6Class(
   "target_cleanup",
-  inherit=target,
+  inherit=target_base,
   public=list(
     ## Special cleanup target needs a reference back to the original
     ## maker object, as we call back to that for the actual removal.
     maker=NULL,
 
-    initialize=function(name, rule, depends=NULL) {
-      super$initialize(name, rule, depends, "never")
-      self$type <- "cleanup"
+    initialize=function(name, command, opts) {
+      super$initialize(name, command, opts, "cleanup")
     },
 
     activate=function(maker) {
@@ -437,7 +409,7 @@ target_cleanup <- R6Class(
     },
 
     build=function(quiet=FALSE) {
-      self$maker$remove_targets(self$will_remove(), chain=FALSE)
+      self$maker$remove_targets(self$will_remove())
       super$build(quiet=quiet) # runs any clean hooks
     },
 
@@ -453,24 +425,27 @@ target_cleanup <- R6Class(
 
 target_fake <- R6Class(
   "target_fake",
-  inherit=target,
+  inherit=target_base,
   public=list(
-    initialize=function(name, depends=NULL) {
-      super$initialize(name, NULL, depends, "never")
-      self$type <- "fake"
+    initialize=function(name, command, opts) {
+      if (!is.null(command$rule)) {
+        stop("fake targets must have a null rule (how did you do this?)")
+      }
+      super$initialize(name, command, opts, "fake")
     }
     ))
 
+## Note that this is *totally* different to the above, at least for
+## now.
 target_utility <- R6Class(
   "target_utility",
-  inherit=target,
+  inherit=target_base,
   public=list(
     utility=NULL,
     maker=NULL,
 
     initialize=function(name, utility, maker) {
-      super$initialize(name, NULL, NULL, "never")
-      self$type <- "utility"
+      super$initialize(name, NULL, NULL, "utility")
       self$utility <- utility
       self$maker <- maker
     },
@@ -490,19 +465,16 @@ target_plot <- R6Class(
   public=list(
     plot=NULL,
 
-    ## TODO: This should just not take target_argument?!
-    initialize=function(name, rule, depends=NULL, cleanup_level="tidy",
-      target_argument=NULL, chained=FALSE, plot=NULL) {
-      if (is.null(rule)) {
+    initialize=function(name, command, opts) {
+      if (is.null(command$rule)) {
         stop("Cannot have a NULL rule")
       }
-      if (!is.null(target_argument)) {
-        stop("Plot targets cannot use target_argument")
-      }
-      super$initialize(name, rule, depends, cleanup_level,
-                       target_argument, chain)
-      ## This gets sanitised during activate:
-      self$plot <- plot
+      super$initialize(name, command, opts)
+      self$plot <- opts$plot # checked at activate()
+    },
+
+    valid_options=function() {
+      c(super$valid_options(), "plot")
     },
 
     activate=function(maker) {
@@ -615,6 +587,9 @@ is_current <- function(target, store) {
     ## offer a $compare_dependency_status() method, we can do this
     ## incrementally, returning FALSE as soon as the first failure is
     ## found.
+    ##
+    ## TODO: Need options for deciding what to check (existance, data,
+    ## code).
     return(compare_dependency_status(
       store$db$get(target$name),
       target$dependency_status(missing_ok=TRUE)))

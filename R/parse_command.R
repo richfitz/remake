@@ -1,32 +1,35 @@
-## There will be *three* possible way of getting
+## There will be *two* possible way of getting
 ## target_argument_name in:
 ##  - use the target name, possibly with quotes (test that!)
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
-##  - use a period ".", no quotes.
+## (currently quoting or not is not checked)
 parse_target_command <- function(target, command) {
   dat <- parse_command(command)
-  targets <- sapply(dat$depends, "[[", 1)
-  pos <- c(target, "target_name", ".")
-  ## Need to determine that there is only a single possible target:
-  i <- sapply(pos, function(x) targets == x)
-  if (length(targets) == 1) {
-    i <- rbind(i, deparse.level=0)
-  }
-  if (sum(i) == 1L) {
-    j <- which(rowSums(i) == 1L)
-    if (is.null(names(dat$depends)) || names(dat$depends)[[j]] == "") {
-      dat$target_argument <- j
-    } else {
-      dat$target_argument <- names(dat$depends)[[j]]
+  if (length(dat$depends) > 0L) {
+    targets <- sapply(dat$depends, "[[", 1)
+    pos <- c(target, "target_name")
+    ## Need to determine that there is only a single possible target:
+    i <- sapply(pos, function(x) targets == x)
+    if (length(targets) == 1) {
+      i <- rbind(i, deparse.level=0)
     }
-    dat$depends <- dat$depends[-j]
-  } else if (sum(i) > 1L) {
-    n <- colSums(i)
-    n <- n[n > 0]
-    stop(sprintf("target name matched multiple times in command for '%s': %s",
-                 dat$rule,
-                 paste(sprintf("%s (%d)", names(n), n), collapse=", ")))
+
+    if (sum(i) == 1L) {
+      j <- which(rowSums(i) == 1L)
+      if (is.null(names(dat$depends)) || names(dat$depends)[[j]] == "") {
+        dat$target_argument <- j
+      } else {
+        dat$target_argument <- names(dat$depends)[[j]]
+      }
+      dat$depends <- dat$depends[-j]
+    } else if (sum(i) > 1L) {
+      n <- colSums(i)
+      n <- n[n > 0]
+      stop(sprintf("target name matched multiple times in command for '%s': %s",
+                   dat$rule,
+                   paste(sprintf("%s (%d)", names(n), n), collapse=", ")))
+    }
   }
   dat
 }

@@ -199,7 +199,7 @@ maker <- R6Class(
     },
 
     add_targets=function(x, force=FALSE, activate=FALSE) {
-      if (!all(sapply(x, inherits, "target"))) {
+      if (!all(sapply(x, inherits, "target_base"))) {
         stop("All elements must be targets")
       }
       target_names <- vapply(x, "[[", character(1), "name")
@@ -300,6 +300,7 @@ maker <- R6Class(
         if (i > 1L) {
           depends <- c(depends, list(levels[[i - 1L]]))
         }
+        ## TODO: new function 'make_target_cleanup'
         targets[[i]] <- make_target(target_name,
                                     list(rule=rule, depends=depends),
                                     "cleanup")

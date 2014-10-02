@@ -43,6 +43,7 @@ test_that("Build works with plotting target", {
   cleanup()
 })
 
+if (FALSE) {
 test_that("Chained targets", {
   cleanup()
   m <- maker$new("chain.yml")
@@ -58,3 +59,4 @@ test_that("Chained targets", {
   expect_that(e$manual, equals(6))
   cleanup()
 })
+}

@@ -56,10 +56,11 @@ is_directory <- function(path) {
 }
 
 ## Like match.arg(), but does not allow for abbreviation.
-match_value <- function(arg, choices, msg=NULL) {
+match_value <- function(arg, choices, name=deparse(substitute(arg))) {
   assert_scalar_character(arg)
   if (!(arg %in% choices)) {
-    stop("'arg' must be one of ", paste(dQuote(choices), collapse=", "))
+    stop(sprintf("%s must be one of %s",
+                 name, paste(dQuote(choices), collapse=", ")))
   }
   arg
 }

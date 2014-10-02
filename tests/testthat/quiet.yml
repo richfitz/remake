@@ -24,13 +24,13 @@ targets:
     rule: noisy_error
     quiet: true
 
-  noisy_chain:
-    chain:
-      - rule: noisy_message
-      - rule: noisy_message2
+  # noisy_chain:
+  #   chain:
+  #     - rule: noisy_message
+  #     - rule: noisy_message2
 
-  quiet_chain:
-    chain:
-      - rule: noisy_message
-      - rule: noisy_message2
-    quiet: true
+  # quiet_chain:
+  #   chain:
+  #     - rule: noisy_message
+  #     - rule: noisy_message2
+  #   quiet: true

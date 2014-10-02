@@ -9,7 +9,9 @@ context("Build")
 test_that("Build works", {
   cleanup()
   m <- maker$new("maker.yml")
+
   m$make("plot.pdf", dry_run=TRUE)
+
   m$make("plot.pdf", dry_run=FALSE)
   m$make("plot.pdf", dry_run=FALSE)
   expect_that(file.exists("plot.pdf"), is_true())

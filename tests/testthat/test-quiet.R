@@ -113,6 +113,7 @@ test_that("Quiet maker", {
               prints_text(msg))
 })
 
+if (FALSE) {
 test_that("Quiet chain", {
   cleanup()
   m <- maker$new("quiet.yml", verbose=FALSE)
@@ -143,3 +144,4 @@ test_that("Quiet chain", {
   m$remove_target("quiet_chain")
   expect_that(m$make("quiet_chain", quiet_target=TRUE), not(shows_message()))
 })
+}

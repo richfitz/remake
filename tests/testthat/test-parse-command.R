@@ -76,9 +76,11 @@ test_that("Rules with multiple arguments", {
 })
 
 test_that("target_argument detection", {
+  expect_that(parse_target_command("a", "foo()"),
+              equals(list(rule="foo", depends=list())))
+
   cmp_pos  <- list(rule="foo", depends=list(), target_argument=1)
   expect_that(parse_target_command("a", "foo(a)"), equals(cmp_pos))
-  expect_that(parse_target_command("a", "foo(.)"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
@@ -86,14 +88,12 @@ test_that("target_argument detection", {
   ## that up.  Ideally it would be 'a' from here and the other two
   ## from above.
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
-  expect_that(parse_target_command("a", "foo('.')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo('target_name')"),
               equals(cmp_pos))
 
   cmp_name <- list(rule="foo", depends=empty_named_list(),
                    target_argument="arg")
   expect_that(parse_target_command("a", "foo(arg=a)"), equals(cmp_name))
-  expect_that(parse_target_command("a", "foo(arg=.)"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
 
@@ -109,13 +109,7 @@ test_that("target_argument detection", {
   ## Errors:
   expect_that(parse_target_command("a", "foo(a, a)"),
               throws_error("multiple times"))
-  expect_that(parse_target_command("a", "foo(., .)"),
-              throws_error("multiple times"))
   expect_that(parse_target_command("a", "foo(target_name, target_name)"),
-              throws_error("multiple times"))
-  expect_that(parse_target_command("a", "foo(a, .)"),
-              throws_error("multiple times"))
-  expect_that(parse_target_command("a", "foo(., target_name)"),
               throws_error("multiple times"))
   expect_that(parse_target_command("a", "foo(a, target_name)"),
               throws_error("multiple times"))
