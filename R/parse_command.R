@@ -8,8 +8,11 @@ parse_target_command <- function(target, command) {
   dat <- parse_command(command)
   targets <- sapply(dat$depends, "[[", 1)
   pos <- c(target, "target_name", ".")
-  ## Need to determine that there is only a sing
+  ## Need to determine that there is only a single possible target:
   i <- sapply(pos, function(x) targets == x)
+  if (length(targets) == 1) {
+    i <- rbind(i, deparse.level=0)
+  }
   if (sum(i) == 1L) {
     j <- which(rowSums(i) == 1L)
     if (is.null(names(dat$depends)) || names(dat$depends)[[j]] == "") {
@@ -17,6 +20,7 @@ parse_target_command <- function(target, command) {
     } else {
       dat$target_argument <- names(dat$depends)[[j]]
     }
+    dat$depends <- dat$depends[-j]
   } else if (sum(i) > 1L) {
     n <- colSums(i)
     n <- n[n > 0]

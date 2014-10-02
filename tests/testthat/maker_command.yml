@@ -1,0 +1,27 @@
+# This version exercises the 'command' interface that will probably
+# become the standard.
+sources:
+  - code.R
+
+packages:
+  - testthat
+
+plot_options:
+  default:
+    width: 8
+    height: 4
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    command: download_data(.)
+    cleanup_level: purge
+
+  processed:
+    command: process_data("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: default

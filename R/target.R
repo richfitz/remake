@@ -9,6 +9,19 @@ make_target <- function(name, dat, type=NULL) {
                  # Special things
                  "plot"))
 
+  ## TODO: Elsewhere run a tryCatch over this to uniformly add the
+  ## target name to the error.
+  if ("command" %in% names(dat)) {
+    ## This does not allow rule/depends/target_argument
+    err <- intersect(c("rule", "depends", "target_argument"), names(dat))
+    if (length(err)) {
+      stop(sprintf("When using 'command', cannot specify %s (target: %s)",
+                   paste(err, collapse=" or "), name))
+    }
+    tmp <- parse_target_command(name, dat$command)
+    dat[names(tmp)] <- tmp
+  }
+
   ## TODO: This *might* be possible, no?  Would just affect 1st rule?
   chained <- !is.null(dat$chain)
   if (chained) {
@@ -650,7 +663,7 @@ do_call_fake <- function(cmd, args) {
 ## There aren't many of these yet; might end up with more over time
 ## though.
 target_reserved_names <- function() {
-  c("deps", "gitignore")
+  c("deps", "gitignore", "target_name", ".")
 }
 
 filter_targets_by_type <- function(targets, types) {

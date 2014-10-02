@@ -76,6 +76,27 @@ test_that("Rules with multiple arguments", {
 })
 
 test_that("target_argument detection", {
+  cmp_pos  <- list(rule="foo", depends=list(), target_argument=1)
+  expect_that(parse_target_command("a", "foo(a)"), equals(cmp_pos))
+  expect_that(parse_target_command("a", "foo(.)"), equals(cmp_pos))
+  expect_that(parse_target_command("a", "foo(target_name)"),
+              equals(cmp_pos))
+
+  ## It's debatable that these are both reasonable.  I may tighten
+  ## that up.  Ideally it would be 'a' from here and the other two
+  ## from above.
+  expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
+  expect_that(parse_target_command("a", "foo('.')"), equals(cmp_pos))
+  expect_that(parse_target_command("a", "foo('target_name')"),
+              equals(cmp_pos))
+
+  cmp_name <- list(rule="foo", depends=empty_named_list(),
+                   target_argument="arg")
+  expect_that(parse_target_command("a", "foo(arg=a)"), equals(cmp_name))
+  expect_that(parse_target_command("a", "foo(arg=.)"), equals(cmp_name))
+  expect_that(parse_target_command("a", "foo(arg=target_name)"),
+              equals(cmp_name))
+
   expect_that(parse_target_command("a", "foo(a, b)")$target_argument,
               equals(1))
   expect_that(parse_target_command("a", "foo(b, a)")$target_argument,
@@ -99,3 +120,6 @@ test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo(a, target_name)"),
               throws_error("multiple times"))
 })
+
+## TODO: Add things that have non-symbol objects within them.  Things
+## like list(a, b), for example.
