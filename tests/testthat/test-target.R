@@ -5,7 +5,7 @@ if (interactive()) {
   source("helper-maker.R")
 }
 
-context("Build")
+context("Targets")
 
 test_that("Targets return their output on build", {
   cleanup()
