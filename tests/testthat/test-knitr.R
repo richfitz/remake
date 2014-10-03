@@ -21,3 +21,20 @@ test_that("Script", {
   src <- m$script("knitr.md")
   expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
 })
+
+test_that("knitr depends", {
+  cleanup()
+  m <- maker$new("knitr.yml")
+  t <- m$get_target("knitr.md")
+  expect_that(knitr_depends(t$maker, t$depends),
+              equals("processed"))
+
+  expect_that(knitr_depends(t$maker, unname(m$get_targets("processed"))),
+              equals("processed"))
+
+  expect_that(knitr_depends(t$maker, unname(m$get_targets("all"))),
+              equals("processed"))
+
+  expect_that(knitr_depends(t$maker, list()),
+              equals(character(0)))
+})

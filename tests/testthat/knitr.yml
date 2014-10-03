@@ -20,4 +20,3 @@ targets:
   knitr.md:
     depends: processed
     knitr: true
-    quiet: true

@@ -535,6 +535,7 @@ target_knitr <- R6Class(
   inherit=target_file,
   public=list(
     knitr=NULL,
+    maker=NULL,
 
     ## Ideas here:
     ##  - export_all: export all objects in the store?
@@ -547,6 +548,8 @@ target_knitr <- R6Class(
       }
       ## Hack to let target_base know we're not implicit:
       command$rule <- "knitr"
+
+      opts$quiet <- with_default(opts$quiet, TRUE)
 
       knitr <- opts$knitr
       if (identical(knitr, TRUE) || is.null(knitr)) {
@@ -568,6 +571,11 @@ target_knitr <- R6Class(
       self$knitr <- knitr
     },
 
+    activate=function(maker) {
+      super$activate(maker)
+      self$maker <- maker
+    },
+
     valid_options=function() {
       c(super$valid_options(), "knitr")
     },
@@ -577,10 +585,9 @@ target_knitr <- R6Class(
     },
 
     run=function(quiet=FALSE) {
-      to_export <- filter_targets_by_type(self$depends, "object")
-      to_export <- sapply(to_export, function(x) x$name)
+      object_names <- knitr_depends(self$maker, self$depends)
       knitr_from_maker(self$knitr$input, self$name, self$store,
-                       to_export, quiet=self$quiet)
+                       object_names, quiet=self$quiet)
     },
 
     run_fake=function(for_script=FALSE) {

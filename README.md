@@ -123,4 +123,4 @@ with the idea that we'd end up evaluating `process_data(filename="data.csv")`.
 
 # Examples
 
-Real world examples coming soon.  In the meantime [this example](tests/testthat/maker3.yml) gives a flavour of what maker tries to enable.
+Real world examples coming soon.  In the meantime [this example](tests/testthat/maker_command.yml) gives a flavour of what maker tries to enable.  Here's a similar [configuration]((tests/testthat/knitr.yml) using [knitr](http://yihui.name/knitr).
