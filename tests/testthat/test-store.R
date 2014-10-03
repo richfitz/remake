@@ -33,6 +33,17 @@ test_that("data store", {
   st2 <- maker:::object_store$new(path)
   st2$contains("foo")
 
+  ## Can export things:
+  e <- new.env(parent=emptyenv())
+  st2$export("foo", e)
+  expect_that(ls(e), equals("foo"))
+  expect_that(e$foo, is_identical_to(1:10))
+
+  ## Can export zero things:
+  e <- new.env(parent=emptyenv())
+  st2$export(character(0), e)
+  expect_that(ls(e), equals(character(0)))
+
   st$del("foo")
   expect_that(st$contains("foo"), is_false())
   expect_that(st2$contains("foo"), is_false())
