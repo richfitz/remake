@@ -9,12 +9,12 @@ make_target <- function(name, dat, type=NULL) {
 
   if (is.null(type)) {
     type <- if (target_is_file(name)) "file" else  "object"
-    if (type == "object" && is.null(dat$command$rule)) {
-      type <- "fake"
-    } else if (type == "file" && "plot" %in% names(dat$opts)) {
-      type <- "plot"
-    } else if (type == "file" && "knitr" %in% names(dat$opts)) {
+    if ("knitr" %in% names(dat$opts)) {
       type <- "knitr"
+    } else if ("plot" %in% names(dat$opts)) {
+      type <- "plot"
+    } else if (type == "object" && is.null(dat$command$rule)) {
+      type <- "fake"
     }
   }
 
@@ -432,7 +432,7 @@ target_fake <- R6Class(
   public=list(
     initialize=function(name, command, opts) {
       if (!is.null(command$rule)) {
-        stop("fake targets must have a null rule (how did you do this?)")
+        stop("fake targets must have a NULL rule (how did you do this?)")
       }
       super$initialize(name, command, opts, "fake")
     }
@@ -531,7 +531,7 @@ target_plot <- R6Class(
     ))
 
 target_knitr <- R6Class(
-  "target_base",
+  "target_knitr",
   inherit=target_file,
   public=list(
     knitr=NULL,
@@ -544,10 +544,9 @@ target_knitr <- R6Class(
     ##  - render to html, etc.
     initialize=function(name, command, opts) {
       if (!is.null(command$rule)) {
-        stop("Must have a NULL rule")
+        stop(sprintf("%s: knitr targets must have a NULL rule",
+                     name))
       }
-      ## Hack to let target_base know we're not implicit:
-      command$rule <- "knitr"
 
       opts$quiet <- with_default(opts$quiet, TRUE)
 
@@ -566,7 +565,9 @@ target_knitr <- R6Class(
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))
 
-      ## That should be everything:
+      ## Hack to let target_base know we're not implicit.  There does
+      ## need to be something here as a few places test for null-ness.
+      command$rule <- ".__knitr__"
       super$initialize(name, command, opts)
       self$knitr <- knitr
     },

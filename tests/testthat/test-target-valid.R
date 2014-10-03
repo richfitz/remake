@@ -35,7 +35,7 @@ test_that("Fake targets", {
 
 test_that("Fake targets (invalid)", {
   expect_that(make_target("fake", list(rule="foo"), type="fake"),
-              throws_error("fake targets must have a null rule"))
+              throws_error("fake targets must have a NULL rule"))
   expect_that(make_target("fake", list(target_argument="foo"), type="fake"),
               throws_error("'target_argument' field invalid for"))
   expect_that(make_target("fake", list(quiet=TRUE), type="fake"),
@@ -188,4 +188,46 @@ test_that("Implicit file targets", {
   expect_that(t$build(), throws_error("Can't build implicit targets"))
   expect_that(t$run(), is_null())
   expect_that(t$run_fake(), is_null())
+})
+
+test_that("knitr", {
+  t <- make_target("file.md", list(), "knitr")
+  expect_that(t, is_a("target_knitr"))
+  ## TODO: Not sure that this is correct (see elsewhere for plot though)
+  expect_that(t$type, equals("file"))
+
+  ## Inferred correct input:
+  expect_that(t$knitr$input, equals("file.Rmd"))
+
+  ## Allow knitr in opts:
+  t <- make_target("file.md", list(knitr=TRUE))
+  expect_that(t, is_a("target_knitr"))
+
+  ## Only valid option is "input":
+  t <- make_target("file.md", list(knitr=list(input="foo.Rmd")))
+  expect_that(t$knitr$input, equals("foo.Rmd"))
+
+  ## Quiet by default:
+  expect_that(t$quiet, is_true())
+  expect_that(make_target("file.md", list(quiet=TRUE), "knitr")$quiet,
+              is_true())
+  expect_that(make_target("file.md", list(quiet=FALSE), "knitr")$quiet,
+              is_false())
+
+  ## This might change
+  expect_that(t$rule, equals(".__knitr__"))
+})
+
+test_that("knitr (invalid)", {
+  expect_that(make_target("file.xmd", list(knitr=TRUE)),
+              throws_error("Target must end in .md"))
+
+  expect_that(make_target("file.md", list(rule="fn"), "knitr"),
+              throws_error("knitr targets must have a NULL rule"))
+
+  expect_that(make_target("file.md", list(quiet="yes please"), "knitr")$quiet,
+              throws_error("file.md: quiet must be logical"))
+
+  expect_that(make_target("file.md", list(unknown="opt"), "knitr"),
+              throws_error("Invalid options for file.md"))
 })
