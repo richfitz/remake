@@ -14,3 +14,10 @@ test_that("Build works", {
   expect_that(is_directory("figure"), is_true())
   cleanup()
 })
+
+test_that("Script", {
+  cleanup()
+  m <- maker$new("knitr.yml")
+  src <- m$script("knitr.md")
+  expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
+})

@@ -584,7 +584,7 @@ target_knitr <- R6Class(
     },
 
     run_fake=function(for_script=FALSE) {
-      "# help coming later..."
+      sprintf('knitr::knit("%s", "%s")', self$knitr$input, self$name)
     }
   ))
 
