@@ -13,6 +13,8 @@ make_target <- function(name, dat, type=NULL) {
       type <- "fake"
     } else if (type == "file" && "plot" %in% names(dat$opts)) {
       type <- "plot"
+    } else if (type == "file" && "knitr" %in% names(dat$opts)) {
+      type <- "knitr"
     }
   }
 
@@ -21,6 +23,7 @@ make_target <- function(name, dat, type=NULL) {
   generators <- list(object=target_object,
                      file=target_file,
                      plot=target_plot,
+                     knitr=target_knitr,
                      fake=target_fake,
                      cleanup=target_cleanup)
   type <- match_value(type, names(generators))
@@ -526,6 +529,64 @@ target_plot <- R6Class(
       c(list(self$get(fake, for_script)), self$plot$args)
     }
     ))
+
+target_knitr <- R6Class(
+  "target_base",
+  inherit=target_file,
+  public=list(
+    knitr=NULL,
+
+    ## Ideas here:
+    ##  - export_all: export all objects in the store?
+    ##  - export_source: export the source functions (or rather, don't)
+    ##  - set knitr options as a hook on run?
+    ##  - render to html, etc.
+    initialize=function(name, command, opts) {
+      if (!is.null(command$rule)) {
+        stop("Must have a NULL rule")
+      }
+      ## Hack to let target_base know we're not implicit:
+      command$rule <- "knitr"
+
+      knitr <- opts$knitr
+      if (identical(knitr, TRUE) || is.null(knitr)) {
+        knitr <- list()
+      }
+      warn_unknown(paste(name, "knitr", sep=": "), knitr, "input")
+
+      ## Infer name if it's not present:
+      if (is.null(knitr$input)) {
+        knitr$input <- knitr_infer_source(name)
+      }
+      assert_scalar_character(knitr$input)
+
+      ## Build a dependency on the input, for obvious reasons:
+      command$depends <- c(command$depends, list(knitr$input))
+
+      ## That should be everything:
+      super$initialize(name, command, opts)
+      self$knitr <- knitr
+    },
+
+    valid_options=function() {
+      c(super$valid_options(), "knitr")
+    },
+
+    status_string=function(current=self$is_current()) {
+      if (current) "OK" else "KNIT"
+    },
+
+    run=function(quiet=FALSE) {
+      to_export <- filter_targets_by_type(self$depends, "object")
+      to_export <- sapply(to_export, function(x) x$name)
+      knitr_from_maker(self$knitr$input, self$name, self$store,
+                       to_export, quiet=self$quiet)
+    },
+
+    run_fake=function(for_script=FALSE) {
+      "# help coming later..."
+    }
+  ))
 
 ##' Returns the vector of known file extensions.  If a target ends in
 ##' one of these, then it will be considered a file, rather than an

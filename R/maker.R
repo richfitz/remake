@@ -450,5 +450,6 @@ status_colour <- function(str) {
          DEL="red",
          UTIL="darkorchid3",
          READ="yellow",
+         KNIT="hotpink",
          NULL)
 }

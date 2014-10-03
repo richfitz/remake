@@ -18,4 +18,5 @@ Suggests:
     testthat,
     igraph,
     optparse,
-    rainbowrite
+    rainbowrite,
+    knitr
