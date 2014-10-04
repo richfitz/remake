@@ -22,6 +22,7 @@ test_that("Fake targets", {
   expect_that(t$rule, equals(NULL))
   expect_that(t$cleanup_level, equals("never"))
   expect_that(t$quiet, equals(FALSE))
+  expect_that(t$check, equals("all"))
 
   ## For this set of arguments we'd infer a fake target, too:
   t <- make_target("a_fake_target", list())
@@ -39,6 +40,8 @@ test_that("Fake targets (invalid)", {
   expect_that(make_target("fake", list(target_argument="foo"), type="fake"),
               throws_error("'target_argument' field invalid for"))
   expect_that(make_target("fake", list(quiet=TRUE), type="fake"),
+              gives_warning("has no effect"))
+  expect_that(make_target("fake", list(check="exists"), type="fake"),
               gives_warning("has no effect"))
   expect_that(make_target("fake", list(cleanup_level="tidy"), type="fake"),
               throws_error("Invalid options for fake: cleanup_level"))
@@ -75,6 +78,7 @@ test_that("Object target", {
   expect_that(t$rule, equals("foo"))
   expect_that(t$cleanup_level, equals("tidy"))
   expect_that(t$quiet, equals(FALSE))
+  expect_that(t$check, equals("all"))
 
   expect_that(t$run_fake(), equals("real <- foo()"))
 
@@ -86,6 +90,9 @@ test_that("Object target", {
   ## Passing options:
   t <- make_target("real", list(rule="foo", quiet=TRUE))
   expect_that(t$quiet, equals(TRUE))
+
+  t <- make_target("real", list(rule="foo", check="code"))
+  expect_that(t$check, equals("code"))
 
   t <- make_target("real", list(rule="foo", cleanup_level="purge"))
   expect_that(t$cleanup_level, equals("purge"))

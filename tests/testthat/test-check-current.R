@@ -14,9 +14,13 @@ context("Check currentness")
 ##   4. all: the code *and* dependencies are up to date
 ## 2-4 all require existance though: we will always try to build a
 ## target that is missing.
-test_that("manual", {
-  devtools::load_all("../../")
 
+test_that("Types of levels", {
+  expect_that(check_levels(),
+              equals(c("all", "code", "depends", "exists")))
+})
+
+test_that("Manual", {
   cleanup()
   m <- maker$new("maker.yml")
   m$load_sources(FALSE)
@@ -70,4 +74,37 @@ test_that("manual", {
   expect_that(t$is_current("code"),    is_true())
   expect_that(t$is_current("depends"), is_false())
   expect_that(t$is_current("exists"),  is_true())
+})
+
+test_that("In target", {
+  cleanup()
+  m <- maker$new("maker_check.yml")
+  m$load_sources(FALSE)
+
+  t <- m$get_target("data.csv")
+  expect_that(t$check, equals("exists"))
+  expect_that(t$is_current(), is_false())
+
+  t$run()
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(t$is_current(),      is_true())
+  expect_that(t$is_current("all"), is_false())
+
+  file_remove("data.csv")
+  m$make("data.csv")
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(t$is_current(),      is_true())
+  expect_that(t$is_current("all"), is_true())
+
+  m$store$db$del("data.csv")
+  expect_that(t$is_current(),      is_true())
+  expect_that(t$is_current("all"), is_false())
+  expect_that(m$is_current("data.csv"), is_true())
+
+  expect_that(m$store$db$contains("data.csv"), is_false())
+  m$make("data.csv")
+  ## Didn't make it: still not in the db!:
+  expect_that(m$store$db$contains("data.csv"), is_false())
+
+  cleanup()
 })

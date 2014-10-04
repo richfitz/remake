@@ -68,6 +68,7 @@ target_base <- R6Class(
     rule=NULL,
     type=NULL,
     cleanup_level="never",
+    check="all",
     store=NULL,
     quiet=FALSE,
 
@@ -105,10 +106,18 @@ target_base <- R6Class(
           warning("Using 'quiet' on a rule-less target has no effect")
         }
       }
+
+      if ("check" %in% names(opts)) {
+        self$check <- match_value(opts$check, check_levels(),
+                                  paste(name, "quiet", sep=": "))
+        if (is.null(self$rule)) {
+          warning("Using 'check' on a rule-less target has no effect")
+        }
+      }
     },
 
     valid_options=function() {
-      "quiet"
+      c("quiet", "check")
     },
 
     check_opts=function(opts) {
@@ -166,8 +175,7 @@ target_base <- R6Class(
       stop("Not something that can be deleted")
     },
 
-    ## TODO: default becomes self$check, once that exists
-    is_current=function(check="all") {
+    is_current=function(check=self$check) {
       is_current(self, self$store, check)
     },
 
@@ -640,7 +648,7 @@ target_is_file <- function(x) {
 ##
 ## Otherwise unclean
 is_current <- function(target, store, check="all") {
-  check <- match_value(check, c("exists", "code", "depends", "all"))
+  check <- match_value(check, check_levels())
 
   if (target$type %in% c("cleanup", "fake", "utility")) {
     return(FALSE)
@@ -684,7 +692,7 @@ compare_dependency_status <- function(prev, curr, check) {
   ##                     prev$name, prev$version))
   ##     return(FALSE)
   ##   }
-  check <- match_value(check, c("exists", "code", "depends", "all"))
+  check <- match_value(check, check_levels())
   ok <- TRUE
 
   if (check == "all" || check == "depends") {
@@ -731,4 +739,8 @@ filter_targets_by_type <- function(targets, types) {
 
 chained_rule_name <- function(name, i) {
   sprintf("%s{%d}", name, i)
+}
+
+check_levels <- function() {
+  c("all", "code", "depends", "exists")
 }

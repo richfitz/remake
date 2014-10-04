@@ -1,0 +1,26 @@
+# example configuration script for maker; using this to test out some
+# ideas.
+sources:
+  - code.R
+
+packages:
+  - testthat
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    rule: download_data
+    target_argument: dest
+    cleanup_level: purge
+    check: exists
+
+  processed:
+    depends: data.csv
+    rule: process_data
+
+  plot.pdf:
+    depends: processed
+    rule: do_plot
+    target_argument: filename
