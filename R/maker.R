@@ -45,7 +45,8 @@ maker <- R6Class(
 
     ## TODO: Not sure if verbose should also be an option here?
     make=function(target_name=NULL, dry_run=FALSE, force=FALSE,
-      force_all=FALSE, quiet_target=self$quiet_target) {
+      force_all=FALSE, quiet_target=self$quiet_target, check=NULL) {
+      #
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
@@ -61,7 +62,7 @@ maker <- R6Class(
       for (i in plan) {
         last <- self$update(i, dry_run,
                             force_all || (force && i == target_name),
-                            quiet_target=quiet_target)
+                            quiet_target=quiet_target, check=check)
       }
       invisible(last)
     },
@@ -104,10 +105,10 @@ maker <- R6Class(
     },
 
     update=function(target_name, dry_run=FALSE, force=FALSE,
-      quiet_target=self$quiet_target) {
+      quiet_target=self$quiet_target, check=NULL) {
       #
       target <- self$get_target(target_name)
-      current <- !force && target$is_current()
+      current <- !force && target$is_current(check)
       if (self$verbose) {
         status <- target$status_string(current)
         cmd <- if (current) NULL else target$run_fake()
@@ -262,8 +263,8 @@ maker <- R6Class(
     },
 
     ## Things that just pass through to the targets:
-    is_current=function(target_name) {
-      self$get_target(target_name)$is_current()
+    is_current=function(target_name, check=NULL) {
+      self$get_target(target_name)$is_current(check)
     },
     dependency_status=function(target_name, missing_ok=FALSE) {
       self$get_target(target_name)$dependency_status(missing_ok)

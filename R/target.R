@@ -175,8 +175,8 @@ target_base <- R6Class(
       stop("Not something that can be deleted")
     },
 
-    is_current=function(check=self$check) {
-      is_current(self, self$store, check)
+    is_current=function(check=NULL) {
+      is_current(self, self$store, with_default(check, self$check))
     },
 
     status_string=function(current=NULL) {

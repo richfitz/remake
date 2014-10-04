@@ -108,3 +108,59 @@ test_that("In target", {
 
   cleanup()
 })
+
+test_that("In maker", {
+  cleanup()
+  m <- maker$new("maker_check.yml")
+  m$load_sources(FALSE)
+
+  expect_that(m$is_current("data.csv"), is_false())
+  expect_that(m$is_current("data.csv", "exists"), is_false())
+
+  m$make("plot.pdf")
+
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(m$is_current("data.csv", "exists"), is_true())
+
+  m$expire("plot.pdf")
+
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(m$is_current("data.csv", "exists"), is_true())
+  expect_that(m$store$db$contains("data.csv"), is_true())
+  expect_that(m$is_current("processed"), is_true())
+  expect_that(m$is_current("processed", "exists"), is_true())
+  expect_that(m$is_current("plot.pdf"), is_false())
+  expect_that(m$is_current("plot.pdf", "exists"), is_true())
+
+  m$expire("plot.pdf", recursive=TRUE)
+
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(m$is_current("data.csv", "exists"), is_true())
+  expect_that(m$store$db$contains("data.csv"), is_false())
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$is_current("processed", "exists"), is_true())
+  expect_that(m$is_current("plot.pdf"), is_false())
+  expect_that(m$is_current("plot.pdf", "exists"), is_true())
+
+  m$make("plot.pdf", check="exists")
+
+  ## Did not make anything:
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(m$is_current("data.csv", "exists"), is_true())
+  expect_that(m$store$db$contains("data.csv"), is_false())
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$is_current("processed", "exists"), is_true())
+  expect_that(m$is_current("plot.pdf"), is_false())
+  expect_that(m$is_current("plot.pdf", "exists"), is_true())
+
+  m$make("plot.pdf", check="all")
+
+  ## Remade everything:
+  expect_that(m$is_current("data.csv"), is_true())
+  expect_that(m$is_current("data.csv", "exists"), is_true())
+  expect_that(m$store$db$contains("data.csv"), is_true())
+  expect_that(m$is_current("processed"), is_true())
+  expect_that(m$is_current("processed", "exists"), is_true())
+  expect_that(m$is_current("plot.pdf"), is_true())
+  expect_that(m$is_current("plot.pdf", "exists"), is_true())
+})
