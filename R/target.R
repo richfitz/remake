@@ -166,8 +166,9 @@ target_base <- R6Class(
       stop("Not something that can be deleted")
     },
 
-    is_current=function() {
-      is_current(self, self$store)
+    ## TODO: default becomes self$check, once that exists
+    is_current=function(check="all") {
+      is_current(self, self$store, check)
     },
 
     status_string=function(current=NULL) {
@@ -638,7 +639,9 @@ target_is_file <- function(x) {
 ## If the hashes of all inputs are unchanged from last time, it is clean
 ##
 ## Otherwise unclean
-is_current <- function(target, store) {
+is_current <- function(target, store, check="all") {
+  check <- match_value(check, c("exists", "code", "depends", "all"))
+
   if (target$type %in% c("cleanup", "fake", "utility")) {
     return(FALSE)
   } else if (!store$contains(target$name, target$type)) {
@@ -650,7 +653,10 @@ is_current <- function(target, store) {
     ## of it being created (such as when the .maker directory is
     ## deleted or if it comes from elsewhere).  In which case we can't
     ## tell if it's up to date and assume not.
-    return(FALSE)
+    ##
+    ## *However* if check is 'exists', then this is enough because we
+    ## don't care about the code or the dependencies.
+    return(check == "exists")
   } else {
     ## TODO: This is all being done at once.  However, if targets
     ## offer a $compare_dependency_status() method, we can do this
@@ -661,11 +667,12 @@ is_current <- function(target, store) {
     ## code).
     return(compare_dependency_status(
       store$db$get(target$name),
-      target$dependency_status(missing_ok=TRUE)))
+      target$dependency_status(missing_ok=TRUE),
+      check))
   }
 }
 
-compare_dependency_status <- function(prev, curr) {
+compare_dependency_status <- function(prev, curr, check) {
   ## Here, if we need to deal with different version information we
   ## can.  One option will be to deprecate previous versions.  So say
   ## we change the format, or hash algorithms, or something and no
@@ -677,10 +684,17 @@ compare_dependency_status <- function(prev, curr) {
   ##                     prev$name, prev$version))
   ##     return(FALSE)
   ##   }
+  check <- match_value(check, c("exists", "code", "depends", "all"))
+  ok <- TRUE
 
-  ## These make the comparisons insensitive to ordering.
-  (identical_map(prev$depends, curr$depends) &&
-   identical_map(prev$code,    curr$code))
+  if (check == "all" || check == "depends") {
+    ok <- ok && identical_map(prev$depends, curr$depends)
+  }
+  if (check == "all" || check == "code") {
+    ok <- ok && identical_map(prev$code, curr$code)
+  }
+
+  ok
 }
 
 ## Not recursive:
