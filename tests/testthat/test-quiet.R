@@ -49,13 +49,13 @@ test_that("Quiet targets", {
   expect_that(t$quiet, is_true())
   expect_that(t$run(),            not(shows_message()))
   expect_that(t$run(quiet=TRUE),  not(shows_message()))
-  expect_that(t$run(quiet=FALSE), not(shows_message()))
+  expect_that(t$run(quiet=FALSE),     shows_message())
 
   t <- m$get_target("quiet_cat")
   expect_that(t$quiet, is_true())
   expect_that(t$run(),            not(prints_text(msg)))
   expect_that(t$run(quiet=TRUE),  not(prints_text(msg)))
-  expect_that(t$run(quiet=FALSE), not(prints_text(msg)))
+  expect_that(t$run(quiet=FALSE),     prints_text(msg))
 
   t <- m$get_target("quiet_warning")
   expect_that(t$quiet, is_true())

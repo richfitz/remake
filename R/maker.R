@@ -19,7 +19,7 @@ maker <- R6Class(
     default=NULL,
 
     initialize=function(maker_file="maker.yml", path=".",
-      verbose=TRUE, quiet_target=FALSE) {
+      verbose=TRUE, quiet_target=NULL) {
       self$file <- maker_file
       self$path <- path
       self$verbose <- verbose

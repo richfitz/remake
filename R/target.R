@@ -215,14 +215,16 @@ target_base <- R6Class(
       }
     },
 
-    run=function(quiet=FALSE) {
+    run=function(quiet=NULL) {
       if (is.null(self$rule)) {
         return()
       }
       args <- self$dependencies_as_args()
 
-      ## Setting quiet in a target always overrides any runtime option.
-      quiet <- quiet || self$quiet
+      ## Setting quiet in a target always overrides any runtime
+      ## option.
+      ## TODO: quiet is not getting sanitised here.  Run via isTRUE?
+      quiet <- with_default(quiet, self$quiet)
       ## Suppressing cat() is hard:
       if (quiet) {
         temp <- file()
@@ -252,7 +254,7 @@ target_base <- R6Class(
     ## This method exists so that classes can define methods to run
     ## things before or after the run function.  See target_clean and
     ## target_file, which both do this.
-    build=function(quiet=FALSE) {
+    build=function(quiet=NULL) {
       self$run(quiet=quiet)
     }
     ),
@@ -333,7 +335,7 @@ target_file <- R6Class(
       args
     },
 
-    build=function(quiet=FALSE) {
+    build=function(quiet=NULL) {
       ## These are implicit, and can't be built directly:
       if (is.null(self$rule)) {
         stop("Can't build implicit targets")
@@ -388,7 +390,7 @@ target_object <- R6Class(
       if (current) "OK" else "BUILD"
     },
 
-    build=function(quiet=FALSE) {
+    build=function(quiet=NULL) {
       res <- super$build(quiet=quiet)
       self$set(res)
       invisible(res)
@@ -420,7 +422,7 @@ target_cleanup <- R6Class(
       "CLEAN"
     },
 
-    build=function(quiet=FALSE) {
+    build=function(quiet=NULL) {
       self$maker$remove_targets(self$will_remove())
       super$build(quiet=quiet) # runs any clean hooks
     },
@@ -462,7 +464,7 @@ target_utility <- R6Class(
       self$maker <- maker
     },
 
-    run=function(quiet=FALSE) {
+    run=function(quiet=NULL) {
       self$utility(self$maker)
     },
 
@@ -513,7 +515,7 @@ target_plot <- R6Class(
       self$plot <- list(device=dev, args=plot)
     },
 
-    run=function(quiet=FALSE) {
+    run=function(quiet=NULL) {
       open_device(self$plot$device, self$plot_args(), self$store$env$env)
       on.exit(dev.off())
       super$run(quiet=quiet)
@@ -594,10 +596,10 @@ target_knitr <- R6Class(
       if (current) "OK" else "KNIT"
     },
 
-    run=function(quiet=FALSE) {
+    run=function(quiet=NULL) {
       object_names <- knitr_depends(self$maker, self$depends)
       knitr_from_maker(self$knitr$input, self$name, self$store,
-                       object_names, quiet=self$quiet)
+                       object_names, quiet=with_default(quiet, self$quiet))
     },
 
     run_fake=function(for_script=FALSE) {
