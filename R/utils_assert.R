@@ -147,3 +147,9 @@ assert_file_exists <- function(x, name=deparse(substitute(x))) {
     stop(sprintf("The file '%s' does not exist", x), call.=FALSE)
   }
 }
+
+assert_directory <- function(x, name=deparse(substitute(x))) {
+  if (!file.exists(x) || !is_directory(x)) {
+    stop(sprintf("'%s' is not a directory", x), call.=FALSE)
+  }
+}

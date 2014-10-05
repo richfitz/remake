@@ -166,13 +166,16 @@ target_base <- R6Class(
 
     ## These basically prevent using target_base
     get=function(fake=FALSE, for_script=FALSE) {
-      stop("Not a target that can be got")
+      stop("Not something that can be got")
     },
     set=function(value) {
-      stop("Not a target that can be got")
+      stop("Not something that can be set")
     },
     del=function(missing_ok=FALSE) {
       stop("Not something that can be deleted")
+    },
+    copy=function(path, missing_ok=FALSE) {
+      stop("Not something that can be copied")
     },
 
     is_current=function(check=NULL) {
@@ -311,6 +314,16 @@ target_file <- R6Class(
       invisible(did_delete_obj || did_delete_db)
     },
 
+    copy=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
+      assert_directory(path)
+      path_files <- file.path(path, "files")
+      path_db <- file.path(path, "db")
+      dir.create(path_files, FALSE)
+      dir.create(path_db, FALSE)
+      self$store$files$copy(self$name, path_files, missing_ok)
+      self$store$db$copy(self$name, path_db, missing_ok_db)
+    },
+
     status_string=function(current=self$is_current()) {
       if (is.null(self$rule)) {
         ""
@@ -384,6 +397,16 @@ target_object <- R6Class(
       did_delete_obj <- self$store$objects$del(self$name, missing_ok)
       did_delete_db  <- self$store$db$del(self$name, missing_ok)
       invisible(did_delete_obj || did_delete_db)
+    },
+
+    copy=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
+      assert_directory(path)
+      path_objects <- file.path(path, "objects")
+      path_db <- file.path(path, "db")
+      dir.create(path_objects, FALSE)
+      dir.create(path_db, FALSE)
+      self$store$objects$copy(self$name, path_objects, missing_ok)
+      self$store$db$copy(self$name, path_db, missing_ok_db)
     },
 
     status_string=function(current=self$is_current()) {

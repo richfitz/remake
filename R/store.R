@@ -47,6 +47,17 @@ object_store <- R6Class(
       invisible(exists)
     },
 
+    copy=function(key, path, missing_ok=FALSE) {
+      assert_directory(path)
+      exists <- self$contains(key)
+      if (!exists && !missing_ok) {
+        stop(sprintf("key %s not found in object store", key))
+      }
+      file_copy(self$fullname(key), path, warn=!missing_ok)
+      file_copy(self$hashname(key), path, warn=!missing_ok)
+      invisible(exists)
+    },
+
     get_hash=function(key, missing_ok=FALSE) {
       exists <- self$contains(key)
       if (exists) {
@@ -122,6 +133,20 @@ file_store <- R6Class(
       invisible(exists)
     },
 
+    copy=function(filename, path, missing_ok=FALSE) {
+      assert_directory(path)
+      exists <- self$contains(filename)
+      if (exists) {
+        full <- self$fullname(filename)
+        dest <- file.path(path, dirname(full))
+        dir.create(dest, FALSE, TRUE)
+        file_copy(full, dest, warn=!missing_ok)
+      } else if (!missing_ok) {
+        stop(sprintf("file %s not found in file store", filename))
+      }
+      invisible(exists)
+    },
+
     get_hash=function(filename, missing_ok=FALSE) {
       exists <- self$contains(filename)
       if (exists) {
@@ -164,6 +189,17 @@ maker_db <- R6Class(
       exists <- self$contains(key)
       if (exists) {
         file.remove(self$fullname(key))
+      } else if (!missing_ok) {
+        stop(sprintf("key %s not found in maker database", key))
+      }
+      invisible(exists)
+    },
+
+    copy=function(key, path, missing_ok=FALSE) {
+      assert_directory(path)
+      exists <- self$contains(key)
+      if (exists) {
+        file_copy(self$fullname(key), path, warn=!missing_ok)
       } else if (!missing_ok) {
         stop(sprintf("key %s not found in maker database", key))
       }

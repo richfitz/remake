@@ -4,6 +4,8 @@
 
 Make-like build management for R
 
+**Warning: This is under heavy development (as of October 2014), so things may suddenly change under you if you start using this now.** However, the core format seems to be working on some nontrivial cases that we are using in our own work.
+
 # Installation
 
 Install using [devtools](https://github.com/hadley/devtools):

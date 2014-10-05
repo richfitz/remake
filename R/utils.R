@@ -159,6 +159,20 @@ brackets <- function(text, style="square", pad=1) {
   paste0(style[[1]], pad, text, pad, style[[2]])
 }
 
+path_copy <- function(from, to, ...) {
+  dest <- file.path(to, dirname(from))
+  dir.create(dest, FALSE, TRUE)
+  file_copy(from, dest, ...)
+}
+
+file_copy <- function(from, to, ..., warn=TRUE) {
+  ok <- file.copy(from, to)
+  if (warn && any(!ok)) {
+    warning("Failed to copy file: ", paste(from[!ok], collapse=", "))
+  }
+  invisible(ok)
+}
+
 ## This is just to avoid dealing with .onLoad
 painter <- R6Class(
   public=list(

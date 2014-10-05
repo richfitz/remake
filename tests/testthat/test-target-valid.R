@@ -34,6 +34,16 @@ test_that("Fake targets", {
   expect_that(t$depends, equals(as.list(deps)))
 })
 
+test_that("Can't do much with fake targets", {
+  t <- make_target("a_fake_target", list(), "fake")
+  expect_that(t$get(), throws_error("Not something that can be"))
+  expect_that(t$set(), throws_error("Not something that can be"))
+  expect_that(t$set(1), throws_error("Not something that can be"))
+  expect_that(t$del(), throws_error("Not something that can be"))
+  expect_that(t$copy(), throws_error("Not something that can be"))
+  expect_that(t$copy(tempdir()), throws_error("Not something that can be"))
+})
+
 test_that("Fake targets (invalid)", {
   expect_that(make_target("fake", list(rule="foo"), type="fake"),
               throws_error("fake targets must have a NULL rule"))
@@ -237,4 +247,88 @@ test_that("knitr (invalid)", {
 
   expect_that(make_target("file.md", list(unknown="opt"), "knitr"),
               throws_error("Invalid options for file.md"))
+})
+
+## Things that need activation:
+test_that("get/set/copy/del object targets", {
+  cleanup()
+  m <- maker$new("maker.yml")
+  m$make("processed")
+  t <- m$get_target("processed")
+  expect_that(t$get(), is_a("data.frame"))
+  dep <- t$dependency_status()
+
+  path <- tempfile()
+  dir.create(path)
+  t$copy(path)
+
+  expect_that(dir(file.path(path, "objects")),
+              equals(c("processed", "processed__hash")))
+  expect_that(readRDS(file.path(path, "objects", "processed")),
+               equals(t$get()))
+  expect_that(readLines(file.path(path, "objects", "processed__hash")),
+               equals(digest::digest(t$get())))
+
+  name <- paste0(digest::digest(t$name), ".rds")
+  expect_that(dir(file.path(path, "db")), equals(name))
+  expect_that(readRDS(file.path(path, "db", name)), equals(dep))
+  unlink(path, recursive=TRUE)
+
+  ## Set this to rubbish values:
+  t$set("foo")
+  expect_that(t$get(), equals("foo"))
+
+  t$del()
+  expect_that(m$store$contains("processed", "object"), is_false())
+  expect_that(t$del(),
+              throws_error("processed not found in object store"))
+  expect_that(t$del(missing_ok=TRUE), is_false())
+
+  path <- tempfile()
+  dir.create(path)
+  expect_that(t$copy(path),
+              throws_error("processed not found in object store"))
+
+  expect_that(t$copy(path, missing_ok=TRUE), is_false())
+  unlink(path, recursive=TRUE)
+})
+
+## Things that need activation:
+test_that("get/set/copy/del file targets", {
+  cleanup()
+  m <- maker$new("maker.yml")
+  m$make("plot.pdf")
+  t <- m$get_target("plot.pdf")
+  expect_that(t$get(), equals("plot.pdf"))
+  dep <- t$dependency_status()
+
+  path <- tempfile()
+  dir.create(path)
+  t$copy(path)
+
+  md5 <- function(f) unname(tools::md5sum(f))
+  expect_that(dir(file.path(path, "files")), equals("plot.pdf"))
+  expect_that(md5(file.path(path, "files", "plot.pdf")),
+              equals(md5("plot.pdf")))
+
+  name <- paste0(digest::digest(t$name), ".rds")
+  expect_that(dir(file.path(path, "db")), equals(name))
+  expect_that(readRDS(file.path(path, "db", name)), equals(dep))
+  unlink(path, recursive=TRUE)
+
+  t$del()
+  expect_that(m$store$contains("plot.pdf", "file"), is_false())
+  expect_that(file.exists("plot.pdf"), is_false())
+
+  expect_that(t$del(),
+              throws_error("plot.pdf not found in file store"))
+  expect_that(t$del(missing_ok=TRUE), is_false())
+
+  path <- tempfile()
+  dir.create(path)
+  expect_that(t$copy(path),
+              throws_error("plot.pdf not found in file store"))
+
+  expect_that(t$copy(path, missing_ok=TRUE), is_false())
+  unlink(path, recursive=TRUE)
 })
