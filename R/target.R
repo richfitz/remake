@@ -137,7 +137,7 @@ target_base <- R6Class(
 
       ## TODO: Need to get some good testing in here:
       depends_name <- sapply(self$depends, "[[", 1)
-      if (any(duplicated(names(depends_name)))) {
+      if (any(duplicated(depends_name))) {
         stop("Dependency listed more than once")
       }
       if (any(duplicated(setdiff(names(self$depends), "")))) {
