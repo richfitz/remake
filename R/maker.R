@@ -43,13 +43,23 @@ maker <- R6Class(
       self$store$env <- managed_environment$new(self$packages, self$sources)
     },
 
+    make=function(target_names=NULL, ...) {
+      if (is.null(target_names)) {
+        target_names <- self$target_default()
+      }
+      for (t in target_names) {
+        if (length(target_names) > 1L && self$verbose) {
+          self$print_message("MAKE", t, style="angle")
+        }
+        last <- self$make1(t, ...)
+      }
+      invisible(last)
+    },
+
     ## TODO: Not sure if verbose should also be an option here?
-    make=function(target_name=NULL, dry_run=FALSE, force=FALSE,
+    make1=function(target_name, dry_run=FALSE, force=FALSE,
       force_all=FALSE, quiet_target=self$quiet_target, check=NULL) {
       #
-      if (is.null(target_name)) {
-        target_name <- self$target_default()
-      }
       ## NOTE: Not 100% sure about this.  The "deps" target requires
       ## that the sources are not loaded before it is run, because it
       ## exists to install required packages.  So it needs to be
@@ -452,5 +462,6 @@ status_colour <- function(str) {
          UTIL="darkorchid3",
          READ="yellow",
          KNIT="hotpink",
+         MAKE="deepskyblue",
          NULL)
 }

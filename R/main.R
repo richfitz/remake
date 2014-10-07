@@ -23,17 +23,15 @@ main <- function(args=commandArgs(TRUE)) {
   }
   targets <- args$args
   if (length(targets) == 0L) {
-    targets <- m$target_default()
+    targets <- NULL
   }
   if (opts$script) {
-    if (length(targets) != 1L) {
+    if (length(targets) > 1L) {
       stop("Expected exactly one target with --script")
     }
     writeLines(m$script(targets))
   } else {
-    for (t in targets) {
-      m$make(t, opts$dry_run)
-    }
+    m$make(targets, dry_run=opts$dry_run)
   }
 }
 
