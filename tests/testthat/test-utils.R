@@ -29,3 +29,28 @@ test_that("insert_at", {
   expect_that(insert_at(x, y, 3), equals(c(a="a", b="b", "value")))
   expect_that(insert_at(x, y, 4), throws_error("Invalid position"))
 })
+
+test_that("zip_dir", {
+  dir.create("test")
+  file.copy(c("code.R", "maker.yml"), "test")
+
+  dest <- zip_dir("test")
+  expect_that(dest, equals("test.zip"))
+  expect_that(file.exists("test.zip"), is_true())
+
+  contents <- unzip("test.zip", list=TRUE)
+  expect_that(contents$Name,
+              equals(c("test/", "test/code.R", "test/maker.yml")))
+  file.remove("test.zip")
+
+  ## Then, out of place:
+  path <- file.path(tempdir(), "test")
+  dir.create(path)
+  file.copy(c("code.R", "maker.yml"), path)
+
+  dest <- zip_dir(path)
+  expect_that(dest, equals("test.zip"))
+  expect_that(contents$Name,
+              equals(c("test/", "test/code.R", "test/maker.yml")))
+  file.remove("test.zip")
+})

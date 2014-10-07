@@ -173,6 +173,34 @@ file_copy <- function(from, to, ..., warn=TRUE) {
   invisible(ok)
 }
 
+## This zips up the directory at `path` into basename(path).zip.
+## Because of the limitations of `zip()`, we do need to change working
+## directories temporarily.
+zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
+                    overwrite=TRUE) {
+  assert_directory(path)
+  at <- dirname(path)
+  base <- basename(path)
+  if (is.null(zipfile)) {
+    zipfile <- paste0(base, ".zip")
+  }
+  if (quiet && !grepl("q", flags)) {
+    flags <- paste0(flags, "q")
+  }
+  cwd <- getwd()
+  zipfile_full <- file.path(cwd, zipfile)
+  ## Should backup?
+  if (overwrite && file.exists(zipfile)) {
+    file.remove(zipfile)
+  }
+  if (at != ".") {
+    owd <- setwd(at)
+    on.exit(setwd(owd))
+  }
+  zip(zipfile_full, base, flags, ...)
+  invisible(zipfile)
+}
+
 ## This is just to avoid dealing with .onLoad
 painter <- R6Class(
   public=list(
