@@ -60,6 +60,22 @@ maker_archive_contents <- function(filename) {
   unname(sapply(res, function(x) readRDS(x)$name))
 }
 
+maker_archive_export <- function(maker, target_name, recursive=TRUE,
+                                 filename="maker.zip") {
+  if (recursive) {
+    graph <- maker$dependency_graph()
+    target_name <- dependencies(target_name, graph)
+  }
+  targets <- maker$get_targets(target_name)
+  path <- file.path(tempfile(),
+                    tools::file_path_sans_ext(basename(filename)))
+  dir.create(path, recursive=TRUE)
+  for (t in filter_targets_by_type(targets, c("file", "object"))) {
+    t$archive_export(path, missing_ok=FALSE)
+  }
+  zip_dir(path)
+}
+
 maker_archive_import <- function(maker, filename) {
   contents <- maker_archive_contents(filename)
   if (!all(maker$has_target(contents))) {

@@ -162,24 +162,12 @@ maker <- R6Class(
       }
     },
 
-    archive_export=function(target_name, recursive=TRUE,
-      filename="maker.zip") {
-      #
-      if (recursive) {
-        graph <- self$dependency_graph()
-        target_name <- dependencies(target_name, graph)
-      }
-      targets <- self$get_targets(target_name)
-      path <- file.path(tempfile(),
-                        tools::file_path_sans_ext(basename(filename)))
-      dir.create(path, recursive=TRUE)
-      for (t in filter_targets_by_type(targets, c("file", "object"))) {
-        t$archive_export(path, missing_ok=FALSE)
-      }
-      zip_dir(path)
+    archive_export=function(target_name, recursive=TRUE, filename="maker.zip") {
+      maker_archive_export(self, target_name, recursive, filename)
     },
 
-    ## TODO: Provide candidate set of targets to export?
+    ## TODO: Provide candidate set of targets to import?
+    ## TODO: Import files/objects?
     archive_import=function(filename) {
       maker_archive_import(self, filename)
     },
