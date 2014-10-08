@@ -138,6 +138,7 @@ test_that("Positional target_argument", {
   m <- maker$new("maker_pos.yml")
   m$make()
   expect_that(file.exists("plot.pdf"), is_true())
+  cleanup()
 })
 
 test_that("command interface", {
@@ -145,4 +146,12 @@ test_that("command interface", {
   m <- maker$new("maker_command.yml")
   m$make()
   expect_that(file.exists("plot.pdf"), is_true())
+  cleanup()
+})
+
+test_that("simple interface", {
+  cleanup()
+  make()
+  expect_that(file.exists("plot.pdf"), is_true())
+  cleanup()
 })

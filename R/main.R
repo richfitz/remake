@@ -101,12 +101,14 @@ install_maker <- function(dest) {
 ##' builds a single target.  If that target is an object it will be
 ##' invisibly returned.
 ##' @title Make a single target
-##' @param target Name of a target to build
+##' @param target_names Vector of names of targets to build, or
+##' \code{NULL} to build the default target (if specified in the
+##' makerfile).
 ##' @param maker_file Name of the makerfile (by default
 ##' \code{maker.yml}).  This is passed to \code{maker$new()}.
 ##' @param path Path to build in (by default the current directory).
 ##' Probably safest to leave this as-is.
 ##' @export
-make <- function(target, maker_file="maker.yml", path=".") {
-  maker$new(maker_file, path)$make(target)
+make <- function(target_names=NULL, maker_file="maker.yml", path=".") {
+  maker$new(maker_file, path)$make(target_names)
 }

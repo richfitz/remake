@@ -3,10 +3,12 @@
 \alias{make}
 \title{Make a single target}
 \usage{
-make(target, maker_file = "maker.yml", path = ".")
+make(target_names = NULL, maker_file = "maker.yml", path = ".")
 }
 \arguments{
-\item{target}{Name of a target to build}
+\item{target_names}{Vector of names of targets to build, or
+\code{NULL} to build the default target (if specified in the
+makerfile).}
 
 \item{maker_file}{Name of the makerfile (by default
 \code{maker.yml}).  This is passed to \code{maker$new()}.}
