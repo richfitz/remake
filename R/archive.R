@@ -52,7 +52,7 @@ maker_archive_contents <- function(filename) {
   tld <- maker_archive_tld(filename, error=TRUE)
   contents <- unzip(filename, list=TRUE)
   path <- tempfile()
-  dir.create(path)
+  dir.create(path, recursive=TRUE)
   on.exit(unlink(path, recursive=TRUE))
   re <- paste0("^", file.path(tld, "db"), ".*\\.rds")
   keep <- contents$Name[grepl(re, contents$Name)]
@@ -86,7 +86,7 @@ maker_archive_import <- function(maker, filename) {
   tld <- maker_archive_tld(filename)
 
   path <- tempfile()
-  dir.create(path)
+  dir.create(path, recursive=TRUE)
   unzip(filename, exdir=path)
   path <- file.path(path, tld)
 
