@@ -165,6 +165,12 @@ path_copy <- function(from, to, ...) {
   file_copy(from, dest, ...)
 }
 
+## Needs making more robust.  Something along the lines of pythons
+## os.path would be ideal I think.
+path_split <- function(x) {
+  strsplit(x, "/", fixed=TRUE)
+}
+
 file_copy <- function(from, to, ..., warn=TRUE) {
   ok <- file.copy(from, to)
   if (warn && any(!ok)) {
