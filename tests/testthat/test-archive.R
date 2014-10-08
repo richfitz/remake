@@ -20,14 +20,14 @@ test_that("Build archive", {
   cleanup()
   m <- maker$new("maker_command.yml")
 
-  expect_that(m$archive("plot.pdf"),
+  expect_that(m$archive_export("plot.pdf"),
               throws_error("file data.csv not found in file store"))
   m$make("processed")
-  expect_that(m$archive("plot.pdf"),
+  expect_that(m$archive_export("plot.pdf"),
               throws_error("file plot.pdf not found in file store"))
   m$make("plot.pdf")
 
-  dest <- m$archive("plot.pdf")
+  dest <- m$archive_export("plot.pdf")
   expect_that(dest, equals("maker.zip"))
   expect_that(file.exists("maker.zip"), is_true())
 
@@ -46,7 +46,7 @@ test_that("Inspect archive", {
 
   m <- maker$new("maker_command.yml")
   m$make()
-  dest <- m$archive("plot.pdf")
+  dest <- m$archive_export("plot.pdf")
 
   expect_that(is_maker_archive("maker.zip"),
               is_true())
@@ -63,6 +63,8 @@ test_that("Inspect archive", {
   zip_dir(tmp_path)
   expect_that(is_maker_archive("maker.zip"),
               is_false())
+  expect_that(is_maker_archive("maker.zip", error=TRUE),
+              throws_error("expected directories"))
   unlink(tmp_path, recursive=TRUE)
 
   ## Basically empty
@@ -70,6 +72,28 @@ test_that("Inspect archive", {
   zip_dir(tmp_path)
   expect_that(is_maker_archive("maker.zip"),
               is_false())
+  expect_that(is_maker_archive("maker.zip", error=TRUE),
+              throws_error("expected directories"))
   unlink(tmp_path, recursive=TRUE)
+  cleanup()
+})
+
+test_that("Import archive", {
+  cleanup()
+  m <- maker$new("maker_command.yml")
+  m$make()
+  dest <- m$archive_export("plot.pdf")
+  m$make("purge")
+
+  expect_that(m$is_current("data.csv"),  is_false())
+  expect_that(m$is_current("processed"), is_false())
+  expect_that(m$is_current("plot.pdf"),  is_false())
+
+  m$archive_import(dest)
+
+  expect_that(m$is_current("data.csv"),  is_true())
+  expect_that(m$is_current("processed"), is_true())
+  expect_that(m$is_current("plot.pdf"),  is_true())
+
   cleanup()
 })

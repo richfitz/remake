@@ -162,7 +162,7 @@ maker <- R6Class(
       }
     },
 
-    archive=function(target_name, recursive=TRUE,
+    archive_export=function(target_name, recursive=TRUE,
       filename="maker.zip") {
       #
       if (recursive) {
@@ -174,9 +174,14 @@ maker <- R6Class(
                         tools::file_path_sans_ext(basename(filename)))
       dir.create(path, recursive=TRUE)
       for (t in filter_targets_by_type(targets, c("file", "object"))) {
-        t$copy(path, missing_ok=FALSE)
+        t$archive_export(path, missing_ok=FALSE)
       }
       zip_dir(path)
+    },
+
+    ## TODO: Provide candidate set of targets to export?
+    archive_import=function(filename) {
+      maker_archive_import(self, filename)
     },
 
     remove_targets=function(target_names, chain=TRUE) {
@@ -205,15 +210,19 @@ maker <- R6Class(
       }
     },
 
+    has_target=function(target_name) {
+      target_name %in% names(self$targets)
+    },
+
     get_target=function(target_name) {
-      if (!(target_name %in% names(self$targets))) {
+      if (!self$has_target(target_name)) {
         stop("No such target ", target_name)
       }
       self$targets[[target_name]]
     },
 
     get_targets=function(target_names) {
-      if (!all(target_names %in% names(self$targets))) {
+      if (!all(self$has_target(target_names))) {
         stop("No such target ",
              paste(setdiff(target_names, names(self$targets)),
                    collapse=", "))

@@ -40,8 +40,8 @@ test_that("Can't do much with fake targets", {
   expect_that(t$set(), throws_error("Not something that can be"))
   expect_that(t$set(1), throws_error("Not something that can be"))
   expect_that(t$del(), throws_error("Not something that can be"))
-  expect_that(t$copy(), throws_error("Not something that can be"))
-  expect_that(t$copy(tempdir()), throws_error("Not something that can be"))
+  expect_that(t$archive_export(), throws_error("Not something that can be"))
+  expect_that(t$archive_export(tempdir()), throws_error("Not something that can be"))
 })
 
 test_that("Fake targets (invalid)", {
@@ -250,7 +250,7 @@ test_that("knitr (invalid)", {
 })
 
 ## Things that need activation:
-test_that("get/set/copy/del object targets", {
+test_that("get/set/archive/del object targets", {
   cleanup()
   m <- maker$new("maker.yml")
   m$make("processed")
@@ -260,7 +260,7 @@ test_that("get/set/copy/del object targets", {
 
   path <- tempfile()
   dir.create(path)
-  t$copy(path)
+  t$archive_export(path)
 
   expect_that(dir(file.path(path, "objects")),
               equals(c("processed", "processed__hash")))
@@ -286,15 +286,15 @@ test_that("get/set/copy/del object targets", {
 
   path <- tempfile()
   dir.create(path)
-  expect_that(t$copy(path),
+  expect_that(t$archive_export(path),
               throws_error("processed not found in object store"))
 
-  expect_that(t$copy(path, missing_ok=TRUE), is_false())
+  expect_that(t$archive_export(path, missing_ok=TRUE), is_false())
   unlink(path, recursive=TRUE)
 })
 
 ## Things that need activation:
-test_that("get/set/copy/del file targets", {
+test_that("get/set/archive/del file targets", {
   cleanup()
   m <- maker$new("maker.yml")
   m$make("plot.pdf")
@@ -304,7 +304,7 @@ test_that("get/set/copy/del file targets", {
 
   path <- tempfile()
   dir.create(path)
-  t$copy(path)
+  t$archive_export(path)
 
   md5 <- function(f) unname(tools::md5sum(f))
   expect_that(dir(file.path(path, "files")), equals("plot.pdf"))
@@ -326,9 +326,9 @@ test_that("get/set/copy/del file targets", {
 
   path <- tempfile()
   dir.create(path)
-  expect_that(t$copy(path),
+  expect_that(t$archive_export(path),
               throws_error("plot.pdf not found in file store"))
 
-  expect_that(t$copy(path, missing_ok=TRUE), is_false())
+  expect_that(t$archive_export(path, missing_ok=TRUE), is_false())
   unlink(path, recursive=TRUE)
 })

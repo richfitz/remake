@@ -174,8 +174,11 @@ target_base <- R6Class(
     del=function(missing_ok=FALSE) {
       stop("Not something that can be deleted")
     },
-    copy=function(path, missing_ok=FALSE) {
+    archive_export=function(path, missing_ok=FALSE) {
       stop("Not something that can be copied")
+    },
+    archive_import=function(path) {
+      stop("Not something that can be imported")
     },
 
     is_current=function(check=NULL) {
@@ -314,14 +317,21 @@ target_file <- R6Class(
       invisible(did_delete_obj || did_delete_db)
     },
 
-    copy=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
+    archive_export=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
       assert_directory(path)
       path_files <- file.path(path, "files")
       path_db <- file.path(path, "db")
       dir.create(path_files, FALSE)
       dir.create(path_db, FALSE)
-      self$store$files$copy(self$name, path_files, missing_ok)
-      self$store$db$copy(self$name, path_db, missing_ok_db)
+      self$store$files$archive_export(self$name, path_files, missing_ok)
+      self$store$db$archive_export(self$name, path_db, missing_ok_db)
+    },
+
+    archive_import=function(path) {
+      path_files <- file.path(path, "files")
+      path_db <- file.path(path, "db")
+      self$store$db$archive_import(self$name, path_db)
+      self$store$files$archive_import(self$name, path_files)
     },
 
     status_string=function(current=self$is_current()) {
@@ -399,14 +409,22 @@ target_object <- R6Class(
       invisible(did_delete_obj || did_delete_db)
     },
 
-    copy=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
+    archive_export=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
       assert_directory(path)
       path_objects <- file.path(path, "objects")
       path_db <- file.path(path, "db")
       dir.create(path_objects, FALSE)
       dir.create(path_db, FALSE)
-      self$store$objects$copy(self$name, path_objects, missing_ok)
-      self$store$db$copy(self$name, path_db, missing_ok_db)
+      self$store$objects$archive_export(self$name, path_objects, missing_ok)
+      self$store$db$archive_export(self$name, path_db, missing_ok_db)
+    },
+
+    archive_import=function(path) {
+      assert_directory(path)
+      path_objects <- file.path(path, "objects")
+      path_db <- file.path(path, "db")
+      self$store$objects$archive_import(self$name, path_objects)
+      self$store$db$archive_import(self$name, path_db)
     },
 
     status_string=function(current=self$is_current()) {

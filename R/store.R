@@ -47,7 +47,7 @@ object_store <- R6Class(
       invisible(exists)
     },
 
-    copy=function(key, path, missing_ok=FALSE) {
+    archive_export=function(key, path, missing_ok=FALSE) {
       assert_directory(path)
       exists <- self$contains(key)
       if (!exists && !missing_ok) {
@@ -56,6 +56,15 @@ object_store <- R6Class(
       file_copy(self$fullname(key), path, warn=!missing_ok)
       file_copy(self$hashname(key), path, warn=!missing_ok)
       invisible(exists)
+    },
+
+    archive_import=function(key, path) {
+      assert_directory(path)
+      file_in <- file.path(path, key)
+      hash_in <- paste0(file_in, "__hash") # TODO: avoid
+      assert_file_exists(file_in)
+      assert_file_exists(hash_in)
+      file_copy(c(file_in, hash_in), self$path)
     },
 
     get_hash=function(key, missing_ok=FALSE) {
@@ -133,7 +142,7 @@ file_store <- R6Class(
       invisible(exists)
     },
 
-    copy=function(filename, path, missing_ok=FALSE) {
+    archive_export=function(filename, path, missing_ok=FALSE) {
       assert_directory(path)
       exists <- self$contains(filename)
       if (exists) {
@@ -145,6 +154,15 @@ file_store <- R6Class(
         stop(sprintf("file %s not found in file store", filename))
       }
       invisible(exists)
+    },
+
+    archive_import=function(filename, path) {
+      assert_directory(path)
+      file_in <- file.path(path, filename)
+      assert_file_exists(file_in)
+      path_out <- dirname(filename)
+      dir.create(path_out, showWarnings=FALSE, recursive=TRUE)
+      file_copy(file_in, path_out)
     },
 
     get_hash=function(filename, missing_ok=FALSE) {
@@ -195,7 +213,7 @@ maker_db <- R6Class(
       invisible(exists)
     },
 
-    copy=function(key, path, missing_ok=FALSE) {
+    archive_export=function(key, path, missing_ok=FALSE) {
       assert_directory(path)
       exists <- self$contains(key)
       if (exists) {
@@ -204,6 +222,17 @@ maker_db <- R6Class(
         stop(sprintf("key %s not found in maker database", key))
       }
       invisible(exists)
+    },
+
+    archive_import=function(key, path) {
+      assert_directory(path)
+      file_in <- file.path(path, self$rdsname(key))
+      assert_file_exists(file_in)
+      ## This should never fail:
+      if (readRDS(file_in)$name != key) {
+        stop("Corrupt database detected")
+      }
+      file_copy(file_in, self$path)
     },
 
     contains=function(key) {
@@ -221,7 +250,11 @@ maker_db <- R6Class(
     ## better.  People should never directly interact with the files
     ## in the directory, so it's OK.
     fullname=function(key) {
-      file.path(self$path, paste0(digest(key), ".rds"))
+      file.path(self$path, self$rdsname(key))
+    },
+
+    rdsname=function(key) {
+      paste0(digest(key), ".rds")
     }
     ))
 
