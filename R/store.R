@@ -64,7 +64,9 @@ object_store <- R6Class(
       hash_in <- paste0(file_in, "__hash") # TODO: avoid
       assert_file_exists(file_in)
       assert_file_exists(hash_in)
-      file_copy(c(file_in, hash_in), self$path)
+      dir.create(self$path, FALSE) # should not be needed?
+      file_copy(file_in, self$path)
+      file_copy(hash_in, self$path)
     },
 
     get_hash=function(key, missing_ok=FALSE) {
