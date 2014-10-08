@@ -39,8 +39,8 @@ test_that("zip_dir", {
   expect_that(file.exists("test.zip"), is_true())
 
   contents <- unzip("test.zip", list=TRUE)
-  expect_that(contents$Name,
-              equals(c("test/", "test/code.R", "test/maker.yml")))
+  expected <- c("test/code.R", "test/maker.yml")
+  expect_that(all(expected %in% contents$Name), is_true())
   file.remove("test.zip")
 
   ## Then, out of place:
@@ -50,7 +50,6 @@ test_that("zip_dir", {
 
   dest <- zip_dir(path)
   expect_that(dest, equals("test.zip"))
-  expect_that(contents$Name,
-              equals(c("test/", "test/code.R", "test/maker.yml")))
+  expect_that(all(expected %in% contents$Name), is_true())
   file.remove("test.zip")
 })

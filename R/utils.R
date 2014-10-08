@@ -172,7 +172,8 @@ path_split <- function(x) {
 }
 
 file_copy <- function(from, to, ..., warn=TRUE) {
-  ok <- file.copy(from, to)
+  assert_scalar_character(from)
+  ok <- file.exists(from) && file.copy(from, to)
   if (warn && any(!ok)) {
     warning("Failed to copy file: ", paste(from[!ok], collapse=", "))
   }
