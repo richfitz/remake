@@ -602,17 +602,41 @@ target_knitr <- R6Class(
 
       opts$quiet <- with_default(opts$quiet, TRUE)
 
+      opts$auto_figure_prefix <-
+        with_default(opts$auto_figure_prefix, FALSE)
+      assert_scalar_logical(opts$auto_figure_prefix)
+
+      ## Then the knitr options:
       knitr <- opts$knitr
       if (identical(knitr, TRUE) || is.null(knitr)) {
         knitr <- list()
       }
-      warn_unknown(paste(name, "knitr", sep=": "), knitr, "input")
+      warn_unknown(paste(name, "knitr", sep=": "), knitr,
+                   c("input", "options", "auto_figure_prefix"))
 
       ## Infer name if it's not present:
       if (is.null(knitr$input)) {
         knitr$input <- knitr_infer_source(name)
       }
       assert_scalar_character(knitr$input)
+
+      ## NOTE: It might be useful to set fig.path here, so that we can
+      ## work out what figures belong with different knitr targets.
+      ## What I'm going to do though is *not* do that at the moment
+      ## though.  Better would be to have a key (e.g.,
+      ## fig.path.disambiguate) that indicate that the prefix should
+      ## be set using the fig_default_fig_path function.  Then the
+      ## default gets the same behaviour as default knitr.
+      if (is.null(knitr$options)) {
+        knitr$options <- list()
+      }
+      if (opts$auto_figure_prefix) {
+        if (is.null(knitr$options$fig.path)) {
+          knitr$options$fig.path <- knitr_default_fig_path(name)
+        } else {
+          warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
+        }
+      }
 
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))
@@ -630,7 +654,7 @@ target_knitr <- R6Class(
     },
 
     valid_options=function() {
-      c(super$valid_options(), "knitr")
+      c(super$valid_options(), "knitr", "auto_figure_prefix")
     },
 
     status_string=function(current=self$is_current()) {
@@ -640,7 +664,9 @@ target_knitr <- R6Class(
     run=function(quiet=NULL) {
       object_names <- knitr_depends(self$maker, self$depends)
       knitr_from_maker(self$knitr$input, self$name, self$store,
-                       object_names, quiet=with_default(quiet, self$quiet))
+                       object_names,
+                       quiet=with_default(quiet, self$quiet),
+                       knitr_options=self$knitr$options)
     },
 
     run_fake=function(for_script=FALSE) {

@@ -1,7 +1,18 @@
+knitr_default_fig_path <- function(filename) {
+  sprintf("figure/%s__", tools::file_path_sans_ext(basename(filename)))
+}
+
 knitr_from_maker <- function(input, output, store, export,
-                             export_source=TRUE, ...) {
+                             export_source=TRUE,
+                             knitr_options=NULL, ...) {
   e <- new.env(parent=if (export_source) store$env$env else .GlobalEnv)
   store$objects$export(export, e)
+  if (!is.null(knitr_options)) {
+    ## Save the previous options:
+    prev <- knitr::opts_chunk$get(names(knitr_options), drop=FALSE)
+    on.exit(knitr::opts_chunk$set(prev))
+    knitr::opts_chunk$set(knitr_options)
+  }
   knitr::knit(input, output, envir=e, ...)
 }
 
