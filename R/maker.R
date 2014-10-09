@@ -93,9 +93,11 @@ maker <- R6Class(
       cmds <- lapply(plan, function(i)
                      self$get_target(i)$run_fake(for_script=TRUE))
 
-      c(unlist(pkgs),
-        unlist(srcs),
-        unlist(cmds))
+      src <- c(unlist(pkgs),
+               unlist(srcs),
+               unlist(cmds))
+      class(src) <- "maker_script"
+      src
     },
 
     script_entry=function(target_name) {
