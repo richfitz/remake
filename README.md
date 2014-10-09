@@ -40,11 +40,12 @@ Other core features:
 
 ## Example
 
-Here's a very simple analysis pipeline that illustrates the basic problem:
+Here's a very simple analysis pipeline that illustrates the basic idea:
 
 1. Download some data from the web into a local file
 2. Process that file to prepare it for analysis
 3. Create a plot from that file
+4. Create a knitr report that uses the same set of objects
 
 The makerfile that describes this pipline might look like this:
 
@@ -71,7 +72,7 @@ targets:
     knitr: true
 ```
 
-(this is a [yaml](http://yaml.org) file).  The full version of this file, with explanations, is [here](docs/maker.yml).
+(this is a [yaml](http://yaml.org) file).  The full version of this file, with explanations, is [here](doc/maker.yml).
 
 You still need to write functions that carry out each step; that might look something like [this](doc/code.R), but it would define the functions `download_data`, `processs_data` and `myplot`.  Maker can then be run from within R:
 
@@ -107,7 +108,7 @@ make("report.md")
 # [  KNIT ] report.md            |  knitr::knit("report.Rmd", "report.md")
 ```
 
-This arranges for the target `processed`, on which this depends (see [the makerfile](docs/maker.yml)) to be passed through to `knitr`, along with all the functions defined in `code.R`, and builds the report `report.md` from the knitr source `report.Rmd` (the source is [here](docs/report.Rmd)).  Note that because `processed` was already up to date, `maker` skips rebuilding it.
+This arranges for the target `processed`, on which this depends (see [the makerfile](doc/maker.yml)) to be passed through to `knitr`, along with all the functions defined in `code.R`, and builds the report `report.md` from the knitr source `report.Rmd` (the source is [here](doc/report.Rmd)).  Note that because `processed` was already up to date, `maker` skips rebuilding it.
 
 `maker` can also be run from the command line (outside of R), to make it easy to include as part of a bigger pipeline, perhaps using make! (I do this in my own use of maker).
 
