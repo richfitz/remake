@@ -1,0 +1,13 @@
+# This is a knitr test
+
+The object `processed` will be found from `maker`.
+
+```{r}
+summary(processed)
+```
+
+Here's a plot:
+
+```{r}
+myplot(processed)
+```
