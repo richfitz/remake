@@ -56,9 +56,28 @@ maker <- R6Class(
       invisible(last)
     },
 
+    make_dependencies=function(target_name, ...) {
+      t <- self$get_target(target_name)
+      if (!(t$type) %in% c("object", "file")) {
+        warning(sprintf("%s is not a real target"))
+      }
+      self$print_message("DEPS", t$name, style="angle")
+      self$make1(target_name, ..., dependencies_only=TRUE)
+      e <- new.env(parent=self$store$env$env)
+
+      deps <- filter_targets_by_type(t$depends, "object")
+      if (length(deps) > 0L) {
+        self$export(sapply(deps, function(x) x$name), e)
+      }
+      class(e) <- "maker_environment"
+      attr(e, "target") <- t
+      invisible(e)
+    },
+
     ## TODO: Not sure if verbose should also be an option here?
     make1=function(target_name, dry_run=FALSE, force=FALSE,
-      force_all=FALSE, quiet_target=self$quiet_target, check=NULL) {
+      force_all=FALSE, quiet_target=self$quiet_target, check=NULL,
+      dependencies_only=FALSE) {
       #
       ## NOTE: Not 100% sure about this.  The "deps" target requires
       ## that the sources are not loaded before it is run, because it
@@ -68,7 +87,7 @@ maker <- R6Class(
         self$load_sources(show_message=!is.null(self$store$env$env))
       }
       graph <- self$dependency_graph()
-      plan <- dependencies(target_name, graph)
+      plan <- dependencies(target_name, graph, dependencies_only)
       for (i in plan) {
         last <- self$update(i, dry_run,
                             force_all || (force && i == target_name),
@@ -479,5 +498,6 @@ status_colour <- function(str) {
          READ="yellow",
          KNIT="hotpink",
          MAKE="deepskyblue",
+         DEPS="deepskyblue",
          NULL)
 }
