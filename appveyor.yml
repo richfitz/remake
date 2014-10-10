@@ -9,6 +9,7 @@ install:
 
 build_script:
   - travis-tool.sh install_deps
+  - ./travis-tool.sh github_package richfitz/rainbowrite
 
 test_script:
   - travis-tool.sh run_tests
