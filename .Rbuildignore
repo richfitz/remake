@@ -1,4 +1,5 @@
 ^\.travis\.yml$
+^appveyor\.yml$
 doc
 Makefile
 tests/testthat/.maker
