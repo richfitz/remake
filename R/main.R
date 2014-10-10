@@ -97,9 +97,11 @@ install_maker <- function(dest) {
   Sys.chmod(file, "0755")
 }
 
-##' This is a convenience function that creates a maker object and
-##' builds a single target.  If that target is an object it will be
-##' invisibly returned.
+##' These are convenience functions that creates a maker object and
+##' runs \code{make} or \code{script} on it.  For \code{make}, if the
+##' final target is an object, that will be invisibly returned.  These
+##' exist only to avoid creating a maker object before doing something
+##' with it; this is all these functions do internally!
 ##' @title Make a single target
 ##' @param target_names Vector of names of targets to build, or
 ##' \code{NULL} to build the default target (if specified in the
@@ -111,4 +113,9 @@ install_maker <- function(dest) {
 ##' @export
 make <- function(target_names=NULL, maker_file="maker.yml", path=".") {
   maker$new(maker_file, path)$make(target_names)
+}
+
+##' @rdname make
+make_script <- function(target_names=NULL, maker_file="maker.yml", path=".") {
+  maker$new(maker_file, path)$script(target_names)
 }

@@ -4,9 +4,7 @@
 
 Make-like build management, reimagined for R.
 
-**Warning: This is under heavy development (as of October 2014), so things may suddenly change under you if you start using this now.** However, the core format seems to be working on some nontrivial cases that we are using in our own work.
-
-See below for installation instructions.
+See below for [installation instructions](#installation).
 
 # The idea
 
@@ -15,13 +13,15 @@ when it works, is wonderful.  Being able to change part of a complicated system 
 
 The idea here is to re-imagine a set of ideas from make but built for R.  Rather than having a series of calls to different instances of R (as happens if you run make on R scripts), the idea is to define pieces of a pipeline within an R session.  Rather than being language agnostic (like make must be), `maker` is unapologetically R focussed.
 
+**Note**: This package is under heavy development (as of October 2014), so things may change under you if you start using this now.  However, the core format seems to be working on some nontrivial cases that we are using in our own work.  At the same time, if you're willing to have things change around a bit feel free to start using this and post [issues](https://github.com/richfitz/maker/issues) with problems/friction/ideas etc and the package will reflect your workflow more.
+
 ## What maker does
 
 You describe the beginning, intermediate and end points of your analysis, and how they flow together.
 
 * "**targets**" are the points in your analysis.  They can be either files (data files for input; tables, plots, knitr reports for output) or they can be R objects (representing processed data, results, fitted models, etc).
 * "**rules**" are how the targets in your analysis relate together and are simply the names of R functions.
-* "**dependencies** are the targets that need to already be made before a particular target can run (for example, a processed data set might depend on downloading a file; a plot might depend on a processed data set).
+* "**dependencies**" are the targets that need to already be made before a particular target can run (for example, a processed data set might depend on downloading a file; a plot might depend on a processed data set).
 
 There might be very few steps or very many, but `maker` will take care of stepping through the analysis in a correct order (there can be more than one correct order!).
 
@@ -30,10 +30,12 @@ Other core features:
 * `maker` determines if any dependencies have changed when need running your analysis.  So if a downloaded data file changes, everything that depends on it will be rebuilt when needed.
   - however, rather than rely on file modification times, `maker` uses a hash (like a digital fingerprint) of the file or object to determine if the contents have *really* changed.  So inconsequential changes will be ignored.
 * Object targets are persistent across sessions, so manual saving of objects is not necessary.  This avoids a lot of manual caching of results that tends to litter long-running analysis code.
-* `maker` also checks if the *functions* used as rules (or called from those functions) have changed and will rebuild if these have changed (for the rationale here, see [here](doc/reproducible_research)).
+* `maker` also checks if the *functions* used as rules (or called from those functions) have changed and will rebuild if these have changed (for the rationale here, see [here](doc/reproducible_research.md)).
 * Because `maker` keeps track of which files and objects it created, it can automatically clean up after itself.  This makes it easy to rerun the entire analysis beginning-to-end.
   - three levels of cleaning (tidy, clean and purge) are provided to categorise how much you want to keep a particular target.
-* Support for easily making figures and running [`knitr`](http://yihui.name/knitr) as special targetas.
+* Support for easily making figures and running [`knitr`](http://yihui.name/knitr) as special targets.
+* Automate installation of dependencies.
+* Automate curation of `.gitignore` files to prevent accidentally committing large output to your repository.
 * (Very early) support for archiving a set of analyses that other users can import.
   - This means you can share results of long-running analyses/simulations and people can easily run the last steps of your analyses.
   - Eventually this will interface with [rfigshare](https://github.com/ropensci/rfigshare) and GitHub [releases](https://github.com/blog/1547-release-your-software).
@@ -84,7 +86,7 @@ make()
 # [       ] all
 ```
 
-The "BUILD: next to each target indicates that it is being run (which may take some time for a complicated step) and after the pipe a call is printed that indicates what is happening (this is a small white lie).
+The "`BUILD`": next to each target indicates that it is being run (which may take some time for a complicated step) and after the pipe a call is printed that indicates what is happening (this is a small white lie).
 
 Rerunning maker:
 
@@ -111,6 +113,18 @@ make("report.md")
 This arranges for the target `processed`, on which this depends (see [the makerfile](doc/maker.yml)) to be passed through to `knitr`, along with all the functions defined in `code.R`, and builds the report `report.md` from the knitr source `report.Rmd` (the source is [here](doc/report.Rmd)).  Note that because `processed` was already up to date, `maker` skips rebuilding it.
 
 `maker` can also be run from the command line (outside of R), to make it easy to include as part of a bigger pipeline, perhaps using make! (I do this in my own use of maker).
+
+Rather than require that you buy in to some all-singing, all-dancing workflow tool, `maker` tries to be agnostic about how you work: there are no special functions within your code that you need to use.  You can also create a linear version of your analysis at any time:
+
+```r
+make_script()
+# source("code.R")
+# download_data("data.csv")
+# processed <- process_data("data.csv")
+# pdf("plot.pdf")
+# myplot(processed)
+# dev.off()
+```
 
 # Installation
 

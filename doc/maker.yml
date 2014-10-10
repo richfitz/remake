@@ -8,6 +8,7 @@ sources:
 targets:
   ## 'all' is a special target that will be used as the default
   ## target by 'maker'.  It doesn't actually make anything but
+  ## "depends" on other targets.
   all:
     depends: plot.pdf
 

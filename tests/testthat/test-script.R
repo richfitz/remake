@@ -35,6 +35,13 @@ test_that("Build works with plotting target", {
   cleanup()
 })
 
+test_that("Simple interface", {
+  cleanup()
+  src <- make_script()
+  cmp <- maker$new()$script()
+  expect_that(src, is_identical_to(cmp))
+})
+
 if (FALSE) {
 test_that("Chained targets", {
   cleanup()
