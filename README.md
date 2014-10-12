@@ -1,6 +1,7 @@
 # maker
 
 [![Build Status](https://travis-ci.org/richfitz/maker.png?branch=master)](https://travis-ci.org/richfitz/maker)
+[![Build status](https://ci.appveyor.com/api/projects/status/yltv2lpn046a7e93/branch/master?svg=true)](https://ci.appveyor.com/project/richfitz/maker/branch/master)
 
 Make-like build management, reimagined for R.
 
