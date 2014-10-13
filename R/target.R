@@ -35,7 +35,7 @@ make_target <- function(name, dat, type=NULL) {
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("rule", "depends", "target_argument")
+  core <- c("rule", "depends", "target_argument", "quoted")
   if ("command" %in% names(dat)) {
     ## TODO: indicate on output that this was generated with command
     ## TODO: track entries that were given with/without quotes

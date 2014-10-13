@@ -42,10 +42,22 @@ test_that("Rules with one argument", {
   res <- parse_command("foo(a)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list("a")))
+  expect_that(res$quoted, is_false())
 
   res <- parse_command("foo(argname=a)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list(argname="a")))
+  expect_that(res$quoted, is_false())
+
+  res <- parse_command("foo('a')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list("a")))
+  expect_that(res$quoted, is_true())
+
+  res <- parse_command("foo(argname='a')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list(argname="a")))
+  expect_that(res$quoted, is_true())
 
   expect_that(parse_command("foo(1)"),
               throws_error("Every element must be a character or name"))
@@ -61,25 +73,50 @@ test_that("Rules with multiple arguments", {
   res <- parse_command("foo(a, b)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list("a", "b")))
+  expect_that(res$quoted, equals(c(FALSE, FALSE)))
 
   res <- parse_command("foo(arg1=a, b)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list(arg1="a", "b")))
+  expect_that(res$quoted, equals(c(FALSE, FALSE)))
 
   res <- parse_command("foo(a, arg2=b)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list("a", arg2="b")))
+  expect_that(res$quoted, equals(c(FALSE, FALSE)))
 
   res <- parse_command("foo(arg1=a, arg2=b)")
   expect_that(res$rule, equals("foo"))
   expect_that(res$depends, equals(list(arg1="a", arg2="b")))
+  expect_that(res$quoted, equals(c(FALSE, FALSE)))
+
+  ## Quote one of these:
+  res <- parse_command("foo(a, 'b')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list("a", "b")))
+  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+
+  res <- parse_command("foo(arg1=a, 'b')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list(arg1="a", "b")))
+  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+
+  res <- parse_command("foo(a, arg2='b')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list("a", arg2="b")))
+  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+
+  res <- parse_command("foo(arg1=a, arg2='b')")
+  expect_that(res$rule, equals("foo"))
+  expect_that(res$depends, equals(list(arg1="a", arg2="b")))
+  expect_that(res$quoted, equals(c(FALSE, TRUE)))
 })
 
 test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo()"),
-              equals(list(rule="foo", depends=list())))
+              equals(list(rule="foo", depends=list(), quoted=logical(0))))
 
-  cmp_pos  <- list(rule="foo", depends=list(), target_argument=1)
+  cmp_pos  <- list(rule="foo", depends=list(), quoted=FALSE, target_argument=1)
   expect_that(parse_target_command("a", "foo(a)"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
@@ -87,14 +124,21 @@ test_that("target_argument detection", {
   ## It's debatable that these are both reasonable.  I may tighten
   ## that up.  Ideally it would be 'a' from here and the other two
   ## from above.
+  cmp_pos  <- list(rule="foo", depends=list(), quoted=TRUE, target_argument=1)
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo('target_name')"),
               equals(cmp_pos))
 
-  cmp_name <- list(rule="foo", depends=empty_named_list(),
+  cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=FALSE,
                    target_argument="arg")
   expect_that(parse_target_command("a", "foo(arg=a)"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
+              equals(cmp_name))
+
+  cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=TRUE,
+                   target_argument="arg")
+  expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
+  expect_that(parse_target_command("a", "foo(arg='target_name')"),
               equals(cmp_name))
 
   expect_that(parse_target_command("a", "foo(a, b)")$target_argument,

@@ -7,6 +7,7 @@
 parse_target_command <- function(target, command) {
   dat <- parse_command(command)
   if (length(dat$depends) > 0L) {
+    ## This whole section tries to work out the target_argument field.
     targets <- sapply(dat$depends, "[[", 1)
     pos <- c(target, "target_name")
     ## Need to determine that there is only a single possible target:
@@ -37,8 +38,13 @@ parse_target_command <- function(target, command) {
 parse_command <- function(str) {
   res <- check_command(str)
   rule <- check_command_rule(res[[1]])
+  quoted <- logical(length(res) - 1)
+  ## This could be done more tidily!
   depends <- lapply(res[-1], check_command_arg)
-  list(rule=rule, depends=depends)
+  quoted <- vapply(depends, function(x) attr(x, "quoted"), logical(1),
+                   USE.NAMES=FALSE)
+  depends <- lapply(depends, as.character)
+  list(rule=rule, depends=depends, quoted=quoted)
 }
 
 check_command <- function(str) {
@@ -59,7 +65,10 @@ check_command <- function(str) {
 check_command_arg <- function(x) {
   if (is.name(x)) {
     x <- as.character(x)
-  } else if (!is.character(x)) {
+    attr(x, "quoted") <- FALSE
+  } else if (is.character(x)) {
+    attr(x, "quoted") <- TRUE
+  } else {
     stop("Every element must be a character or name")
   }
   x
