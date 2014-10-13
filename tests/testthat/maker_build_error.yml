@@ -1,0 +1,29 @@
+## NOTE: This is an _ordered_ list, and will be read through in the
+## order given.  This means that functions in code-error will
+## overwrite those in code.R
+sources:
+  - code.R
+  - code-error.R
+
+packages:
+  - testthat
+
+plot_options:
+  default:
+    width: 8
+    height: 4
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command: process_data("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: default

@@ -368,9 +368,38 @@ target_file <- R6Class(
       ## should be a configurable behaviour, but we're guaranteed to
       ## be working with genuine files so this should be harmless.
       dir.create(dirname(self$name), showWarnings=FALSE, recursive=TRUE)
-      res <- super$build()
+
+      ## NOTE: I'm using withCallingHandlers here because that does
+      ## allow options(error=recover) to behave in the expected way
+      ## (i.e., the target function remains on the stack and can be
+      ## inspected/browsed).
+      path <- self$backup()
+      withCallingHandlers(super$build(),
+                          error=function(e) {
+                            self$restore(path)
+                            stop(e)
+                          })
+      ## This only happens if the error is not raised above:
       self$set(res)
       invisible(self$name)
+    },
+
+    ## Used in build/restore
+    backup=function() {
+      if (file.exists(self$name)) {
+        path <- file.path(tempfile(), self$name)
+        dir.create(dirname(path), showWarnings=FALSE, recursive=TRUE)
+        file.copy(self$name, path)
+        path
+      } else {
+        NULL
+      }
+    },
+    restore=function(path) {
+      if (!is.null(path)) {
+        message("Restoring previous version of ", self$name)
+        file.copy(path, self$name, overwrite=TRUE)
+      }
     }
     ))
 
