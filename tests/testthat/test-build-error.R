@@ -32,7 +32,7 @@ test_that("Check mocking works", {
   cleanup()
 })
 
-test_that("", {
+test_that("Errored builds restore files", {
   cleanup()
   m <- maker$new("maker_build_error.yml")
   m$load_sources()

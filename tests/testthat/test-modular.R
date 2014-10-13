@@ -11,7 +11,7 @@ test_that("Modular makerfile", {
   m <- maker$new("modular.yml")
 
   ## Not duplicated:
-  expect_that(m$sources, equals("code.R"))
+  expect_that(m$store$env$sources, equals("code.R"))
   expect_that("data.csv" %in% m$target_names(), is_true())
   ## data.csv is now listed *after* plot.pdf, because it was included
   ## afterwards.

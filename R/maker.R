@@ -8,8 +8,6 @@ maker <- R6Class(
     file=NULL,
     path=NULL,
     store=NULL,
-    sources=NULL,
-    packages=NULL,
     plot_options=NULL,
     targets=NULL,
     ## NOTE: *verbose* applies to maker, while *quiet_target* applies
@@ -30,8 +28,6 @@ maker <- R6Class(
     reload=function() {
       self$store <- store$new(self$path)
       config <- read_maker_file(self$file)
-      self$sources <- config$sources
-      self$packages <- config$packages
       self$plot_options <- config$plot_options
       self$targets <- NULL
       self$add_targets(config$targets)
@@ -40,7 +36,7 @@ maker <- R6Class(
       private$initialize_default_target(config$target_default)
       private$initialize_utility_targets() # last; nothing depends on these
       private$initialize_message_format()
-      self$store$env <- managed_environment$new(self$packages, self$sources)
+      self$store$env <- managed_environment$new(config$packages, config$sources)
     },
 
     make=function(target_names=NULL, ...) {

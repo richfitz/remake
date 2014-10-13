@@ -111,7 +111,7 @@ test_that("Error in source file", {
   writeLines(c(readLines("code.R"), "}"), "code2.R")
   m <- maker$new()
   ## Ugly, and might not work in future:
-  m$store$env$sources <- m$sources <- "code2.R"
+  m$store$env$sources <- "code2.R"
   expect_that(m$load_sources(),
               throws_error("while sourcing 'code2.R'"))
   ## Will continually throw this error even though the files have not
