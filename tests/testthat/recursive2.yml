@@ -1,0 +1,7 @@
+include:
+  - recursive1.yml
+
+targets:
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge

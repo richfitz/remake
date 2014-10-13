@@ -394,7 +394,12 @@ maker <- R6Class(
 
 ## TODO: There is far too much going on in here: split this into
 ## logical chunks.
-read_maker_file <- function(filename, included=FALSE) {
+read_maker_file <- function(filename, seen=character(0)) {
+  if (filename %in% seen) {
+    stop("Recursive include detected: ",
+         paste(c(seen, filename), collapse=" -> "))
+  }
+
   ## TODO: Sort out the logic here:
   if (dirname(filename) != "." && dirname(filename) != getwd()) {
     stop("Logic around paths in out-of-directory maker files not decided")
@@ -406,7 +411,7 @@ read_maker_file <- function(filename, included=FALSE) {
                  "plot_options",
                  "target_default", "targets"))
 
-  if (included) {
+  if (length(seen) > 0L) { # an included file
     dat$target_default <- NULL
   }
 
@@ -437,7 +442,7 @@ read_maker_file <- function(filename, included=FALSE) {
       stop("All included makerfiles must be in the current directory")
     }
     for (f in dat$include) {
-      dat_sub <- read_maker_file(f, included=TRUE)
+      dat_sub <- read_maker_file(f, c(seen, filename))
       dat$packages <- unique(c(dat$packages, dat_sub$packages))
       dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
 

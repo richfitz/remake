@@ -1,0 +1,16 @@
+sources:
+  - code.R
+
+include:
+  - recursive2.yml
+
+targets:
+  all:
+    depends: plot.pdf
+
+  processed:
+    command: process_data("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true
