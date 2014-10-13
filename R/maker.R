@@ -35,6 +35,7 @@ maker <- R6Class(
       self$add_targets(config$targets)
       private$initialize_cleanup_targets()
       private$initialize_targets_activate()
+      private$check_rule_target_clash()
       private$initialize_default_target(config$target_default)
       private$initialize_utility_targets() # last; nothing depends on these
       private$initialize_message_format()
@@ -395,6 +396,17 @@ maker <- R6Class(
         target_width=target_width,
         max_cmd_width=width - (w0 + 1 + target_width + 4),
         p=painter$new(interactive()))
+    },
+
+    check_rule_target_clash=function() {
+      ## TODO: Special effort needed for chained rules.
+      ## TODO: Filter by realness?
+      rules <- unlist(lapply(self$targets, function(x) x$rule))
+      dups <- intersect(rules, self$target_names())
+      if (length(dups) > 0L) {
+        warning("Rule name clashes with target name: ",
+                paste(dups, collapse=", "))
+      }
     }
     ))
 

@@ -1,0 +1,17 @@
+sources:
+  - code-clash.R
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command: processed("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true
