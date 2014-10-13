@@ -6,6 +6,7 @@ maker <- R6Class(
   "maker",
   public=list(
     file=NULL,
+    hash=NULL,
     path=NULL,
     store=NULL,
     plot_options=NULL,
@@ -28,6 +29,7 @@ maker <- R6Class(
     reload=function() {
       self$store <- store$new(self$path)
       config <- read_maker_file(self$file)
+      self$hash <- config$hash
       self$plot_options <- config$plot_options
       self$targets <- NULL
       self$add_targets(config$targets)
@@ -123,6 +125,10 @@ maker <- R6Class(
     load_sources=function(show_message=TRUE) {
       force(show_message) # stupid delayed evaluation
       first <- is.null(self$store$env$env)
+      if (!identical(tools::md5sum(names(self$hash)), self$hash)) {
+        self$print_message("READ", "", "# reloading makerfile")
+        self$reload()
+      }
       reloaded <- self$store$env$reload()
       if (self$verbose && show_message && reloaded) {
         cmd <- sprintf("# %s sources",
@@ -411,6 +417,8 @@ read_maker_file <- function(filename, seen=character(0)) {
                  "plot_options",
                  "target_default", "targets"))
 
+  dat$hash <- tools::md5sum(filename)
+
   if (length(seen) > 0L) { # an included file
     dat$target_default <- NULL
   }
@@ -445,6 +453,9 @@ read_maker_file <- function(filename, seen=character(0)) {
       dat_sub <- read_maker_file(f, c(seen, filename))
       dat$packages <- unique(c(dat$packages, dat_sub$packages))
       dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
+      ## No unique here because it destroys names.  There should be no
+      ## repetition here though.
+      dat$hash     <-        c(dat$hash,     dat_sub$hash)
 
       dups <- intersect(names(dat_sub$plot_options), names(dat$plot_options))
       if (length(dups) > 0L) {
