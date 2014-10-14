@@ -7,6 +7,11 @@ if (interactive()) {
 context("Chained rules")
 
 if (FALSE) { # Disabled until rewritten
+test_that("command interface", {
+  cleanup()
+  m <- maker$new("chain_command.yml")
+})
+
 test_that("Chained rules", {
   cleanup()
   m <- maker$new("chain.yml")

@@ -41,6 +41,25 @@ parse_target_command <- function(target, command) {
   dat
 }
 
+parse_target_chain <- function(target, chain) {
+  chain <- lapply(chain, parse_target_command, target=target)
+
+  has_dot <- sapply(chain, function(x) "." %in% x$depends)
+
+  if ("." %in% has_dot[[1]]) {
+    stop("The first element in a chain cannot contain a dot ('.')")
+  }
+  if (any(!has_dot[-1])) {
+    stop("All chain elements except the first need a dot")
+  }
+  has_target_argument <- sapply(chain, function(x) !is.null(x$target_argument))
+  nok <- has_target_argument & seq_along(chain) < length(chain)
+  if (any(nok)) {
+    stop("Can only refer to target in the final element of a chain")
+  }
+  chain
+}
+
 parse_command <- function(str) {
   res <- check_command(str)
   rule <- check_command_rule(res[[1]])

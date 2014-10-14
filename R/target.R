@@ -42,7 +42,8 @@ make_target <- function(name, dat) {
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
   core <- c("command", "depends",
-            "rule", "target_argument", "quoted", "depends_is_fake")
+            "rule", "target_argument", "quoted", "depends_is_fake",
+            "chain")
 
   ## Quick check that may disappear later:
   invalid <- c("rule", "target_argument", "quoted", "depends_is_fake")
@@ -53,7 +54,12 @@ process_target_command <- function(name, dat) {
   if (is.null(dat$command)) {
     dat$depends_is_fake <- rep(TRUE, length(dat$depends))
   } else {
-    tmp <- parse_target_command(name, dat$command)
+    ## TODO: This switch is better in parse_target_comman
+    if (length(dat$command) == 1L) {
+      tmp <- parse_target_command(name, dat$command)
+    } else {
+      tmp <- parse_target_chain(name, dat$command)
+    }
 
     tmp$depends_is_fake <-
       rep(c(FALSE, TRUE), c(length(tmp$depends), length(dat$depends)))
@@ -63,6 +69,7 @@ process_target_command <- function(name, dat) {
     dat[intersect(names(tmp), core)] <- tmp
   }
   is_command <- names(dat) %in% c(core)
+
   list(command=dat[is_command], opts=dat[!is_command])
 }
 
