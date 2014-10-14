@@ -74,6 +74,8 @@ target_base <- R6Class(
 
     initialize=function(name, command, opts, type="base") {
       self$name <- name
+      private$command <- command
+
       ## TODO: move into private
       opts <- self$check_opts(opts)
 
@@ -156,8 +158,36 @@ target_base <- R6Class(
         implicit <- lapply(msg, target_file$new, NULL, NULL)
         maker$add_targets(implicit, activate=TRUE)
       }
+
       ## This preserves the original names:
       self$depends[] <- maker$get_targets(depends_name)
+
+      ## This whole section is a bit silly, but will save some
+      ## confusion down the track.  Basically; file targets must be
+      ## quoted, object targets must not be.  This lets us mimic R
+      ## calls.  It's not actually required by any of the parsing
+      ## machinery, but it means the files will be easier to
+      ## interpret.
+      if (!is.null(private$command$quoted)) {
+        assert_length(private$command$quoted, length(depends_name))
+        depends_type <- sapply(self$depends, function(x) x$type)
+        should_be_quoted <- depends_type == "file"
+        if (any(should_be_quoted != private$command$quoted)) {
+          err_quote <- depends_name[should_be_quoted  & !private$command$quoted]
+          err_plain <- depends_name[!should_be_quoted & private$command$quoted]
+          msg <- character(0)
+          if (length(err_quote) > 0) {
+            msg <- c(msg, paste("Should be quoted:",
+                                paste(err_quote, collapse=", ")))
+          }
+          if (length(err_plain) > 0) {
+            msg <- c(msg, paste("Should not be quoted:",
+                                paste(err_plain, collapse=", ")))
+          }
+          stop(sprintf("Incorrect quotation in target '%s':\n%s",
+                       self$name, paste(msg, collapse="\n")))
+        }
+      }
     },
 
     is_active=function() {
@@ -265,6 +295,7 @@ target_base <- R6Class(
     }
     ),
   private=list(
+    command=NULL
     ))
 
 target_file <- R6Class(

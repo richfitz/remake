@@ -23,7 +23,14 @@ parse_target_command <- function(target, command) {
       } else {
         dat$target_argument <- names(dat$depends)[[j]]
       }
+      if (dat$depends[[j]] == "target_name" && dat$quoted[[j]]) {
+        stop("target_name must not be quoted (it's like a variable)")
+      }
+      if (dat$depends[[j]] != "target_name" && !dat$quoted[[j]]) {
+        stop("target name must be quoted (it must be a file name)")
+      }
       dat$depends <- dat$depends[-j]
+      dat$quoted  <- dat$quoted[-j] # TODO: allows target name through
     } else if (sum(i) > 1L) {
       n <- colSums(i)
       n <- n[n > 0]

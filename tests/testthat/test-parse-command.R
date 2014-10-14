@@ -116,39 +116,39 @@ test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo()"),
               equals(list(rule="foo", depends=list(), quoted=logical(0))))
 
-  cmp_pos  <- list(rule="foo", depends=list(), quoted=FALSE, target_argument=1)
-  expect_that(parse_target_command("a", "foo(a)"), equals(cmp_pos))
+  cmp_pos  <- list(rule="foo", depends=list(), quoted=logical(0),
+                   target_argument=1)
+  expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
-  ## It's debatable that these are both reasonable.  I may tighten
-  ## that up.  Ideally it would be 'a' from here and the other two
-  ## from above.
-  cmp_pos  <- list(rule="foo", depends=list(), quoted=TRUE, target_argument=1)
-  expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
-  expect_that(parse_target_command("a", "foo('target_name')"),
-              equals(cmp_pos))
-
-  cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=FALSE,
+  cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=logical(0),
                    target_argument="arg")
-  expect_that(parse_target_command("a", "foo(arg=a)"), equals(cmp_name))
+  expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
 
-  cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=TRUE,
-                   target_argument="arg")
-  expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
+  ## These should error:
+  expect_that(parse_target_command("a", "foo(a)"),
+              throws_error("target name must be quoted"))
+  expect_that(parse_target_command("a", "foo('target_name')"),
+              throws_error("target_name must not be quoted"))
+  expect_that(parse_target_command("a", "foo(arg=a)"),
+              throws_error("target name must be quoted"))
   expect_that(parse_target_command("a", "foo(arg='target_name')"),
-              equals(cmp_name))
+              throws_error("target_name must not be quoted"))
 
-  expect_that(parse_target_command("a", "foo(a, b)")$target_argument,
-              equals(1))
-  expect_that(parse_target_command("a", "foo(b, a)")$target_argument,
-              equals(2))
-  expect_that(parse_target_command("a", "foo(arg=a, b)")$target_argument,
-              equals("arg"))
-  expect_that(parse_target_command("a", "foo(arg=a, b)")$target_argument,
-              equals("arg"))
+  f <- function(a, x) parse_target_command(a, x)$target_argument
+
+  expect_that(f("a", "foo('a', b)"),     equals(1))
+  expect_that(f("a", "foo(b, 'a')"),     equals(2))
+  expect_that(f("a", "foo(arg='a', b)"), equals("arg"))
+  expect_that(f("a", "foo(arg='a', b)"), equals("arg"))
+
+  expect_that(f("a", "foo(target_name, b)"),     equals(1))
+  expect_that(f("a", "foo(b, target_name)"),     equals(2))
+  expect_that(f("a", "foo(arg=target_name, b)"), equals("arg"))
+  expect_that(f("a", "foo(arg=target_name, b)"), equals("arg"))
 
   ## Errors:
   expect_that(parse_target_command("a", "foo(a, a)"),

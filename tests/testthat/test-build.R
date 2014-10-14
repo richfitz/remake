@@ -142,6 +142,7 @@ test_that("Positional target_argument", {
 })
 
 test_that("command interface", {
+  devtools::load_all("../../")
   cleanup()
   m <- maker$new("maker_command.yml")
   m$make()
