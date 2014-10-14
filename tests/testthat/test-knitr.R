@@ -17,7 +17,7 @@ test_that("Build works", {
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
-  expect_that(file.exists("figure/unnamed-chunk-2.png"),
+  expect_that(file.exists("figure/unnamed-chunk-2-1.png"),
               is_true())
   expect_that(knitr::opts_chunk$get("fig.path"),
               equals("figure/"))
@@ -59,7 +59,7 @@ test_that("knitr options", {
 
   ## This should dump out figures in a special place because the
   ## fig.path option was set:
-  expect_that(dir("figure"), equals("myprefix_unnamed-chunk-2.png"))
+  expect_that(dir("figure"), equals("myprefix_unnamed-chunk-2-1.png"))
 
   ## But leaves the gloal options unchanged:
   expect_that(knitr::opts_chunk$get("fig.path"), equals("figure/"))
@@ -74,7 +74,7 @@ test_that("auto_figure_prefix", {
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
-  expect_that(file.exists("figure/knitr__unnamed-chunk-2.png"),
+  expect_that(file.exists("figure/knitr__unnamed-chunk-2-1.png"),
               is_true())
   ## Knitr options reset:
   expect_that(knitr::opts_chunk$get("fig.path"),
