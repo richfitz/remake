@@ -8,10 +8,7 @@ packages:
 
 targets:
   processed:
-    depends: [filename: data.csv]
-    rule: process_data
+    command: process_data("data.csv")
 
   plot.pdf:
-    depends: processed
-    rule: do_plot
-    target_argument: filename
+    command: do_plot(processed, target_name)

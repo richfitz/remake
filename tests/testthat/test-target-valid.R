@@ -45,10 +45,10 @@ test_that("Can't do much with fake targets", {
 })
 
 test_that("Fake targets (invalid)", {
-  expect_that(make_target("fake", list(rule="foo"), type="fake"),
+  expect_that(make_target("fake", list(command="foo()"), type="fake"),
               throws_error("fake targets must have a NULL rule"))
   expect_that(make_target("fake", list(target_argument="foo"), type="fake"),
-              throws_error("'target_argument' field invalid for"))
+              throws_error("Invalid keys: target_argument"))
   expect_that(make_target("fake", list(quiet=TRUE), type="fake"),
               gives_warning("has no effect"))
   expect_that(make_target("fake", list(check="exists"), type="fake"),
@@ -77,7 +77,7 @@ test_that("Dependency parsing", {
 })
 
 test_that("Object target", {
-  t <- make_target("real", list(rule="foo"))
+  t <- make_target("real", list(command="foo()"))
 
   expect_that(t, is_a("target_object"))
   expect_that(t, is_a("target_base"))
@@ -92,23 +92,18 @@ test_that("Object target", {
 
   expect_that(t$run_fake(), equals("real <- foo()"))
 
-  ## Using the command interface
-  t <- make_target("real", list(command="foo()"))
-  expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(list()))
-
   ## Passing options:
-  t <- make_target("real", list(rule="foo", quiet=TRUE))
+  t <- make_target("real", list(command="foo()", quiet=TRUE))
   expect_that(t$quiet, equals(TRUE))
 
-  t <- make_target("real", list(rule="foo", check="code"))
+  t <- make_target("real", list(command="foo()", check="code"))
   expect_that(t$check, equals("code"))
 
-  t <- make_target("real", list(rule="foo", cleanup_level="purge"))
+  t <- make_target("real", list(command="foo()", cleanup_level="purge"))
   expect_that(t$cleanup_level, equals("purge"))
 
   ## With dependencies:
-  t <- make_target("real", list(rule="foo", depends=list("a")))
+  t <- make_target("real", list(command="foo()", depends=list("a")))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals("a"))
 
@@ -127,26 +122,29 @@ test_that("Object target (invalid)", {
   expect_that(make_target("real", list(), type="object"),
               throws_error("Must not have a NULL rule"))
 
-  expect_that(make_target("real", list(rule="foo", target_argument=1)),
-              throws_error("'target_argument' field invalid"))
+  expect_that(make_target("real", list(command="foo()", target_argument=1)),
+              throws_error("Invalid keys: target_argument"))
+  expect_that(make_target("real", list(rule="foo")),
+              throws_error("Invalid keys: rule"))
 
-  expect_that(make_target("real", list(rule=c("foo", "bar"))),
-              throws_error("real: rule must be a scalar"))
+  expect_that(make_target("real", list(command=c("foo()", "bar()"))),
+              throws_error("str must be a scalar"))
 
-  expect_that(make_target("real", list(rule="foo", quiet="quiet")),
+  expect_that(make_target("real", list(command="foo()", quiet="quiet")),
               throws_error("real: quiet must be logical"))
-  expect_that(make_target("real", list(rule="foo", quiet=c(TRUE, TRUE))),
+  expect_that(make_target("real", list(command="foo()", quiet=c(TRUE, TRUE))),
               throws_error("real: quiet must be a scalar"))
 
-  expect_that(make_target("real", list(rule="foo", cleanup_level="purge2")),
+  expect_that(make_target("real", list(command="foo()",
+                                       cleanup_level="purge2")),
               throws_error("real: cleanup_level must be one"))
 
-  expect_that(make_target("real", list(rule="foo", other_opt="tidy")),
+  expect_that(make_target("real", list(command="foo()", other_opt="tidy")),
               throws_error("Invalid options for real: other_opt"))
 })
 
 test_that("File targets", {
-  t <- make_target("foo.csv", list(rule="foo"))
+  t <- make_target("foo.csv", list(command="foo()"))
   expect_that(t$type, equals("file"))
   expect_that(t, is_a("target_file"))
   expect_that(t, is_a("target_base"))
@@ -155,32 +153,28 @@ test_that("File targets", {
   expect_that(t$target_argument, is_null())
   expect_that(t$run_fake(), equals("foo()"))
 
-  deps <- from_yaml_map_list(yaml_load("[a, b, c]"))
-  t <- make_target("foo.csv", list(rule="foo", depends=deps))
+  t <- make_target("foo.csv", list(command="foo(a, b, c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("a", "b", "c")))
   expect_that(t$target_argument, is_null())
 
-  deps <- from_yaml_map_list(yaml_load("[a, b, C: c]"))
-  t <- make_target("foo.csv", list(rule="foo", depends=deps))
+  t <- make_target("foo.csv", list(command="foo(a, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("a", "b", C="c")))
   expect_that(t$target_argument, is_null())
 
-  t <- make_target("foo.csv", list(rule="foo", depends=deps,
-                                   target_argument=1))
+  t <- make_target("foo.csv", list(command="foo(target_name, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("a", "b", C="c")))
+  expect_that(t$depends, equals(c("b", C="c")))
   expect_that(t$target_argument, equals(1))
 
-  t <- make_target("foo.csv", list(rule="foo", depends=deps,
-                                   target_argument="name"))
+  t <- make_target("foo.csv", list(command="foo(name='foo.csv', b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("a", "b", C="c")))
+  expect_that(t$depends, equals(c("b", C="c")))
   expect_that(t$target_argument, equals("name"))
 })
 
@@ -239,7 +233,7 @@ test_that("knitr (invalid)", {
   expect_that(make_target("file.xmd", list(knitr=TRUE)),
               throws_error("Target must end in .md"))
 
-  expect_that(make_target("file.md", list(rule="fn"), "knitr"),
+  expect_that(make_target("file.md", list(command="fn()"), "knitr"),
               throws_error("knitr targets must have a NULL rule"))
 
   expect_that(make_target("file.md", list(quiet="yes please"), "knitr")$quiet,

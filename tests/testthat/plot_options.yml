@@ -13,38 +13,29 @@ plot_options:
 
 targets:
   all:
-    depends: [plot.pdf, plot2.pdf, plot3.pdf, plot4.pdf]
+    depends: [plot1.pdf, plot2.pdf, plot3.pdf, plot4.pdf]
 
   data.csv:
-    rule: download_data
-    target_argument: dest
+    command: download_data(target_name)
     cleanup_level: purge
 
   processed:
-    depends: data.csv
-    rule: process_data
+    command: process_data("data.csv")
 
-  plot.pdf:
-    depends: processed
-    rule: myplot
+  plot1.pdf:
+    command: myplot(processed)
     plot:
       width: 8
       height: 4
 
   plot2.pdf:
-    depends: processed
-    rule: myplot
+    command: myplot(processed)
     plot: mystyle
 
   plot3.pdf:
-    depends: processed
-    rule: myplot
+    command: myplot(processed)
     plot: ~
 
   plot4.pdf:
-    depends: processed
-    rule: myplot
+    command: myplot(processed)
     plot: true
-
-  clean:
-    rule: clean_hook

@@ -1,9 +1,8 @@
 ## There will be *two* possible way of getting
-## target_argument_name in:
-##  - use the target name, possibly with quotes (test that!)
+## target_argument in:
+##  - use the target name, *in quotes*
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
-## (currently quoting or not is not checked)
 parse_target_command <- function(target, command) {
   dat <- parse_command(command)
   if (length(dat$depends) > 0L) {
@@ -17,7 +16,7 @@ parse_target_command <- function(target, command) {
     }
 
     if (sum(i) == 1L) {
-      j <- which(rowSums(i) == 1L)
+      j <- unname(which(rowSums(i) == 1L))
       if (is.null(names(dat$depends)) || names(dat$depends)[[j]] == "") {
         dat$target_argument <- j
       } else {
@@ -55,6 +54,7 @@ parse_command <- function(str) {
 }
 
 check_command <- function(str) {
+  assert_scalar_character(str)
   res <- parse(text=as.character(str))
   if (length(res) != 1L) {
     stop("Expected single expression")

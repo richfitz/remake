@@ -24,7 +24,7 @@ test_that("Build works", {
 
 test_that("Build works with plotting target", {
   cleanup()
-  m <- maker$new("maker3.yml")
+  m <- maker$new("plot_simple.yml")
   src <- m$script()
   expect_that(src, is_a("maker_script"))
   expect_that(unclass(src), is_a("character"))

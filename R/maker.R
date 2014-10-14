@@ -342,16 +342,16 @@ maker <- R6Class(
         target_name <- levels[[i]]
         if (target_name %in% self$target_names()) {
           depends <- self$get_target(target_name)$depends
-          rule    <- self$get_target(target_name)$rule
+          command <- self$get_target(target_name)$command
         } else {
-          depends <- rule <- NULL
+          depends <- command <- NULL
         }
         if (i > 1L) {
           depends <- c(depends, list(levels[[i - 1L]]))
         }
-        ## TODO: new function 'make_target_cleanup'
+        ## TODO: new function 'make_target_cleanup'?
         targets[[i]] <- make_target(target_name,
-                                    list(rule=rule, depends=depends),
+                                    list(command=command, depends=depends),
                                     "cleanup")
       }
       self$add_targets(targets, force=TRUE)

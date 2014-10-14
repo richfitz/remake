@@ -5,6 +5,5 @@ target_default: data.csv
 
 targets:
   data.csv:
-    rule: download_data
-    target_argument: dest
+    command: download_data(target_name)
     cleanup_level: purge

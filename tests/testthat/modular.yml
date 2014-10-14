@@ -1,9 +1,6 @@
 sources:
   - code.R
 
-packages:
-  - testthat
-
 include:
   - modular_module.yml
 
@@ -12,12 +9,8 @@ targets:
     depends: plot.pdf
 
   processed:
-    depends: data.csv
-    rule: process_data
+    command: process_data("data.csv")
 
   plot.pdf:
-    depends: processed
-    rule: myplot
-    plot:
-      width: 8
-      height: 4
+    command: myplot(processed)
+    plot: true

@@ -3,34 +3,34 @@ sources:
 
 targets:
   noisy_message:
-    rule: run_noisy_message
+    command: run_noisy_message()
   noisy_cat:
-    rule: run_noisy_cat
+    command: run_noisy_cat()
   noisy_warning:
-    rule: run_noisy_warning
+    command: run_noisy_warning()
   noisy_error:
-    rule: run_noisy_error
+    command: run_noisy_error()
 
   quiet_message:
-    rule: run_noisy_message
+    command: run_noisy_message()
     quiet: true
   quiet_cat:
-    rule: run_noisy_cat
+    command: run_noisy_cat()
     quiet: true
   quiet_warning:
-    rule: run_noisy_warning
+    command: run_noisy_warning()
     quiet: true
   quiet_error:
-    rule: run_noisy_error
+    command: run_noisy_error()
     quiet: true
 
   # noisy_chain:
-  #   chain:
-  #     - rule: run_noisy_message
-  #     - rule: run_noisy_message2
+  #   command:
+  #     - run_noisy_message()
+  #     - run_noisy_message2()
 
   # quiet_chain:
-  #   chain:
-  #     - rule: run_noisy_message
-  #     - rule: run_noisy_message2
+  #   command:
+  #     - run_noisy_message()
+  #     - run_noisy_message2()
   #   quiet: true

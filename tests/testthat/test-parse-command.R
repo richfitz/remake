@@ -8,9 +8,11 @@ context("Parse commands")
 
 test_that("Corner cases", {
   expect_that(parse_command(character(0)),
-              throws_error("Expected single expression"))
+              throws_error("str must be a scalar"))
   expect_that(parse_command(NULL),
-              throws_error("Expected single expression"))
+              throws_error("str must be a scalar"))
+  expect_that(parse_command(c("foo(1)", "foo(2)")),
+              throws_error("str must be a scalar"))
   expect_that(parse_command("foo(1); foo(2)"),
               throws_error("Expected single expression"))
   expect_that(parse_command("foo"),

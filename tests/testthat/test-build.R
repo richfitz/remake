@@ -11,7 +11,6 @@ test_that("Build works", {
   m <- maker$new("maker.yml")
 
   m$make("plot.pdf", dry_run=TRUE)
-
   m$make("plot.pdf", dry_run=FALSE)
   m$make("plot.pdf", dry_run=FALSE)
   expect_that(file.exists("plot.pdf"), is_true())
@@ -125,28 +124,12 @@ test_that("Error in yaml", {
   cleanup()
   expect_that(m <- maker$new("nonexistant.yml"),
               throws_error("'nonexistant.yml' does not exist"))
-  writeLines(sub("rule: do_plot", " rule: do_plot", readLines("maker.yml")),
+  writeLines(sub("command: download_data", " command: download_data",
+                 readLines("maker.yml")),
              "maker_error.yml")
 
   expect_that(maker$new("maker_error.yml"),
               throws_error("while reading 'maker_error.yml'"))
-  cleanup()
-})
-
-test_that("Positional target_argument", {
-  cleanup()
-  m <- maker$new("maker_pos.yml")
-  m$make()
-  expect_that(file.exists("plot.pdf"), is_true())
-  cleanup()
-})
-
-test_that("command interface", {
-  devtools::load_all("../../")
-  cleanup()
-  m <- maker$new("maker_command.yml")
-  m$make()
-  expect_that(file.exists("plot.pdf"), is_true())
   cleanup()
 })
 

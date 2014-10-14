@@ -18,7 +18,7 @@ context("Archive")
 ## this the exact same way as expire.
 test_that("Build archive", {
   cleanup()
-  m <- maker$new("maker_command.yml")
+  m <- maker$new("maker.yml")
 
   expect_that(m$archive_export("plot.pdf"),
               throws_error("file data.csv not found in file store"))
@@ -44,7 +44,7 @@ test_that("Inspect archive", {
   expect_that(is_maker_archive("maker.zip"),
               throws_error("The file 'maker.zip' does not exist"))
 
-  m <- maker$new("maker_command.yml")
+  m <- maker$new("maker.yml")
   m$make()
   dest <- m$archive_export("plot.pdf")
 
@@ -80,7 +80,7 @@ test_that("Inspect archive", {
 
 test_that("Import archive", {
   cleanup()
-  m <- maker$new("maker_command.yml")
+  m <- maker$new("maker.yml")
   m$make()
   dest <- m$archive_export("plot.pdf")
   m$make("purge")

@@ -8,7 +8,7 @@ context("Plot")
 
 test_that("Build works", {
   cleanup()
-  m <- maker$new("maker3.yml")
+  m <- maker$new("plot_simple.yml")
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   ## TODO: ideally check that it is the expected size
@@ -19,7 +19,7 @@ test_that("Plot options", {
   cleanup()
   m <- maker$new("plot_options.yml")
 
-  t1 <- m$get_target("plot.pdf")
+  t1 <- m$get_target("plot1.pdf")
   t2 <- m$get_target("plot2.pdf")
   t3 <- m$get_target("plot3.pdf")
   t4 <- m$get_target("plot4.pdf")
@@ -35,5 +35,11 @@ test_that("Plot options", {
   expect_that(t4$plot$args, equals(list()))
 
   m$make()
+
+  expect_that(file.exists("plot1.pdf"), is_true())
+  expect_that(file.exists("plot2.pdf"), is_true())
+  expect_that(file.exists("plot3.pdf"), is_true())
+  expect_that(file.exists("plot4.pdf"), is_true())
+
   cleanup()
 })

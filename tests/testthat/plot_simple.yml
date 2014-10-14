@@ -1,15 +1,7 @@
-# This version exercises the 'command' interface that will probably
-# become the standard.
+# example configuration script for maker; using this to test out some
+# ideas.
 sources:
   - code.R
-
-packages:
-  - testthat
-
-plot_options:
-  default:
-    width: 8
-    height: 4
 
 targets:
   all:
@@ -24,4 +16,6 @@ targets:
 
   plot.pdf:
     command: myplot(processed)
-    plot: default
+    plot:
+      width: 8
+      height: 4

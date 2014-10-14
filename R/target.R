@@ -35,28 +35,28 @@ make_target <- function(name, dat, type=NULL) {
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("rule", "depends", "target_argument", "quoted")
-  if ("command" %in% names(dat)) {
-    ## TODO: indicate on output that this was generated with command
-    ## TODO: track entries that were given with/without quotes
-    err <- intersect(core, names(dat))
-    if (length(err)) {
-      stop(sprintf("When using 'command', cannot specify %s (target: %s)",
-                   paste(err, collapse=" or "), name))
-    }
-    tmp <- parse_target_command(name, dat$command)
-    dat[intersect(names(tmp), core)] <- tmp
-  } else {
-    ## TODO: this needs a test if it is to stay.
-    ## TODO: this should also apply in the with-command case?
-    if (!is.null(dat$target_argument) &&
-        is.character(dat$target_argument) &&
-        dat$target_argument %in% names(dat$depends)) {
-      stop("target_argument clashes with named dependency")
-    }
-  }
+  core <- c("command", "depends",
+            "rule", "target_argument", "quoted", "depends_is_fake")
 
-  is_command <- names(dat) %in% c(core, "command")
+  ## Quick check that may disappear later:
+  invalid <- c("rule", "target_argument", "quoted", "depends_is_fake")
+  if (any(invalid %in% names(dat))) {
+    stop("Invalid keys: ",
+         paste(intersect(invalid, names(dat)), collapse=", "))
+  }
+  if (is.null(dat$command)) {
+    dat$depends_is_fake <- rep(TRUE, length(dat$depends))
+  } else {
+    tmp <- parse_target_command(name, dat$command)
+
+    tmp$depends_is_fake <-
+      rep(c(FALSE, TRUE), c(length(tmp$depends), length(dat$depends)))
+    if ("depends" %in% names(dat)) {
+      tmp$depends <- c(tmp$depends, dat$depends)
+    }
+    dat[intersect(names(tmp), core)] <- tmp
+  }
+  is_command <- names(dat) %in% c(core)
   list(command=dat[is_command], opts=dat[!is_command])
 }
 
@@ -64,7 +64,10 @@ target_base <- R6Class(
   "target_base",
   public=list(
     name=NULL,
+    command=NULL,
     depends=NULL,
+    ## Will change name soon:
+    depends_is_fake=NULL,
     rule=NULL,
     type=NULL,
     cleanup_level="never",
@@ -74,9 +77,13 @@ target_base <- R6Class(
 
     initialize=function(name, command, opts, type="base") {
       self$name <- name
-      private$command <- command
+      ## TODO: This is a mess!  What we really have with the incoming
+      ## 'command' is a processed set of commands.  We don't actually
+      ## store this, but all the bits are scattered around.  'quoted'
+      ## is used only during validation.
+      self$command <- command$command
+      private$quoted <- command$quoted
 
-      ## TODO: move into private
       opts <- self$check_opts(opts)
 
       if (!is.null(command$rule)) {
@@ -87,6 +94,7 @@ target_base <- R6Class(
 
       self$depends <- from_yaml_map_list(command$depends)
       sapply(self$depends, assert_scalar_character)
+      self$depends_is_fake <- command$depends_is_fake
 
       if ("target_argument" %in% names(command) && type != "file") {
         stop("'target_argument' field invalid for arguments of type ", type)
@@ -161,33 +169,7 @@ target_base <- R6Class(
 
       ## This preserves the original names:
       self$depends[] <- maker$get_targets(depends_name)
-
-      ## This whole section is a bit silly, but will save some
-      ## confusion down the track.  Basically; file targets must be
-      ## quoted, object targets must not be.  This lets us mimic R
-      ## calls.  It's not actually required by any of the parsing
-      ## machinery, but it means the files will be easier to
-      ## interpret.
-      if (!is.null(private$command$quoted)) {
-        assert_length(private$command$quoted, length(depends_name))
-        depends_type <- sapply(self$depends, function(x) x$type)
-        should_be_quoted <- depends_type == "file"
-        if (any(should_be_quoted != private$command$quoted)) {
-          err_quote <- depends_name[should_be_quoted  & !private$command$quoted]
-          err_plain <- depends_name[!should_be_quoted & private$command$quoted]
-          msg <- character(0)
-          if (length(err_quote) > 0) {
-            msg <- c(msg, paste("Should be quoted:",
-                                paste(err_quote, collapse=", ")))
-          }
-          if (length(err_plain) > 0) {
-            msg <- c(msg, paste("Should not be quoted:",
-                                paste(err_plain, collapse=", ")))
-          }
-          stop(sprintf("Incorrect quotation in target '%s':\n%s",
-                       self$name, paste(msg, collapse="\n")))
-        }
-      }
+      private$check_quoted()
     },
 
     is_active=function() {
@@ -226,7 +208,8 @@ target_base <- R6Class(
     ## Bad name, but the idea is simple: We want to return a list with
     ## only dependencies that are interesting (i.e, file/plot/object
     dependencies_real=function() {
-      filter_targets_by_type(self$depends, c("file", "plot", "object"))
+      filter_targets_by_type(self$depends[!self$depends_is_fake],
+                             c("file", "plot", "object"))
     },
 
     dependency_status=function(missing_ok=FALSE) {
@@ -295,8 +278,42 @@ target_base <- R6Class(
     }
     ),
   private=list(
-    command=NULL
+    quoted=NULL,
+
+    ## This whole section is a bit silly, but will save some
+    ## confusion down the track.  Basically; file targets must be
+    ## quoted, object targets must not be.  This lets us mimic R
+    ## calls.  It's not actually required by any of the parsing
+    ## machinery, but it means the files will be easier to
+    ## interpret.
+
+    check_quoted=function() {
+      quoted <- private$quoted
+      if (!is.null(quoted)) {
+        i <- !self$depends_is_fake
+        depends_name <- sapply(self$depends[i], function(x) x$name)
+        depends_type <- sapply(self$depends[i], function(x) x$type)
+        assert_length(quoted, length(depends_name))
+        should_be_quoted <- depends_type == "file"
+        if (any(should_be_quoted != quoted)) {
+          err_quote <- depends_name[should_be_quoted  & !quoted]
+          err_plain <- depends_name[!should_be_quoted &  quoted]
+          msg <- character(0)
+          if (length(err_quote) > 0) {
+            msg <- c(msg, paste("Should be quoted:",
+                                paste(err_quote, collapse=", ")))
+          }
+          if (length(err_plain) > 0) {
+            msg <- c(msg, paste("Should not be quoted:",
+                                paste(err_plain, collapse=", ")))
+          }
+          stop(sprintf("Incorrect quotation in target '%s':\n%s",
+                       self$name, paste(msg, collapse="\n")))
+        }
+      }
+    }
     ))
+
 
 target_file <- R6Class(
   "target_file",
@@ -700,6 +717,7 @@ target_knitr <- R6Class(
 
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))
+      command$depends_is_fake <- c(command$depends_is_fake, TRUE)
 
       ## Hack to let target_base know we're not implicit.  There does
       ## need to be something here as a few places test for null-ness.

@@ -11,16 +11,13 @@ targets:
     depends: plot.pdf
 
   data.csv:
-    rule: download_data
-    target_argument: dest
+    command: download_data(target_name)
     cleanup_level: purge
     check: exists
 
   processed:
-    depends: data.csv
-    rule: process_data
+    command: process_data("data.csv")
 
   plot.pdf:
-    depends: processed
-    rule: do_plot
-    target_argument: filename
+    command: myplot(processed)
+    plot: true

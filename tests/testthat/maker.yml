@@ -1,28 +1,29 @@
-# example configuration script for maker; using this to test out some
-# ideas.
+# This version exercises the 'command' interface that will probably
+# become the standard.
 sources:
   - code.R
 
 packages:
   - testthat
 
+plot_options:
+  default:
+    width: 8
+    height: 4
+
 targets:
   all:
     depends: plot.pdf
 
   data.csv:
-    rule: download_data
-    target_argument: dest
+    command: download_data(target_name)
     cleanup_level: purge
 
   processed:
-    depends: data.csv
-    rule: process_data
+    command: process_data("data.csv")
 
   plot.pdf:
-    depends: processed
-    rule: do_plot
-    target_argument: filename
+    command: do_plot(processed, target_name)
 
   clean:
-    rule: clean_hook
+    command: clean_hook()

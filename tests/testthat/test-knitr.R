@@ -19,7 +19,6 @@ test_that("Build works", {
   expect_that(is_directory("figure"), is_true())
   expect_that(file.exists("figure/unnamed-chunk-2.png"),
               is_true())
-  ## Knitr options reset:
   expect_that(knitr::opts_chunk$get("fig.path"),
               equals("figure/"))
   cleanup()
