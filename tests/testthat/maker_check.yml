@@ -17,6 +17,7 @@ targets:
 
   processed:
     command: process_data("data.csv")
+    check: code
 
   plot.pdf:
     command: myplot(processed)

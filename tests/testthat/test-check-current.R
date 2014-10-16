@@ -18,6 +18,15 @@ context("Check currentness")
 test_that("Types of levels", {
   expect_that(check_levels(),
               equals(c("all", "code", "depends", "exists")))
+  expect_that(check_code("all"),     is_true())
+  expect_that(check_code("code"),    is_true())
+  expect_that(check_code("depends"), is_false())
+  expect_that(check_code("exists"),  is_false())
+
+  expect_that(check_depends("all"),     is_true())
+  expect_that(check_depends("code"),    is_false())
+  expect_that(check_depends("depends"), is_true())
+  expect_that(check_depends("exists"),  is_false())
 })
 
 test_that("Manual", {
@@ -93,8 +102,8 @@ test_that("In target", {
   file_remove("data.csv")
   m$make("data.csv")
   expect_that(file.exists("data.csv"), is_true())
-  expect_that(t$is_current(),      is_true())
-  expect_that(t$is_current("all"), is_true())
+  expect_that(t$is_current(),          is_true())
+  expect_that(t$is_current("all"),     is_true())
 
   m$store$db$del("data.csv")
   expect_that(t$is_current(),      is_true())
@@ -107,6 +116,24 @@ test_that("In target", {
   expect_that(m$store$db$contains("data.csv"), is_false())
 
   cleanup()
+})
+
+test_that("dependency_status", {
+  cleanup()
+  m <- maker$new("maker_check.yml")
+  m$load_sources(FALSE)
+
+  t <- m$get_target("data.csv")
+  expect_that(t$check, equals("exists"))
+  expect_that(t$is_current(), is_false())
+
+  status <- m$dependency_status("processed")
+  expect_that(status$depends, equals(NULL))
+  expect_that(status$code, not(equals(NULL)))
+
+  status <- m$dependency_status("data.csv")
+  expect_that(status$depends, equals(NULL))
+  expect_that(status$code, equals(NULL))
 })
 
 test_that("In maker", {

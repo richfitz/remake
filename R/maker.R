@@ -309,8 +309,8 @@ maker <- R6Class(
     is_current=function(target_name, check=NULL) {
       self$get_target(target_name)$is_current(check)
     },
-    dependency_status=function(target_name, missing_ok=FALSE) {
-      self$get_target(target_name)$dependency_status(missing_ok)
+    dependency_status=function(target_name, missing_ok=FALSE, check=NULL) {
+      self$get_target(target_name)$dependency_status(missing_ok, check)
     },
     build=function(target_name, quiet_target=self$quiet_target) {
       self$get_target(target_name)$build(quiet=quiet_target)

@@ -194,7 +194,7 @@ target_base <- R6Class(
     },
 
     is_current=function(check=NULL) {
-      is_current(self, self$store, with_default(check, self$check))
+      is_current(self, self$store, check)
     },
 
     status_string=function(current=NULL) {
@@ -212,14 +212,24 @@ target_base <- R6Class(
                              c("file", "plot", "object"))
     },
 
-    dependency_status=function(missing_ok=FALSE) {
-      depends <- self$dependencies_real()
-      names(depends) <- sapply(depends, function(x) x$name)
-      depends <- lapply(depends, function(x) x$get_hash(missing_ok))
+    dependency_status=function(missing_ok=FALSE, check=NULL) {
+      check <- with_default(check, self$check)
+      depends <- code <- NULL
+
+      if (check_depends(check)) {
+        depends <- self$dependencies_real()
+        names(depends) <- sapply(depends, function(x) x$name)
+        depends <- lapply(depends, function(x) x$get_hash(missing_ok))
+      }
+
+      if (check_code(check)) {
+        code <- self$store$env$deps$info(self$rule)
+      }
+
       list(version=self$store$version,
            name=self$name,
            depends=depends,
-           code=self$store$env$deps$info(self$rule))
+           code=code)
     },
 
     get_hash=function(missing_ok=FALSE) {
@@ -356,7 +366,7 @@ target_file <- R6Class(
 
     ## NOTE: this ignores the value.
     set=function(value) {
-      self$store$db$set(self$name, self$dependency_status())
+      self$store$db$set(self$name, self$dependency_status(check="all"))
     },
 
     del=function(missing_ok=FALSE) {
@@ -475,9 +485,13 @@ target_object <- R6Class(
       }
     },
 
+    ## NOTE: When creating the entry in the database, we add *all* of
+    ## the dependency information, even if this target won't use it
+    ## all.  This is possibly slower than ideal, especially for things
+    ## that depend on very large files.
     set=function(value) {
       self$store$objects$set(self$name, value)
-      self$store$db$set(self$name, self$dependency_status())
+      self$store$db$set(self$name, self$dependency_status(check="all"))
     },
 
     del=function(missing_ok=FALSE) {
@@ -794,7 +808,8 @@ target_is_file <- function(x) {
 ## If the hashes of all inputs are unchanged from last time, it is clean
 ##
 ## Otherwise unclean
-is_current <- function(target, store, check="all") {
+is_current <- function(target, store, check=NULL) {
+  check <- with_default(check, target$check)
   check <- match_value(check, check_levels())
 
   if (target$type %in% c("cleanup", "fake", "utility")) {
@@ -822,7 +837,7 @@ is_current <- function(target, store, check="all") {
     ## code).
     return(compare_dependency_status(
       store$db$get(target$name),
-      target$dependency_status(missing_ok=TRUE),
+      target$dependency_status(missing_ok=TRUE, check=check),
       check))
   }
 }
@@ -839,13 +854,14 @@ compare_dependency_status <- function(prev, curr, check) {
   ##                     prev$name, prev$version))
   ##     return(FALSE)
   ##   }
+  ## TODO: This check is not actually needed here.
   check <- match_value(check, check_levels())
   ok <- TRUE
 
-  if (check == "all" || check == "depends") {
+  if (check_depends(check)) {
     ok <- ok && identical_map(prev$depends, curr$depends)
   }
-  if (check == "all" || check == "code") {
+  if (check_code(check)) {
     ok <- ok && identical_map(prev$code, curr$code)
   }
 
@@ -890,4 +906,11 @@ chained_rule_name <- function(name, i) {
 
 check_levels <- function() {
   c("all", "code", "depends", "exists")
+}
+
+check_code <- function(x) {
+  x %in% c("all", "code")
+}
+check_depends <- function(x) {
+  x %in% c("all", "depends")
 }
