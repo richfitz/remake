@@ -1,13 +1,16 @@
 maker_environment_info <- function(e) {
   t <- attr(e, "target")
-  message("Maker environment for building ", t$name)
-  message("    rule: ", t$rule)
-  message("    command: ", t$run_fake())
+  if (is.null(t)) {
+    message("Maker environment")
+  } else {
+    message("Maker environment for building ", t$name)
+    message("    rule: ", t$rule)
+    message("    command: ", t$run_fake())
+  }
   message("    objects:")
   message(paste(strwrap(paste(ls(e), collapse=", "),
                         indent=8, exdent=8), collapse="\n"))
 }
-
 
 ##' These functions may be useful in debugging workflows.  A
 ##' \code{maker_environment} object is created by running
@@ -42,7 +45,8 @@ maker_environment_attach <- function(e, verbose=TRUE) {
     maker_environment_info(e)
   }
   maker_environment_detach(warn=FALSE, verbose=verbose)
-  name <- paste0("maker:", attr(e, "target")$name)
+  t <- attr(e, "target")
+  name <- paste0("maker:", if (is.null(t)) "<objects>" else t$name)
   attach(parent.env(e), name="maker:functions")
   attach(e, name=name)
   if (verbose) {
@@ -85,4 +89,12 @@ browse_env <- function(e, ...) {
 ##' @export
 print.maker_environment <- function(x, ...) {
   maker_environment_info(x)
+}
+
+maker_environment <- function(names, m, target=NULL) {
+  e <- new.env(parent=m$store$env$env)
+  m$export(names, e)
+  attr(e, "target") <- target
+  class(e) <- "maker_environment"
+  e
 }

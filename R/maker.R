@@ -62,15 +62,10 @@ maker <- R6Class(
       }
       self$print_message("DEPS", t$name, style="angle")
       self$make1(target_name, ..., dependencies_only=TRUE)
-      e <- new.env(parent=self$store$env$env)
-
       deps <- filter_targets_by_type(t$depends, "object")
-      if (length(deps) > 0L) {
-        self$export(sapply(deps, function(x) x$name), e)
-      }
-      class(e) <- "maker_environment"
-      attr(e, "target") <- t
-      invisible(e)
+      deps_name <- sapply(deps, function(x) x$name)
+
+      invisible(maker_environment(deps_name, self, t))
     },
 
     ## TODO: Not sure if verbose should also be an option here?
