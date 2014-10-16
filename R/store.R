@@ -91,8 +91,17 @@ object_store <- R6Class(
       if (is.null(list)) {
         list <- self$ls()
       }
-      for (i in list) {
-        assign(i, self$get(i), envir=envir)
+      assert_character(list)
+
+      if (is.null(names(list))) {
+        names_out <- list
+      } else {
+        names_out <- names(list)
+        names_out[names_out == ""] <- list[names_out == ""]
+      }
+
+      for (i in seq_along(list)) {
+        assign(names_out[i], self$get(list[i]), envir=envir)
       }
     },
 

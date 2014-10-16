@@ -44,9 +44,32 @@ test_that("data store", {
   st2$export(character(0), e)
   expect_that(ls(e), equals(character(0)))
 
+  ## Can export everything
+  st$set("bar", runif(10))
+  expect_that(st$ls(), equals(c("bar", "foo")))
+  e <- new.env(parent=emptyenv())
+  st$export(envir=e)
+  expect_that(ls(e), equals(c("bar", "foo")))
+
+  ## Can rename things on export:
+  e <- new.env(parent=emptyenv())
+  st$export(c(Bar="bar", Foo="foo"), e)
+  expect_that(ls(e), equals(c("Bar", "Foo")))
+  expect_that(e$Bar, is_identical_to(st$get("bar")))
+  expect_that(e$Foo, is_identical_to(st$get("foo")))
+
+  ## Pathalogical rename:
+  e <- new.env(parent=emptyenv())
+  st$export(c(foo="bar", bar="foo"), e)
+  expect_that(ls(e), equals(c("bar", "foo")))
+  expect_that(e$foo, is_identical_to(st$get("bar")))
+  expect_that(e$bar, is_identical_to(st$get("foo")))
+
   st$del("foo")
   expect_that(st$contains("foo"), is_false())
   expect_that(st2$contains("foo"), is_false())
+
+  expect_that(st$ls(), equals("bar"))
 
   unlink(path, recursive=TRUE)
 })
