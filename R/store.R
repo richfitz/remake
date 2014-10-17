@@ -31,9 +31,13 @@ object_store <- R6Class(
     },
 
     set=function(key, value) {
-      hash <- digest::digest(value)
+      hash <- self$hash(value)
       saveRDS(value, self$fullname(key))
       writeLines(hash, self$hashname(key))
+    },
+
+    hash=function(value) {
+      hash_object(value)
     },
 
     del=function(key, missing_ok=FALSE) {
@@ -179,7 +183,7 @@ file_store <- R6Class(
     get_hash=function(filename, missing_ok=FALSE) {
       exists <- self$contains(filename)
       if (exists) {
-        unname(tools::md5sum(self$fullname(filename)))
+        hash_files(filename, named=FALSE)
       } else if (missing_ok) {
         NA_character_
       } else {
@@ -399,7 +403,7 @@ list_store <- R6Class(
       if (check_bounds) {
         self$check_bounds(i)
       }
-      hash <- digest::digest(value)
+      hash <- self$hash(value)
       saveRDS(value, self$fullname(i))
       writeLines(hash, self$hashname(i))
     },
@@ -414,6 +418,10 @@ list_store <- R6Class(
         self$set(i, value[[i]], check_bounds=FALSE)
       }
       saveRDS(attributes(value), self$attrname())
+    },
+
+    hash=function(value) {
+      hash_object(value)
     },
 
     del=function(i, missing_ok=FALSE, check_bounds=TRUE) {

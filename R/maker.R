@@ -121,7 +121,7 @@ maker <- R6Class(
     load_sources=function(show_message=TRUE) {
       force(show_message) # stupid delayed evaluation
       first <- is.null(self$store$env$env)
-      if (!identical(tools::md5sum(names(self$hash)), self$hash)) {
+      if (!identical(hash_files(names(self$hash)), self$hash)) {
         self$print_message("READ", "", "# reloading makerfile")
         self$reload()
       }
@@ -424,7 +424,7 @@ read_maker_file <- function(filename, seen=character(0)) {
                  "plot_options",
                  "target_default", "targets"))
 
-  dat$hash <- tools::md5sum(filename)
+  dat$hash <- hash_files(filename, named=TRUE)
 
   if (length(seen) > 0L) { # an included file
     dat$target_default <- NULL

@@ -21,7 +21,7 @@ managed_environment <- R6Class(
 
     reload=function(force=FALSE) {
       source_files <- self$find_files()
-      source_files_hash <- tools::md5sum(source_files)
+      source_files_hash <- hash_files(source_files)
       reload <- (force
                  || is.null(self$env)
                  || !identical_map(source_files_hash, self$source_files_hash))
