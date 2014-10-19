@@ -26,29 +26,47 @@ object_store <- R6Class(
       file.exists(self$fullname(key))
     },
 
+    is_list=function(key) {
+      is_directory(self$fullname(key))
+    },
+
     get=function(key) {
-      readRDS(self$fullname(key))
+      path <- self$fullname(key)
+      if (self$is_list(key)) {
+        list_store$new(path)$get_list()
+      } else {
+        readRDS(self$fullname(key))
+      }
     },
 
-    set=function(key, value) {
-      hash <- self$hash(value)
-      saveRDS(value, self$fullname(key))
-      writeLines(hash, self$hashname(key))
-    },
-
-    hash=function(value) {
-      hash_object(value)
+    set=function(key, value, as_list=FALSE) {
+      if (as_list) {
+        path <- self$fullname(key)
+        st <- list_store$new(path)
+        st$set_list(value)
+        ## NOTE: this also sets up the hash for us, but it's a
+        ## different sort of hash to the usual objects.  I'm deleting
+        ## any existing hash object though, to be on the safe side.
+        file_remove(self$hashname(key))
+      } else {
+        hash <- self$hash(value)
+        saveRDS(value, self$fullname(key))
+        writeLines(hash, self$hashname(key))
+      }
     },
 
     del=function(key, missing_ok=FALSE) {
-      ## TODO: Generalise this pattern (see also get_hash)
       exists <- self$contains(key)
-      file_remove(self$fullname(key))
+      file_remove(self$fullname(key), recursive=TRUE)
       file_remove(self$hashname(key))
       if (!exists && !missing_ok) {
         stop(sprintf("key %s not found in object store", key))
       }
       invisible(exists)
+    },
+
+    hash=function(value) {
+      hash_object(value)
     },
 
     archive_export=function(key, path, missing_ok=FALSE) {
@@ -76,7 +94,11 @@ object_store <- R6Class(
     get_hash=function(key, missing_ok=FALSE) {
       exists <- self$contains(key)
       if (exists) {
-        readLines(self$hashname(key))
+        if (self$is_list(key)) {
+          list_store$new(path)$get_hash_list()
+        } else {
+          readLines(self$hashname(key))
+        }
       } else if (missing_ok) {
         NA_character_
       } else {
@@ -86,7 +108,8 @@ object_store <- R6Class(
 
     ## This is not really used that often.
     ls=function() {
-      grep("__hash$", dir(self$path), invert=TRUE, value=TRUE)
+      c(grep("__hash$", dir(self$path), invert=TRUE, value=TRUE),
+        basename(list.dirs(self$path, recursive=FALSE)))
     },
 
     ## This is a *one way* function; changes won't be automatically
@@ -362,6 +385,9 @@ list_store <- R6Class(
     path=NULL,
 
     initialize=function(path) {
+      if (file.exists(path) && !is_directory(path)) {
+        file_remove(path)
+      }
       self$path <- path
       dir.create(self$path, FALSE)
       if (!file.exists(self$lenname())) {
@@ -469,8 +495,11 @@ list_store <- R6Class(
       }
     },
 
-    get_hash_list=function(i, missing_ok=FALSE) {
-      vapply(self$len(), function(i) self$get_hash(i, missing_ok),
+    ## Might be better if we then hash this whole set.  Or concatenate
+    ## with paste?
+    get_hash_list=function(missing_ok=FALSE) {
+      vapply(seq_len(self$len()),
+             function(i) self$get_hash(i, missing_ok),
              character(1L))
     },
 

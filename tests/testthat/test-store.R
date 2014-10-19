@@ -93,3 +93,14 @@ test_that("file store", {
   st$del(file)
   expect_that(st$contains(file), is_false())
 })
+
+test_that("storing lists", {
+  path <- tempfile()
+  st <- maker:::object_store$new(path)
+
+  x <- as.list(1:10)
+  st$set("as_object", x)
+  st$set("as_list",   x, as_list=TRUE)
+
+  expect_that(st$get("as_list"), equals(st$get("as_object")))
+})
