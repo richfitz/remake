@@ -83,9 +83,11 @@ maker <- R6Class(
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph, dependencies_only)
       for (i in plan) {
+        is_last <- i == target_name
         last <- self$update(i, dry_run,
-                            force_all || (force && i == target_name),
-                            quiet_target=quiet_target, check=check)
+                            force_all || (force && is_last),
+                            quiet_target=quiet_target, check=check,
+                            return_target=is_last)
       }
       invisible(last)
     },
@@ -134,7 +136,7 @@ maker <- R6Class(
     },
 
     update=function(target_name, dry_run=FALSE, force=FALSE,
-      quiet_target=self$quiet_target, check=NULL) {
+      quiet_target=self$quiet_target, check=NULL, return_target=TRUE) {
       #
       target <- self$get_target(target_name)
       current <- !force && target$is_current(check)
@@ -145,10 +147,10 @@ maker <- R6Class(
         self$print_message(status, target_name, cmd, style)
       }
       if (!dry_run) {
-        if (current) {
-          invisible(target$get())
-        } else {
+        if (!current) {
           target$build(quiet=quiet_target)
+        } else if (return_target) {
+          invisible(target$get())
         }
       }
     },
