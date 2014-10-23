@@ -25,7 +25,9 @@ test_that("data store", {
   obj <- st$get("foo")
   expect_that(obj, is_identical_to(1:10))
 
+  expect_that(st$get("bar"), throws_error("not found in object store"))
   expect_that(st$get_hash("bar"), throws_error("not found in object store"))
+
   expect_that(st$get_hash("bar", TRUE), is_identical_to(NA_character_))
   expect_that(st$get_hash("foo", TRUE), equals(digest::digest(1:10)))
 

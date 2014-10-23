@@ -31,6 +31,10 @@ object_store <- R6Class(
     },
 
     get=function(key) {
+      exists <- self$contains(key)
+      if (!exists) {
+        stop(sprintf("key %s not found in object store", key))
+      }
       path <- self$fullname(key)
       if (self$is_list(key)) {
         list_store$new(path)$get_list()
