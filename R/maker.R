@@ -55,17 +55,30 @@ maker <- R6Class(
       invisible(last)
     },
 
+    ## NOTE: This one is doing rather a lot more than the case below.
+    ## The logic around here is subject to complete change, too.
     make_dependencies=function(target_name, ...) {
       t <- self$get_target(target_name)
+      ## TODO: I don't see the big problem here:
       if (!(t$type) %in% c("object", "file")) {
         warning(sprintf("%s is not a real target"))
       }
-      self$print_message("DEPS", t$name, style="angle")
+      self$print_message("ENV", t$name, style="angle")
       self$make1(target_name, ..., dependencies_only=TRUE)
       deps <- filter_targets_by_type(t$depends, "object")
       deps_name <- sapply(deps, function(x) x$name)
 
-      invisible(maker_environment(deps_name, self, t))
+      invisible(maker_environment(self, deps_name, t))
+    },
+
+    ## TODO: Some support for getting *everything* out here.
+    ##   - that's hard because we'd only want to get the up-to-date
+    ##     things, and some of those might be large.
+    ## TODO: Some support for doing a delayedAssign
+    environment=function(target_names) {
+      self$print_message("ENV", "", style="angle")
+      self$load_sources()
+      maker_environment(self, target_names, NULL)
     },
 
     ## TODO: Not sure if verbose should also be an option here?
@@ -519,6 +532,6 @@ status_colour <- function(str) {
          READ="yellow",
          KNIT="hotpink",
          MAKE="deepskyblue",
-         DEPS="deepskyblue",
+         ENV="deepskyblue",
          NULL)
 }

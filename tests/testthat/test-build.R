@@ -148,7 +148,7 @@ test_that("make_dependencies", {
 
   expect_that(ls(e), equals("processed"))
 
-  expect_that(maker_environment_attach(e),
+  expect_that(maker_attach(e),
               shows_message("Maker environment for building"))
   expect_that("maker:plot.pdf" %in% search(), is_true())
   expect_that("maker:functions" %in% search(), is_true())
@@ -156,18 +156,30 @@ test_that("make_dependencies", {
   expect_that(exists("processed"), is_true())
   expect_that(processed, is_a("data.frame"))
 
-  expect_that(maker_environment_detach(),
+  expect_that(maker_detach(),
               shows_message("Detaching"))
-  expect_that(maker_environment_detach(),
+  expect_that(maker_detach(),
               gives_warning("No maker environments found on search path"))
-  expect_that(maker_environment_detach(warn=FALSE),
+  expect_that(maker_detach(warn=FALSE),
               not(gives_warning()))
   expect_that(exists("processed"), is_false())
 
-  expect_that(maker_environment_attach(e, verbose=FALSE),
+  expect_that(maker_attach(e, verbose=FALSE),
               not(shows_message()))
   expect_that(exists("processed"), is_true())
-  expect_that(maker_environment_detach(verbose=FALSE),
+  expect_that(maker_detach(verbose=FALSE),
               not(shows_message()))
   expect_that(exists("processed"), is_false())
+})
+
+test_that("maker environment", {
+  cleanup()
+  m <- maker$new("maker.yml")
+  expect_that(m$environment("processed"),
+              throws_error("not found in object store"))
+  m$make("processed")
+  e <- m$environment("processed")
+  expect_that(attr(e, "target"), is_null())
+  expect_that(ls(e), equals("processed"))
+  expect_that(exists("download_data", e), is_true())
 })

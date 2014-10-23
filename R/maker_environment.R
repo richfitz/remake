@@ -39,18 +39,18 @@ maker_environment_browse <- function(e, verbose=TRUE) {
 
 ##' @export
 ##' @rdname maker_environment
-maker_environment_attach <- function(e, verbose=TRUE) {
+maker_attach <- function(e, verbose=TRUE) {
   assert_inherits(e, "maker_environment")
   if (verbose) {
     maker_environment_info(e)
   }
-  maker_environment_detach(warn=FALSE, verbose=verbose)
+  maker_detach(warn=FALSE, verbose=verbose)
   t <- attr(e, "target")
   name <- paste0("maker:", if (is.null(t)) "<objects>" else t$name)
   attach(parent.env(e), name="maker:functions")
   attach(e, name=name)
   if (verbose) {
-    message("...clean up with maker_environment_detach()")
+    message("...clean up with maker_detach()")
   }
 }
 
@@ -58,7 +58,7 @@ maker_environment_attach <- function(e, verbose=TRUE) {
 ##' @rdname maker_environment
 ##' @param warn Logical, indicating if a warning should be given when
 ##' there are no maker environments to detach.
-maker_environment_detach <- function(warn=TRUE, verbose=TRUE) {
+maker_detach <- function(warn=TRUE, verbose=TRUE) {
   ours <- grep("^maker:", search(), value=TRUE)
   if (length(ours) > 0L) {
     for (i in ours) {
@@ -91,7 +91,7 @@ print.maker_environment <- function(x, ...) {
   maker_environment_info(x)
 }
 
-maker_environment <- function(names, m, target=NULL) {
+maker_environment <- function(m, names=character(0), target=NULL) {
   e <- new.env(parent=m$store$env$env)
   m$export(names, e)
   attr(e, "target") <- target
