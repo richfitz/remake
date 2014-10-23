@@ -19,21 +19,23 @@ managed_environment <- R6Class(
       self$sources <- sources
     },
 
-    reload=function(force=FALSE) {
+    current=function(force=FALSE) {
+      !(force
+        || is.null(self$env)
+        || !identical_map(hash_files(self$find_files()),
+                          self$source_files_hash))
+    },
+
+    reload=function() {
       source_files <- self$find_files()
       source_files_hash <- hash_files(source_files)
-      reload <- (force
-                 || is.null(self$env)
-                 || !identical_map(source_files_hash, self$source_files_hash))
-      if (reload) {
-        self$env <- new.env(parent=.GlobalEnv)
-        self$source_files <- source_files
-        self$load_packages()
-        self$load_sources()
-        self$source_files_hash <- source_files_hash
-        self$deps <- code_deps$new(self$env)
-      }
-      invisible(reload)
+
+      self$env <- new.env(parent=.GlobalEnv)
+      self$source_files <- source_files
+      self$load_packages()
+      self$load_sources()
+      self$source_files_hash <- source_files_hash
+      self$deps <- code_deps$new(self$env)
     },
 
     load_packages=function() {

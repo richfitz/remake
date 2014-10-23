@@ -32,7 +32,7 @@ test_that("Types of levels", {
 test_that("Manual", {
   cleanup()
   m <- maker$new("maker.yml")
-  m$load_sources(FALSE)
+  m$load_sources()
 
   t <- m$get_target("data.csv")
   expect_that(t$is_current(),          is_false())
@@ -88,7 +88,7 @@ test_that("Manual", {
 test_that("In target", {
   cleanup()
   m <- maker$new("maker_check.yml")
-  m$load_sources(FALSE)
+  m$load_sources()
 
   t <- m$get_target("data.csv")
   expect_that(t$check, equals("exists"))
@@ -121,7 +121,7 @@ test_that("In target", {
 test_that("dependency_status", {
   cleanup()
   m <- maker$new("maker_check.yml")
-  m$load_sources(FALSE)
+  m$load_sources()
 
   t <- m$get_target("data.csv")
   expect_that(t$check, equals("exists"))
@@ -139,7 +139,7 @@ test_that("dependency_status", {
 test_that("In maker", {
   cleanup()
   m <- maker$new("maker_check.yml")
-  m$load_sources(FALSE)
+  m$load_sources()
 
   expect_that(m$is_current("data.csv"), is_false())
   expect_that(m$is_current("data.csv", "exists"), is_false())

@@ -12,7 +12,7 @@ test_that("Targets return their output on build", {
   m <- maker$new("maker.yml")
   ## TODO: there's a really obscure error if this is not run but
   ## targets are.  Really need to catch that somewhere.
-  m$load_sources(FALSE)
+  m$load_sources()
 
   ## File targets will invisibly return their filename:
   t <- m$get_target("data.csv")

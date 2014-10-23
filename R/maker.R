@@ -47,7 +47,7 @@ maker <- R6Class(
         target_names <- self$target_default()
       }
       for (t in target_names) {
-        if (length(target_names) > 1L && self$verbose) {
+        if (length(target_names) > 1L) {
           self$print_message("MAKE", t, style="angle")
         }
         last <- self$make1(t, ...)
@@ -81,7 +81,6 @@ maker <- R6Class(
       maker_environment(self, target_names, NULL)
     },
 
-    ## TODO: Not sure if verbose should also be an option here?
     make1=function(target_name, dry_run=FALSE, force=FALSE,
       force_all=FALSE, quiet_target=self$quiet_target, check=NULL,
       dependencies_only=FALSE) {
@@ -91,7 +90,7 @@ maker <- R6Class(
       ## exists to install required packages.  So it needs to be
       ## picked up here specially.
       if (target_name != "deps") {
-        self$load_sources(show_message=!is.null(self$store$env$env))
+        self$load_sources()
       }
       graph <- self$dependency_graph()
       plan <- dependencies(target_name, graph, dependencies_only)
@@ -133,18 +132,16 @@ maker <- R6Class(
       target$run_fake()
     },
 
-    load_sources=function(show_message=TRUE) {
-      force(show_message) # stupid delayed evaluation
+    load_sources=function() {
       first <- is.null(self$store$env$env)
       if (!identical(hash_files(names(self$hash)), self$hash)) {
         self$print_message("READ", "", "# reloading makerfile")
         self$reload()
       }
-      reloaded <- self$store$env$reload()
-      if (self$verbose && show_message && reloaded) {
-        cmd <- sprintf("# %s sources",
-                       if (first) "loading" else "reloading")
-        self$print_message("READ", "", cmd)
+
+      if (!self$store$env$current()) {
+        self$print_message("READ", "", "# loading sources")
+        self$store$env$reload()
       }
     },
 
@@ -153,12 +150,12 @@ maker <- R6Class(
       #
       target <- self$get_target(target_name)
       current <- !force && target$is_current(check)
-      if (self$verbose) {
-        status <- target$status_string(current)
-        cmd <- if (current) NULL else target$run_fake()
-        style <- if (is.null(target$chain_parent)) "square" else "curly"
-        self$print_message(status, target_name, cmd, style)
-      }
+
+      status <- target$status_string(current)
+      cmd <- if (current) NULL else target$run_fake()
+      style <- if (is.null(target$chain_parent)) "square" else "curly"
+      self$print_message(status, target_name, cmd, style)
+
       if (!dry_run) {
         if (!current) {
           target$build(quiet=quiet_target)
@@ -182,7 +179,9 @@ maker <- R6Class(
         str <- sprintf(private$fmt$with_cmd, status, target_name,
                        private$fmt$p$paint(cmd, "grey"))
       }
-      message(str)
+      if (self$verbose) {
+        message(str)
+      }
     },
 
     expire=function(target_name, recursive=FALSE) {
@@ -218,18 +217,17 @@ maker <- R6Class(
         chain_names <- sapply(target$chain, function(x) x$name)
         self$remove_targets(chain_names, chain=FALSE)
       }
+
       did_remove <- target$del(missing_ok=TRUE)
-      if (self$verbose) {
-        if (did_remove) {
-          status <- "DEL"
-          fn <- if (target$type == "object") "rm" else "file.remove"
-          cmd <- sprintf('%s("%s")', fn, target_name)
-        } else {
-          status <- ""
-          cmd <- NULL
-        }
-        self$print_message(status, target_name, cmd, "round")
+      if (did_remove) {
+        status <- "DEL"
+        fn <- if (target$type == "object") "rm" else "file.remove"
+        cmd <- sprintf('%s("%s")', fn, target_name)
+      } else {
+        status <- ""
+        cmd <- NULL
       }
+      self$print_message(status, target_name, cmd, "round")
     },
 
     has_target=function(target_name) {
