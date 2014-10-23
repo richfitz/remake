@@ -31,6 +31,10 @@ code_dependencies <- function(f) {
 }
 
 hash_function <- function(f) {
+  ## Work around a hard-to-trigger bug: this global option affects
+  ## deparsing!
+  oo <- options(scipen=0)
+  on.exit(options(oo))
   digest::digest(deparse(f))
 }
 

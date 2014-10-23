@@ -71,3 +71,24 @@ test_that("Simple case", {
   expect_that(deps$info("nonexistant"),
               equals(list(functions=empty, packages=empty)))
 })
+
+test_that("deparse tricks", {
+  f <- function() {
+    0.0001
+  }
+
+  ## First check the R behaviour that triggers the bug:
+  oo <- options(scipen=0)
+  on.exit(options(oo))
+  expect_that(deparse(f)[[3]], matches("\\s*1e-04$"))
+  h1 <- digest::digest(deparse(f))
+  options(scipen=1000)
+  expect_that(deparse(f)[[3]], matches("0\\.0001$"))
+  h2 <- digest::digest(deparse(f))
+  expect_that(h1, not(equals(h2)))
+
+  ## But we don't see this:
+  expect_that(hash_function(f), equals(h1))
+  options(scipen=0)
+  expect_that(hash_function(f), equals(h1))
+})
