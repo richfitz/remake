@@ -72,7 +72,7 @@ test_that("Simple case", {
               equals(list(functions=empty, packages=empty)))
 })
 
-test_that("deparse tricks", {
+test_that("deparse scipen", {
   f <- function() {
     0.0001
   }
@@ -91,4 +91,23 @@ test_that("deparse tricks", {
   expect_that(hash_function(f), equals(h1))
   options(scipen=0)
   expect_that(hash_function(f), equals(h1))
+})
+
+test_that("deparse cutoff", {
+  ## Just check that deparsing does not seem to respond to the cutoff
+  ## option though:
+  g <- function() {
+    very + very + long + line + that + r + will + want + to + split + somewhere
+  }
+  oo <- options(deparse.cutoff=50)
+  on.exit(options(oo))
+  s1 <- deparse(g)
+
+  options(deparse.cutoff=60)
+  s2 <- deparse(g)
+  expect_that(s1, equals(s2))
+
+  ## Bug here with equals:
+  s3 <- deparse(g, width.cutoff=50)
+  expect_that(s1, not(is_identical_to(s3)))
 })
