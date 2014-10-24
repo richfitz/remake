@@ -862,7 +862,8 @@ compare_dependency_status <- function(prev, curr, check) {
     ok <- ok && identical_map(prev$depends, curr$depends)
   }
   if (check_code(check)) {
-    ok <- ok && identical_map(prev$code, curr$code)
+    ## TODO: I've dropped checking *packages* here: see #13
+    ok <- ok && identical_map(prev$code$functions, curr$code$functions)
   }
 
   ok
