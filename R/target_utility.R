@@ -1,5 +1,6 @@
 utility_install_packages <- function(m) {
-  install_packages(m$packages)
+  extras <- unique(unlist(lapply(m$targets, function(x) x$packages)))
+  install_packages(union(m$packages, extras))
 }
 
 utility_gitignore <- function(m) {
