@@ -208,7 +208,7 @@ target_base <- R6Class(
     ## Bad name, but the idea is simple: We want to return a list with
     ## only dependencies that are interesting (i.e, file/plot/object
     dependencies_real=function() {
-      filter_targets_by_type(self$depends[!self$depends_is_fake],
+      filter_targets_by_type(self$depends,
                              c("file", "plot", "object"))
     },
 
