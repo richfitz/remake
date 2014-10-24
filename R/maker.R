@@ -133,7 +133,6 @@ maker <- R6Class(
     },
 
     load_sources=function() {
-      first <- is.null(self$store$env$env)
       if (!identical(hash_files(names(self$hash)), self$hash)) {
         self$print_message("READ", "", "# reloading makerfile")
         self$reload()
@@ -158,7 +157,14 @@ maker <- R6Class(
 
       if (!dry_run) {
         if (!current) {
-          target$build(quiet=quiet_target)
+          ## See #12 - targets can specify conditional packages, and
+          ## we load them, but also unload them afterwards (including
+          ## dependencies).  This does not leave packages loaded for
+          ## dependent taragets though.
+          extra <- load_extra_packages(target$packages)
+          ret <- target$build(quiet=quiet_target)
+          unload_extra_packages(extra)
+          invisible(ret)
         } else if (return_target) {
           invisible(target$get())
         }

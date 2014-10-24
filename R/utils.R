@@ -208,6 +208,22 @@ zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
   invisible(zipfile)
 }
 
+load_extra_packages <- function(packages) {
+  prev <- .packages()
+  for (p in packages) {
+    suppressMessages(library(p, character.only=TRUE, quietly=TRUE))
+  }
+  invisible(setdiff(.packages(), prev))
+}
+
+## This tries to unload packages in the reverse order they were loaded
+## in, so aside from circular dependencies this should work OK.
+unload_extra_packages <- function(packages) {
+  for (p in packages) {
+    detach(sprintf("package:%s", p), character.only=TRUE)
+  }
+}
+
 ## This is just to avoid dealing with .onLoad
 painter <- R6Class(
   public=list(

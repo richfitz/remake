@@ -74,6 +74,7 @@ target_base <- R6Class(
     check="all",
     store=NULL,
     quiet=FALSE,
+    packages=NULL,
 
     initialize=function(name, command, opts, type="base") {
       self$name <- name
@@ -124,10 +125,15 @@ target_base <- R6Class(
           warning("Using 'check' on a rule-less target has no effect")
         }
       }
+
+      if ("packages" %in% names(opts)) {
+        self$packages <- opts$packages
+        assert_character(opts$packages)
+      }
     },
 
     valid_options=function() {
-      c("quiet", "check")
+      c("quiet", "check", "packages")
     },
 
     check_opts=function(opts) {
