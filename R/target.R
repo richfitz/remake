@@ -893,7 +893,7 @@ do_call_fake <- function(cmd, args) {
 ## There aren't many of these yet; might end up with more over time
 ## though.
 target_reserved_names <- function() {
-  c("deps", "gitignore", "target_name", ".")
+  c("install_packages", "gitignore", "target_name", ".")
 }
 
 filter_targets_by_type <- function(targets, types) {

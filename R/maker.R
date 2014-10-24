@@ -85,11 +85,11 @@ maker <- R6Class(
       force_all=FALSE, quiet_target=self$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
-      ## NOTE: Not 100% sure about this.  The "deps" target requires
-      ## that the sources are not loaded before it is run, because it
-      ## exists to install required packages.  So it needs to be
-      ## picked up here specially.
-      if (target_name != "deps") {
+      ## NOTE: Not 100% sure about this.  The "install_packages"
+      ## target requires that the sources are not loaded before it is
+      ## run, because it exists to install required packages.  So it
+      ## needs to be picked up here specially.
+      if (target_name != "install_packages") {
         self$load_sources()
       }
       graph <- self$dependency_graph()
@@ -366,7 +366,8 @@ maker <- R6Class(
     },
 
     initialize_utility_targets=function() {
-      add <- list(target_utility$new("deps", utility_deps, self),
+      add <- list(target_utility$new("install_packages",
+                                     utility_install_packages, self),
                   target_utility$new("gitignore", utility_gitignore, self))
       self$add_targets(add)
     },

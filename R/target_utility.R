@@ -1,6 +1,5 @@
-utility_deps <- function(m) {
-  install_dependencies(m$packages)
-  m$load_sources()
+utility_install_packages <- function(m) {
+  install_packages(m$packages)
 }
 
 utility_gitignore <- function(m) {
@@ -8,17 +7,27 @@ utility_gitignore <- function(m) {
   add_to_gitignore(c(".maker", files))
 }
 
-## This is super basic for now: don't try and do anything clever with
-## non-CRAN packages or the like.  Rather than do that we should
-## probably try and leverage the packrat automatic dependency
-## detection and its lockfile.
-install_dependencies <- function(packages, ...) {
+install_packages <- function(packages,
+                             maker_sources="maker_sources.yml") {
   pkgs <- rownames(installed.packages())
   msg <- setdiff(packages, pkgs)
+
   if (length(msg) > 0L) {
     message("Installing missing required packages:\n",
             paste0("\t", msg, collapse="\n"))
-    install.packages(msg, ...)
+    if (file.exists(maker_sources)) {
+      extras <- read_maker_packages(maker_sources)[msg]
+    } else {
+      extras <- list()
+    }
+
+    from_cran <- setdiff(msg, names(extras))
+    if (length(from_cran) > 0L) {
+      install.packages(msg)
+    }
+    if (length(extras) > 0L) {
+      install_extras(extras)
+    }
   }
 }
 

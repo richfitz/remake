@@ -1,0 +1,7 @@
+sowsear:
+  source: github
+  repo: richfitz/sowsear
+
+arbutus:
+  source: github
+  repo: mwpennell/arbutus
