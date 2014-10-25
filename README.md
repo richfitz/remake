@@ -26,21 +26,6 @@ You describe the beginning, intermediate and end points of your analysis, and ho
 
 There might be very few steps or very many, but `maker` will take care of stepping through the analysis in a correct order (there can be more than one correct order!).
 
-Other core features:
-
-* `maker` determines if any dependencies have changed when need running your analysis.  So if a downloaded data file changes, everything that depends on it will be rebuilt when needed.
-  - however, rather than rely on file modification times, `maker` uses a hash (like a digital fingerprint) of the file or object to determine if the contents have *really* changed.  So inconsequential changes will be ignored.
-* Object targets are persistent across sessions, so manual saving of objects is not necessary.  This avoids a lot of manual caching of results that tends to litter long-running analysis code.
-* `maker` also checks if the *functions* used as rules (or called from those functions) have changed and will rebuild if these have changed (for the rationale here, see [here](doc/reproducible_research.md)).
-* Because `maker` keeps track of which files and objects it created, it can automatically clean up after itself.  This makes it easy to rerun the entire analysis beginning-to-end.
-  - three levels of cleaning (tidy, clean and purge) are provided to categorise how much you want to keep a particular target.
-* Support for easily making figures and running [`knitr`](http://yihui.name/knitr) as special targets.
-* Automate installation of dependencies.
-* Automate curation of `.gitignore` files to prevent accidentally committing large output to your repository.
-* (Very early) support for archiving a set of analyses that other users can import.
-  - This means you can share results of long-running analyses/simulations and people can easily run the last steps of your analyses.
-  - Eventually this will interface with [rfigshare](https://github.com/ropensci/rfigshare) and GitHub [releases](https://github.com/blog/1547-release-your-software).
-
 ## Example
 
 Here's a very simple analysis pipeline that illustrates the basic idea:
@@ -126,6 +111,25 @@ make_script()
 # myplot(processed)
 # dev.off()
 ```
+
+## Other core features:
+
+* `maker` determines if any dependencies have changed when need running your analysis.  So if a downloaded data file changes, everything that depends on it will be rebuilt when needed.
+  - however, rather than rely on file modification times, `maker` uses a hash (like a digital fingerprint) of the file or object to determine if the contents have *really* changed.  So inconsequential changes will be ignored.
+* Object targets are persistent across sessions, so manual saving of objects is not necessary.  This avoids a lot of manual caching of results that tends to litter long-running analysis code.
+* `maker` also checks if the *functions* used as rules (or called from those functions) have changed and will rebuild if these have changed (for the rationale here, see [here](doc/reproducible_research.md)).
+* Because `maker` keeps track of which files and objects it created, it can automatically clean up after itself.  This makes it easy to rerun the entire analysis beginning-to-end.
+  - three levels of cleaning (tidy, clean and purge) are provided to categorise how much you want to keep a particular target.
+* Support for easily making figures and running [`knitr`](http://yihui.name/knitr) as special targets.
+* Automate installation of dependencies.
+* Automate curation of `.gitignore` files to prevent accidentally committing large output to your repository.
+* (Very early) support for archiving a set of analyses that other users can import.
+  - This means you can share results of long-running analyses/simulations and people can easily run the last steps of your analyses.
+  - Eventually this will interface with [rfigshare](https://github.com/ropensci/rfigshare) and GitHub [releases](https://github.com/blog/1547-release-your-software).
+
+## Real-world examples
+
+* A large analysis of [adequacy of models used in comparative phylogenetics](https://github.com/richfitz/modeladequacy/blob/master/analysis/maker.yml).
 
 # Installation
 
