@@ -92,8 +92,7 @@ maker <- R6Class(
       if (target_name != "install_packages") {
         self$load_sources()
       }
-      graph <- self$dependency_graph()
-      plan <- dependencies(target_name, graph, dependencies_only)
+      plan <- self$plan(target_name, dependencies_only)
       for (i in plan) {
         is_last <- i == target_name
         last <- self$update(i, dry_run,
@@ -108,16 +107,12 @@ maker <- R6Class(
       if (is.null(target_name)) {
         target_name <- self$target_default()
       }
-      ## This is repeated from make()
-      graph <- self$dependency_graph()
-      plan <- dependencies(target_name, graph)
-
       pkgs <- lapply(self$store$env$packages,
                      function(x) sprintf('library("%s")', x))
       srcs <- lapply(self$store$env$sources,
                      function(x) sprintf('source("%s")', x))
       ## Probably best to filter by "real" here?
-      cmds <- lapply(plan, function(i)
+      cmds <- lapply(self$plan(target_name), function(i)
                      self$get_target(i)$run_fake(for_script=TRUE))
 
       src <- c(unlist(pkgs),
@@ -169,6 +164,11 @@ maker <- R6Class(
           invisible(target$get())
         }
       }
+    },
+
+    plan=function(target_name, dependencies_only=FALSE) {
+      graph <- self$dependency_graph()
+      dependencies(target_name, graph, dependencies_only)
     },
 
     print_message=function(status, target_name, cmd=NULL, style="square") {
