@@ -171,6 +171,11 @@ maker <- R6Class(
       dependencies(target_name, graph, dependencies_only)
     },
 
+    status=function(target_name) {
+      graph <- self$dependency_graph()
+      status(target_name, graph, self)
+    },
+
     print_message=function(status, target_name, cmd=NULL, style="square") {
       paint <- private$fmt$p$paint
       col <- status_colour(status)

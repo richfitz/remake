@@ -18,21 +18,6 @@ diagram <- function(m, targets=NULL) {
     g <- g[dependencies(targets, g)]
   }
 
-  ## This wants abstracting.  Also worth thinking about getting rules
-  ## onto the edges:
-  dependencies_to_adjacency <- function(g) {
-    t <- names(g)
-    mat <- matrix(FALSE, length(t), length(t), dimnames=list(t, t))
-    for (i in t) {
-      ## TODO: empty dependency lists are list() not character(0)
-      d <- g[[i]]
-      if (length(d) > 0) {
-        mat[i,d] <- TRUE
-      }
-    }
-    mat
-  }
-
   ## The transpose here will switch between the formal DAG thing, and
   ## the intuitive *flow*.
   op <- par(mar=rep(0, 4))
