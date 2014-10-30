@@ -377,8 +377,9 @@ maker <- R6Class(
         }
         ## TODO: new function 'make_target_cleanup'?
         targets[[i]] <- make_target(target_name,
-                                    list(command=command, depends=depends),
-                                    "cleanup")
+                                    list(command=command,
+                                         depends=depends,
+                                         type="cleanup"))
       }
       self$add_targets(targets, force=TRUE)
     },

@@ -11,7 +11,7 @@ context("Targets (low level)")
 
 ## The simplest target types:
 test_that("Fake targets", {
-  t <- make_target("a_fake_target", list(), "fake")
+  t <- make_target("a_fake_target", list(type="fake"))
 
   expect_that(t, is_a("target_fake"))
   expect_that(t, is_a("target_base"))
@@ -35,7 +35,7 @@ test_that("Fake targets", {
 })
 
 test_that("Can't do much with fake targets", {
-  t <- make_target("a_fake_target", list(), "fake")
+  t <- make_target("a_fake_target", list(type="fake"))
   expect_that(t$get(), throws_error("Not something that can be"))
   expect_that(t$set(), throws_error("Not something that can be"))
   expect_that(t$set(1), throws_error("Not something that can be"))
@@ -45,17 +45,17 @@ test_that("Can't do much with fake targets", {
 })
 
 test_that("Fake targets (invalid)", {
-  expect_that(make_target("fake", list(command="foo()"), type="fake"),
+  expect_that(make_target("fake", list(command="foo()", type="fake")),
               throws_error("fake targets must have a NULL rule"))
-  expect_that(make_target("fake", list(target_argument="foo"), type="fake"),
+  expect_that(make_target("fake", list(target_argument="foo", type="fake")),
               throws_error("Invalid keys: target_argument"))
-  expect_that(make_target("fake", list(quiet=TRUE), type="fake"),
+  expect_that(make_target("fake", list(quiet=TRUE, type="fake")),
               gives_warning("has no effect"))
-  expect_that(make_target("fake", list(check="exists"), type="fake"),
+  expect_that(make_target("fake", list(check="exists", type="fake")),
               gives_warning("has no effect"))
-  expect_that(make_target("fake", list(cleanup_level="tidy"), type="fake"),
+  expect_that(make_target("fake", list(cleanup_level="tidy", type="fake")),
               throws_error("Invalid options for fake: cleanup_level"))
-  expect_that(make_target("fake", list(other_opt="tidy"), type="fake"),
+  expect_that(make_target("fake", list(other_opt="tidy", type="fake")),
               throws_error("Invalid options for fake: other_opt"))
 })
 
@@ -115,14 +115,14 @@ test_that("Object target", {
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("a", b="c")))
 
-  t <- make_target("code.R", list(command="foo()"), type="object")
+  t <- make_target("code.R", list(command="foo()", type="object"))
   expect_that(t$type, equals("object"))
 })
 
 ## TODO: These error messages are super inconsistent.
 test_that("Object target (invalid)", {
   ## This is actually hard to achive:
-  expect_that(make_target("real", list(), type="object"),
+  expect_that(make_target("real", list(type="object")),
               throws_error("Must not have a NULL rule"))
 
   expect_that(make_target("real", list(command="foo()", target_argument=1)),
@@ -185,7 +185,7 @@ test_that("File targets", {
 })
 
 test_that("Implicit file targets", {
-  t <- make_target("code.R", NULL, "file")
+  t <- make_target("code.R", list(type="file"))
   expect_that(t$name, equals("code.R"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, is_null())
@@ -194,7 +194,7 @@ test_that("Implicit file targets", {
   expect_that(t$run(), is_null())
   expect_that(t$run_fake(), is_null())
 
-  expect_that(t <- make_target("file.csv", NULL, "file"),
+  expect_that(t <- make_target("file.csv", list(type="file")),
               gives_warning("Creating implicit target for nonexistant"))
   expect_that(t$name, equals("file.csv"))
   expect_that(t$type, equals("file"))
@@ -208,7 +208,7 @@ test_that("Implicit file targets", {
 })
 
 test_that("knitr", {
-  t <- make_target("file.md", list(), "knitr")
+  t <- make_target("file.md", list(type="knitr"))
   expect_that(t, is_a("target_knitr"))
   ## TODO: Not sure that this is correct (see elsewhere for plot though)
   expect_that(t$type, equals("file"))
@@ -226,9 +226,9 @@ test_that("knitr", {
 
   ## Quiet by default:
   expect_that(t$quiet, is_true())
-  expect_that(make_target("file.md", list(quiet=TRUE), "knitr")$quiet,
+  expect_that(make_target("file.md", list(quiet=TRUE, type="knitr"))$quiet,
               is_true())
-  expect_that(make_target("file.md", list(quiet=FALSE), "knitr")$quiet,
+  expect_that(make_target("file.md", list(quiet=FALSE, type="knitr"))$quiet,
               is_false())
 
   ## This might change
@@ -239,13 +239,17 @@ test_that("knitr (invalid)", {
   expect_that(make_target("file.xmd", list(knitr=TRUE)),
               throws_error("Target must end in .md"))
 
-  expect_that(make_target("file.md", list(command="fn()"), "knitr"),
+  expect_that(make_target("file.md", list(command="fn()", type="knitr")),
               throws_error("knitr targets must have a NULL rule"))
 
-  expect_that(make_target("file.md", list(quiet="yes please"), "knitr")$quiet,
+  expect_that(make_target("file.md", list(command="fn()", knitr=TRUE)),
+              throws_error("knitr targets must have a NULL rule"))
+
+  expect_that(make_target("file.md", list(quiet="yes please",
+                                          type="knitr"))$quiet,
               throws_error("file.md: quiet must be logical"))
 
-  expect_that(make_target("file.md", list(unknown="opt"), "knitr"),
+  expect_that(make_target("file.md", list(unknown="opt", type="knitr")),
               throws_error("Invalid options for file.md"))
 })
 

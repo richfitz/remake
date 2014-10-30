@@ -1,8 +1,14 @@
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
-make_target <- function(name, dat, type=NULL) {
+make_target <- function(name, dat) {
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
+  }
+
+  type <- dat$type
+  if (!is.null(type)) {
+    assert_scalar_character(type)
+    dat <- dat[names(dat) != "type"]
   }
 
   dat <- process_target_command(name, dat)
