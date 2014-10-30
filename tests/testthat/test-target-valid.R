@@ -114,6 +114,9 @@ test_that("Object target", {
   t <- make_target("real", list(command="foo(a, b=c)"))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("a", b="c")))
+
+  t <- make_target("code.R", list(command="foo()"), type="object")
+  expect_that(t$type, equals("object"))
 })
 
 ## TODO: These error messages are super inconsistent.
@@ -176,6 +179,9 @@ test_that("File targets", {
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("b", C="c")))
   expect_that(t$target_argument, equals("name"))
+
+  t <- make_target("code.R", list())
+  expect_that(t$type, equals("file"))
 })
 
 test_that("Implicit file targets", {
