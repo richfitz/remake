@@ -166,12 +166,18 @@ maker <- R6Class(
       }
     },
 
-    plan=function(target_name, dependencies_only=FALSE) {
+    plan=function(target_name=NULL, dependencies_only=FALSE) {
+      if (is.null(target_name)) {
+        target_name <- self$target_default()
+      }
       graph <- self$dependency_graph()
       dependencies(target_name, graph, dependencies_only)
     },
 
-    status=function(target_name) {
+    status=function(target_name=NULL) {
+      if (is.null(target_name)) {
+        target_name <- self$target_default()
+      }
       graph <- self$dependency_graph()
       status(target_name, graph, self)
     },
