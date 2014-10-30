@@ -84,7 +84,7 @@ status <- function(target_name, graph, m) {
     x <- m$get_target(t)
     dirty[[t]] <- !x$is_current()
     if (check_depends(x$check)) {
-      d <- sapply(x$dependencies_real(), function(x) x$name)
+      d <- dependency_names(x$dependencies_real())
       ## TODO: This conditional goes away if we have a dependency
       ## names function that always returns a character vector.
       if (length(d) > 0L) {

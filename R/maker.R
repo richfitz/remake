@@ -66,7 +66,7 @@ maker <- R6Class(
       self$print_message("ENV", t$name, style="angle")
       self$make1(target_name, ..., dependencies_only=TRUE)
       deps <- filter_targets_by_type(t$depends, "object")
-      deps_name <- sapply(deps, function(x) x$name)
+      deps_name <- dependency_names(deps)
 
       invisible(maker_environment(self, deps_name, t))
     },
@@ -225,7 +225,7 @@ maker <- R6Class(
     remove_target=function(target_name, chain=TRUE) {
       target <- self$get_target(target_name)
       if (chain && !is.null(target$chain)) {
-        chain_names <- sapply(target$chain, function(x) x$name)
+        chain_names <- dependency_names(target$chain)
         self$remove_targets(chain_names, chain=FALSE)
       }
 
@@ -342,7 +342,8 @@ maker <- R6Class(
 
     dependency_graph=function() {
       targets <- self$target_names(all=TRUE)
-      g <- lapply(targets, function(t) self$get_target(t)$dependencies())
+      g <- lapply(targets, function(t)
+                  dependency_names(self$get_target(t)$depends))
       names(g) <- targets
       topological_sort(g)
     },

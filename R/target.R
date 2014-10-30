@@ -207,10 +207,6 @@ target_base <- R6Class(
       ""
     },
 
-    dependencies=function() {
-      sapply(self$depends, function(x) x$name)
-    },
-
     ## Bad name, but the idea is simple: We want to return a list with
     ## only dependencies that are interesting (i.e, file/plot/object
     dependencies_real=function() {
@@ -224,7 +220,7 @@ target_base <- R6Class(
 
       if (check_depends(check)) {
         depends <- self$dependencies_real()
-        names(depends) <- sapply(depends, function(x) x$name)
+        names(depends) <- dependency_names(depends)
         depends <- lapply(depends, function(x) x$get_hash(missing_ok))
       }
 
@@ -307,8 +303,8 @@ target_base <- R6Class(
       quoted <- private$quoted
       if (!is.null(quoted)) {
         i <- !self$depends_is_fake
-        depends_name <- sapply(self$depends[i], function(x) x$name)
-        depends_type <- sapply(self$depends[i], function(x) x$type)
+        depends_name <- dependency_names(self$depends[i])
+        depends_type <- dependency_types(self$depends[i])
         assert_length(quoted, length(depends_name))
         should_be_quoted <- depends_type == "file"
         if (any(should_be_quoted != quoted)) {
@@ -903,8 +899,23 @@ target_reserved_names <- function() {
 }
 
 filter_targets_by_type <- function(targets, types) {
-  target_types <- sapply(targets, function(x) x$type)
+  target_types <- dependency_types(targets)
   targets[target_types %in% types]
+}
+
+dependency_names <- function(x) {
+  if (length(x) > 0) {
+    sapply(x, function(el) el$name)
+  } else {
+    character(0)
+  }
+}
+dependency_types <- function(x) {
+  if (length(x) > 0) {
+    sapply(x, function(el) el$type)
+  } else {
+    character(0)
+  }
 }
 
 chained_rule_name <- function(name, i) {

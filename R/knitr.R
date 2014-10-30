@@ -35,8 +35,7 @@ knitr_infer_source <- function(name) {
 ## This is something that could be done more nicely I'm sure.
 knitr_depends <- function(maker, depends) {
   graph <- maker$dependency_graph()
-  depends_names <- dependencies(sapply(depends, function(x) x$name), graph)
-  depends <- filter_targets_by_type(maker$get_targets(depends_names),
-                                    "object")
-  vapply(unname(depends), function(x) x$name, character(1))
+  depends_names <- dependencies(dependency_names(depends), graph)
+  depends <- filter_targets_by_type(maker$get_targets(depends_names), "object")
+  dependency_names(unname(depends))
 }
