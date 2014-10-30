@@ -783,7 +783,7 @@ extensions <- function() {
     # Free form
     "txt", "log", "yml", "yaml", "xml",
     # Text
-    "md", "tex", "Rmd", "Rnw",
+    "md", "tex", "Rmd", "Rnw", "html", "htm",
     # Graphics
     "jpg", "jpeg", "png", "pdf", "eps", "ps", "bmp", "tiff", "svg",
     # Archives
