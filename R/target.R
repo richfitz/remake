@@ -711,7 +711,7 @@ target_knitr <- R6Class(
         knitr <- list()
       }
       warn_unknown(paste(name, "knitr", sep=": "), knitr,
-                   c("input", "options", "auto_figure_prefix"))
+                   c("input", "options"))
 
       ## Infer name if it's not present:
       if (is.null(knitr$input)) {

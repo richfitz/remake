@@ -216,6 +216,9 @@ test_that("knitr", {
   ## Inferred correct input:
   expect_that(t$knitr$input, equals("file.Rmd"))
 
+  ## No options set
+  expect_that(t$knitr$options, equals(list()))
+
   ## Allow knitr in opts:
   t <- make_target("file.md", list(knitr=TRUE))
   expect_that(t, is_a("target_knitr"))
@@ -223,6 +226,21 @@ test_that("knitr", {
   ## Only valid option is "input":
   t <- make_target("file.md", list(knitr=list(input="foo.Rmd")))
   expect_that(t$knitr$input, equals("foo.Rmd"))
+
+  ## Test auto_figure_prefix:
+  t <- make_target("file.md", list(knitr=TRUE, auto_figure_prefix=TRUE))
+  expect_that(t$knitr$options$fig.path, equals("figure/file__"))
+
+  ## auto_figure_prefix works off the *target* name, not the Rmd name
+  ## (when different)
+  t <- make_target("file.md", list(knitr=list(input="other_file.Rmd"),
+                                   auto_figure_prefix=TRUE))
+  expect_that(t$knitr$options$fig.path, equals("figure/file__"))
+
+  prefix <- "figures/file-"
+  t <- make_target("file.md",
+                   list(knitr=list(options=list(fig.path=prefix))))
+  expect_that(t$knitr$options$fig.path, equals(prefix))
 
   ## Quiet by default:
   expect_that(t$quiet, is_true())
@@ -251,6 +269,17 @@ test_that("knitr (invalid)", {
 
   expect_that(make_target("file.md", list(unknown="opt", type="knitr")),
               throws_error("Invalid options for file.md"))
+
+  expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
+              gives_warning("Unknown fields in file.md: knitr: auto_figure"))
+
+  expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
+              gives_warning("Unknown fields in file.md: knitr: auto_figure"))
+
+  dat <- list(knitr=list(options=list(fig.path="foo")),
+              auto_figure_prefix=TRUE)
+  expect_that(make_target("file.md", dat),
+              gives_warning("Ignoring 'auto_figure_prefix'"))
 })
 
 ## Things that need activation:
