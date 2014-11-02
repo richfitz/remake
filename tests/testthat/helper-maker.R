@@ -4,7 +4,8 @@ cleanup <- function() {
                                  "code2.R", "maker_error.yml",
                                  "plot1.pdf", "plot2.pdf",
                                  "plot3.pdf", "plot4.pdf",
-                                 "knitr.md", "test.zip", "maker.zip",
+                                 "knitr.md", "knitr_rename.md",
+                                 "test.zip", "maker.zip",
                                  "tmp_quoting.yml")))
   unlink("figure", recursive=TRUE)
   unlink("test", recursive=TRUE)

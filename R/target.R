@@ -736,6 +736,13 @@ target_knitr <- R6Class(
           warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
         }
       }
+      ## By default we *will* set error=TRUE.  It's hard to imagine a
+      ## workflow where that is not what is wanted.  Better might be
+      ## to allow the compilation to continue but detect if there was
+      ## an error and throw an error at the target level though.
+      if (is.null(knitr$options$error)) {
+        knitr$options$error <- FALSE
+      }
 
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))

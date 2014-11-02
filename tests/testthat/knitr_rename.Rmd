@@ -1,0 +1,13 @@
+# This is a knitr test
+
+The object `data` will be found from `maker` (it was renamed from `processed`).
+
+```{r}
+summary(data)
+```
+
+Here's a plot:
+
+```{r}
+myplot(data)
+```

@@ -217,7 +217,7 @@ test_that("knitr", {
   expect_that(t$knitr$input, equals("file.Rmd"))
 
   ## No options set
-  expect_that(t$knitr$options, equals(list()))
+  expect_that(t$knitr$options, equals(list(error=FALSE)))
 
   ## Allow knitr in opts:
   t <- make_target("file.md", list(knitr=TRUE))

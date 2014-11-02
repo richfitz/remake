@@ -81,3 +81,13 @@ test_that("auto_figure_prefix", {
               equals("figure/"))
   cleanup()
 })
+
+test_that("Errors during compilation propagate", {
+  cleanup()
+  m <- maker$new("knitr_error.yml")
+  expect_that(m$make("knitr_rename.md"), throws_error())
+  t <- m$get_target("knitr_rename.md")
+  expect_that(t$knitr$options$error, is_false())
+  t$knitr$options$error <- TRUE
+  expect_that(m$make("knitr_rename.md"), not(throws_error()))
+})
