@@ -5,6 +5,7 @@ simple.R
 .maker
 figure
 knitr.md
+knitr_rename.md
 test
 test.zip
 tmp_quoting.yml

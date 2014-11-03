@@ -42,7 +42,7 @@ test_that("knitr depends", {
               equals("processed"))
 
   expect_that(knitr_depends(t$maker, unname(m$get_targets("all"))),
-              equals("processed"))
+              equals(character(0)))
 
   expect_that(knitr_depends(t$maker, list()),
               equals(character(0)))
@@ -90,4 +90,10 @@ test_that("Errors during compilation propagate", {
   expect_that(t$knitr$options$error, is_false())
   t$knitr$options$error <- TRUE
   expect_that(m$make("knitr_rename.md"), not(throws_error()))
+})
+
+test_that("Renaming exported objects", {
+  cleanup()
+  m <- maker$new("knitr_rename.yml")
+  m$make("knitr_rename.md")
 })
