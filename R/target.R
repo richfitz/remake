@@ -42,40 +42,28 @@ make_target <- function(name, dat) {
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
   core <- c("command", "depends",
-            "rule", "target_argument", "quoted", "depends_is_fake",
+            "rule", "target_argument", "quoted",
             "chain")
 
   ## Quick check that may disappear later:
-  invalid <- c("rule", "target_argument", "quoted", "depends_is_fake")
+  invalid <- c("rule", "target_argument", "quoted")
   if (any(invalid %in% names(dat))) {
     stop("Invalid keys: ",
          paste(intersect(invalid, names(dat)), collapse=", "))
   }
 
-  ## TODO: Need to revisit exactly what depends_is_fake aims to
-  ## achive.  Looks like it was for testing quotedness and dealing
-  ## with knitr.  Consider lumping with quoted as an NA value for the
-  ## fake cases?  Also tied up with target_name, as that gets special
-  ## treatment too.
-  if (is.null(dat$command)) {
-    dat$depends_is_fake <- rep(TRUE, length(dat$depends))
-  } else {
+  if (!is.null(dat$command)) {
     if (length(dat$command) == 1L) {
       tmp <- parse_target_command(name, dat$command)
     } else {
       tmp <- parse_target_chain(name, dat$command)
     }
 
-    tmp$depends_is_fake <-
-      rep(c(FALSE, TRUE), c(length(tmp$depends), length(dat$depends)))
-    if ("depends" %in% names(dat)) {
-      tmp$depends <- c(tmp$depends, dat$depends)
+    if (length(dat$depends) > 0 && length(tmp$depends) > 0) {
+      stop("This is not supported")
     }
-    if (!is.null(tmp$chain)) {
-      for (i in seq_along(tmp$chain)) {
-        tmp$chain[[i]]$depends_is_fake <-
-          rep(FALSE, length(tmp$chain[[i]]$depends))
-      }
+    if ("depends" %in% names(dat)) {
+      tmp$depends <- dat$depends
     }
     dat[intersect(names(tmp), core)] <- tmp
   }
@@ -91,7 +79,6 @@ target_base <- R6Class(
     command=NULL,
     depends=NULL,
     ## Will change name soon:
-    depends_is_fake=NULL,
     rule=NULL,
     type=NULL,
     cleanup_level="never",
@@ -132,7 +119,6 @@ target_base <- R6Class(
       ## a bit annoying later.
       self$depends <- from_yaml_map_list(command$depends)
       sapply(self$depends, assert_scalar_character)
-      self$depends_is_fake <- command$depends_is_fake
 
       if (!is.null(opts$cleanup_level)) {
         self$cleanup_level <-
@@ -339,10 +325,9 @@ target_base <- R6Class(
 
     check_quoted=function() {
       quoted <- private$quoted
-      if (!is.null(quoted)) {
-        i <- !self$depends_is_fake
-        depends_name <- dependency_names(self$depends[i])
-        depends_type <- dependency_types(self$depends[i])
+      if (!is.null(quoted) && length(quoted) > 0L) {
+        depends_name <- dependency_names(self$depends)
+        depends_type <- dependency_types(self$depends)
         assert_length(quoted, length(depends_name))
         should_be_quoted <- depends_type == "file"
         if (any(should_be_quoted != quoted)) {
@@ -782,7 +767,6 @@ target_knitr <- R6Class(
 
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))
-      command$depends_is_fake <- c(command$depends_is_fake, TRUE)
 
       ## Hack to let target_base know we're not implicit.  There does
       ## need to be something here as a few places test for null-ness.
