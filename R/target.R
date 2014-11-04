@@ -505,11 +505,15 @@ target_object <- R6Class(
   "target_object",
   inherit=target_base,
   public=list(
-    initialize=function(name, command, opts=NULL) {
+    initialize=function(name, command, opts=NULL,
+      filter_options=FALSE) {
       if (is.null(command$rule)) {
         stop("Must not have a NULL rule")
       }
       opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
+      if (filter_options) {
+        opts <- opts[names(opts) %in% self$valid_options()]
+      }
       super$initialize(name, command, opts, "object")
     },
 
@@ -979,33 +983,35 @@ target_chain <- function(chain, parent, opts) {
   if (!(parent$type %in% c("file", "object"))) {
     stop("Can't use chained rules on targets of type ", parent)
   }
-  generator <- if (parent$type == "file") target_file else target_object
   len <- length(chain)
   chain_names <- chained_rule_name(parent$name, seq_len(len))
+  target_chain_match_dot(parent, len + 1L, chain_names)
 
-  match_dot <- function(x, pos, chain_names) {
-    j <- which(as.character(x$depends) == ".")
-    if (length(j) == 1L) {
-      x$depends[[j]] <- chain_names[[pos - 1L]]
-    } else { # defensive - should be safe here.
-      if (length(j) > 1L) {
-        stop("never ok")
-      } else if (pos > 1L) {
-        stop("missing")
-      }
+  f <- function(i) {
+    x <- target_object$new(chain_names[[i]], chain[[i]], opts,
+                           filter_options=TRUE)
+    x$chain_parent <- parent
+    target_chain_match_dot(x, i, chain_names)
+    x
+  }
+
+  lapply(seq_len(len), f)
+}
+
+target_chain_match_dot <- function(x, pos, chain_names) {
+  j <- which(as.character(x$depends) == ".")
+  if (length(j) == 1L) {
+    if (j > length(chain_names)) {
+      stop("Attempt to select impossible chain element") # defensive only
+    }
+    x$depends[[j]] <- chain_names[[pos - 1L]]
+  } else { # defensive - should be safe here.
+    if (length(j) > 1L) {
+      stop("never ok")
+    } else if (pos > 1L) {
+      stop("missing")
     }
   }
-
-  ret <- vector("list", len)
-  for (i in seq_len(len)) {
-    x <- generator$new(chain_names[[i]], chain[[i]], opts)
-    x$chain_parent <- parent
-    match_dot(x, i, chain_names)
-    ret[[i]] <- x
-  }
-
-  match_dot(parent, len + 1L, chain_names)
-  ret
 }
 
 chained_rule_name <- function(name, i) {
