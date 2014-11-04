@@ -230,8 +230,8 @@ maker <- R6Class(
 
     remove_target=function(target_name, chain=TRUE) {
       target <- self$get_target(target_name)
-      if (chain && !is.null(target$chain)) {
-        chain_names <- dependency_names(target$chain)
+      if (chain && !is.null(target$chain_kids)) {
+        chain_names <- dependency_names(target$chain_kids)
         self$remove_targets(chain_names, chain=FALSE)
       }
 

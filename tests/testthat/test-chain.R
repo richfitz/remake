@@ -6,12 +6,6 @@ if (interactive()) {
 
 context("Chained rules")
 
-if (FALSE) { # Disabled until rewritten
-test_that("command interface", {
-  cleanup()
-  m <- maker$new("chain_command.yml")
-})
-
 test_that("Chained rules", {
   cleanup()
   m <- maker$new("chain.yml")
@@ -25,20 +19,26 @@ test_that("Chained rules", {
   expect_that(c("chained{1}", "chained{2}") %in% m$target_names(all=TRUE),
               equals(c(TRUE, TRUE)))
 
+  t <- m$get_target("chained")
+
   t1 <- m$get_target("chained{1}")
-  expect_that(t1, is_a("target"))
-  expect_that(is.null(t1$chain_parent), is_false())
+  expect_that(t1, is_a("target_base"))
+  expect_that(t1, is_a("target_object"))
+  expect_that(t1$chain_parent, equals(t))
   expect_that(t1$depends, equals(list()))
 
   t2 <- m$get_target("chained{2}")
-  expect_that(t2, is_a("target"))
-  expect_that(is.null(t2$chain_parent), is_false())
+  expect_that(t2, is_a("target_base"))
+  expect_that(t2, is_a("target_object"))
+  expect_that(t2$chain_parent, equals(t))
   expect_that(t2$depends, equals(list(t1)))
+
+  expect_that(length(t$chain_kids), equals(2))
 
   res <- m$make("chained")
   expect_that(res, equals(6))
 
-  expect_that(m$store$objects$contains("chained"), is_true())
+  expect_that(m$store$objects$contains("chained"),    is_true())
   expect_that(m$store$objects$contains("chained{1}"), is_true())
   expect_that(m$store$objects$contains("chained{2}"), is_true())
 
@@ -61,4 +61,3 @@ test_that("Chained rules", {
   expect_that(m$store$objects$contains("chained{1}"), is_true())
   expect_that(m$store$objects$contains("chained{2}"), is_true())
 })
-}

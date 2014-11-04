@@ -130,9 +130,6 @@ test_that("Object target (invalid)", {
   expect_that(make_target("real", list(rule="foo")),
               throws_error("Invalid keys: rule"))
 
-  expect_that(make_target("real", list(command=c("foo()", "bar()"))),
-              throws_error("str must be a scalar"))
-
   expect_that(make_target("real", list(command="foo()", quiet="quiet")),
               throws_error("real: quiet must be logical"))
   expect_that(make_target("real", list(command="foo()", quiet=c(TRUE, TRUE))),

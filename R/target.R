@@ -51,10 +51,15 @@ process_target_command <- function(name, dat) {
     stop("Invalid keys: ",
          paste(intersect(invalid, names(dat)), collapse=", "))
   }
+
+  ## TODO: Need to revisit exactly what depends_is_fake aims to
+  ## achive.  Looks like it was for testing quotedness and dealing
+  ## with knitr.  Consider lumping with quoted as an NA value for the
+  ## fake cases?  Also tied up with target_name, as that gets special
+  ## treatment too.
   if (is.null(dat$command)) {
     dat$depends_is_fake <- rep(TRUE, length(dat$depends))
   } else {
-    ## TODO: This switch is better in parse_target_comman
     if (length(dat$command) == 1L) {
       tmp <- parse_target_command(name, dat$command)
     } else {
@@ -65,6 +70,12 @@ process_target_command <- function(name, dat) {
       rep(c(FALSE, TRUE), c(length(tmp$depends), length(dat$depends)))
     if ("depends" %in% names(dat)) {
       tmp$depends <- c(tmp$depends, dat$depends)
+    }
+    if (!is.null(tmp$chain)) {
+      for (i in seq_along(tmp$chain)) {
+        tmp$chain[[i]]$depends_is_fake <-
+          rep(FALSE, length(tmp$chain[[i]]$depends))
+      }
     }
     dat[intersect(names(tmp), core)] <- tmp
   }
@@ -88,9 +99,19 @@ target_base <- R6Class(
     store=NULL,
     quiet=FALSE,
     packages=NULL,
+    chain_parent=NULL, # controlling target of a chain
+    chain_kids=NULL,   # dependent rules of a chain
 
     initialize=function(name, command, opts, type="base") {
+      assert_scalar_character(name)
       self$name <- name
+      assert_scalar_character(type)
+      self$type <- type
+
+      if ("target_argument" %in% names(command) && type != "file") {
+        stop("'target_argument' field invalid for arguments of type ", type)
+      }
+
       ## TODO: This is a mess!  What we really have with the incoming
       ## 'command' is a processed set of commands.  We don't actually
       ## store this, but all the bits are scattered around.  'quoted'
@@ -106,22 +127,18 @@ target_base <- R6Class(
       }
       self$rule <- command$rule
 
+      ## TODO: It would be useful here to require this to become a
+      ## character vector.  Empty depends sets become list(), which is
+      ## a bit annoying later.
       self$depends <- from_yaml_map_list(command$depends)
       sapply(self$depends, assert_scalar_character)
       self$depends_is_fake <- command$depends_is_fake
-
-      if ("target_argument" %in% names(command) && type != "file") {
-        stop("'target_argument' field invalid for arguments of type ", type)
-      }
 
       if (!is.null(opts$cleanup_level)) {
         self$cleanup_level <-
           match_value(opts$cleanup_level, cleanup_levels(),
                       paste(name, "cleanup_level", sep=": "))
       }
-
-      assert_scalar_character(type)
-      self$type <- type
 
       if ("quiet" %in% names(opts)) {
         assert_scalar_logical(opts$quiet, paste(name, "quiet", sep=": "))
@@ -142,6 +159,10 @@ target_base <- R6Class(
       if ("packages" %in% names(opts)) {
         self$packages <- opts$packages
         assert_character(opts$packages)
+      }
+
+      if ("chain" %in% names(command)) {
+        self$chain_kids <- target_chain(command$chain, self, opts)
       }
     },
 
@@ -177,6 +198,10 @@ target_base <- R6Class(
       ## the database's set of targets. Missing file targets will be
       ## created and added to the database (which being passed by
       ## reference will propagate backwards).
+      if (!is.null(self$chain_kids)) {
+        maker$add_targets(self$chain_kids, activate=TRUE)
+      }
+
       msg <- setdiff(depends_name, maker$target_names(all=TRUE))
       if (length(msg) > 0L) {
         if (!all(target_is_file(msg))) {
@@ -936,6 +961,51 @@ dependency_types <- function(x) {
   } else {
     character(0)
   }
+}
+
+## TODO: There is an issue here for getting options for rules that
+## terminate in knitr or plot rules: we can't pass along options to
+## these!
+##
+##   Always accept quiet, check, packages (base)
+##     cleanup_level (file and object)
+##   never plot, knitr, auto_figure_prefix
+##
+## Special testing will be required to get that right.  Basically only
+## the terminating bit of rule here will accept nonstandard options.
+## I can't trick the R6 classes into allowing static access to a
+## method either.
+target_chain <- function(chain, parent, opts) {
+  if (!(parent$type %in% c("file", "object"))) {
+    stop("Can't use chained rules on targets of type ", parent)
+  }
+  generator <- if (parent$type == "file") target_file else target_object
+  len <- length(chain)
+  chain_names <- chained_rule_name(parent$name, seq_len(len))
+
+  match_dot <- function(x, pos, chain_names) {
+    j <- which(as.character(x$depends) == ".")
+    if (length(j) == 1L) {
+      x$depends[[j]] <- chain_names[[pos - 1L]]
+    } else { # defensive - should be safe here.
+      if (length(j) > 1L) {
+        stop("never ok")
+      } else if (pos > 1L) {
+        stop("missing")
+      }
+    }
+  }
+
+  ret <- vector("list", len)
+  for (i in seq_len(len)) {
+    x <- generator$new(chain_names[[i]], chain[[i]], opts)
+    x$chain_parent <- parent
+    match_dot(x, i, chain_names)
+    ret[[i]] <- x
+  }
+
+  match_dot(parent, len + 1L, chain_names)
+  ret
 }
 
 chained_rule_name <- function(name, i) {

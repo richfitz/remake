@@ -163,3 +163,14 @@ test_that("target_argument detection", {
 
 ## TODO: Add things that have non-symbol objects within them.  Things
 ## like list(a, b), for example.
+
+test_that("chain", {
+  cmd <- parse_target_chain("a", c("foo(x)", "bar(.)"))
+  expect_that(cmd$rule, equals("bar")) # last element of chain
+  expect_that(cmd$depends, equals(list(".")))
+  expect_that(cmd$quoted, equals(FALSE))
+  expect_that(length(cmd$chain), equals(1L))
+  expect_that(cmd$chain[[1]]$rule, equals("foo"))
+  expect_that(cmd$chain[[1]]$depends, equals(list("x")))
+  expect_that(cmd$chain[[1]]$quoted, equals(FALSE))
+})
