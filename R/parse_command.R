@@ -4,10 +4,26 @@
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
 parse_target_command <- function(target, command) {
+  if (length(command) > 1L) {
+    ## This is an early exit, which is slightly evil but avoids this
+    ## whole function being a big if/else statement.
+    return(parse_target_chain(target, command))
+  }
+
   dat <- parse_command(command)
   if (length(dat$depends) > 0L) {
     ## This whole section tries to work out the target_argument field.
     targets <- sapply(dat$depends, "[[", 1)
+
+    ## Deal with dots first.
+    if (any(targets == "." & dat$quoted)) {
+      stop("Dot argument must not be quoted (it's like a variable)")
+    }
+    if (sum(targets == ".") > 1L) {
+      stop("Only a single dot argument allowed")
+    }
+
+    ## Then with target_name
     pos <- c(target, "target_name")
     ## Need to determine that there is only a single possible target:
     i <- sapply(pos, function(x) targets == x)
@@ -44,15 +60,17 @@ parse_target_command <- function(target, command) {
 parse_target_chain <- function(target, chain) {
   chain <- lapply(chain, parse_target_command, target=target)
 
+  ## TODO: Check >1 dot
   has_dot <- sapply(chain, function(x) "." %in% x$depends)
 
-  len <- length(chain)
-  if ("." %in% has_dot[[1]]) {
+  if (has_dot[[1]]) {
     stop("The first element in a chain cannot contain a dot ('.')")
   }
   if (any(!has_dot[-1])) {
     stop("All chain elements except the first need a dot")
   }
+
+  len <- length(chain)
   has_target_argument <- sapply(chain, function(x) !is.null(x$target_argument))
   if (any(has_target_argument & seq_len(len) < len)) {
     stop("Can only refer to target in the final element of a chain")

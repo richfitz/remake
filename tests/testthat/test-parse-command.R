@@ -165,7 +165,7 @@ test_that("target_argument detection", {
 ## like list(a, b), for example.
 
 test_that("chain", {
-  cmd <- parse_target_chain("a", c("foo(x)", "bar(.)"))
+  cmd <- parse_target_command("a", c("foo(x)", "bar(.)"))
   expect_that(cmd$rule, equals("bar")) # last element of chain
   expect_that(cmd$depends, equals(list(".")))
   expect_that(cmd$quoted, equals(FALSE))
@@ -173,4 +173,22 @@ test_that("chain", {
   expect_that(cmd$chain[[1]]$rule, equals("foo"))
   expect_that(cmd$chain[[1]]$depends, equals(list("x")))
   expect_that(cmd$chain[[1]]$quoted, equals(FALSE))
+
+  cmd <- parse_target_command("x", c("foo(a, b)", "bar(c, .)"))
+  expect_that(cmd$chain[[1]]$depends, equals(list('a', 'b')))
+  expect_that(cmd$depends, equals(list('c', '.')))
+
+  cmd <- parse_target_command("x", c("foo(a, b)", "bar(arg1=c, arg2=.)"))
+  expect_that(cmd$depends, equals(list(arg1='c', arg2='.')))
+
+  expect_that(parse_target_command("a", c("foo()", "bar('.')")),
+              throws_error("Dot argument must not be quoted"))
+
+  expect_that(parse_target_command("a", c("foo(.)", "bar(.)")),
+              throws_error("The first element in a chain cannot contain a dot"))
+  expect_that(parse_target_command("a", c("foo()", "bar(x)")),
+              throws_error("All chain elements except the first need a dot"))
+
+  expect_that(parse_target_command("a", c("foo()", "bar(., .)")),
+              throws_error("Only a single dot argument allowed"))
 })

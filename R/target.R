@@ -1,6 +1,7 @@
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
 make_target <- function(name, dat) {
+  assert_scalar_character(name)
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
   }
@@ -53,12 +54,7 @@ process_target_command <- function(name, dat) {
   }
 
   if (!is.null(dat$command)) {
-    if (length(dat$command) == 1L) {
-      tmp <- parse_target_command(name, dat$command)
-    } else {
-      tmp <- parse_target_chain(name, dat$command)
-    }
-
+    tmp <- parse_target_command(name, dat$command)
     if (length(dat$depends) > 0 && length(tmp$depends) > 0) {
       stop("This is not supported")
     }
