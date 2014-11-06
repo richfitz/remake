@@ -48,6 +48,14 @@ test_that("knitr depends", {
               equals(character(0)))
 })
 
+test_that("knitr depends (file only)", {
+  cleanup()
+  m <- maker$new("knitr_file_dep.yml")
+  expect_that(file.exists("data.csv"), is_false())
+  m$make()
+  expect_that(file.exists("data.csv"), is_true())
+})
+
 test_that("knitr options", {
   cleanup()
   m <- maker$new("knitr_opts.yml")

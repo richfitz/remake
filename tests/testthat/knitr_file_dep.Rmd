@@ -1,0 +1,7 @@
+# This is a knitr test
+
+This is the raw data:
+```{r}
+d <- read.csv("data.csv", stringsAsFactors=FALSE)
+head(d)
+```

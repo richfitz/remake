@@ -1,0 +1,16 @@
+# This version exercises the 'command' interface that will probably
+# become the standard.
+sources:
+  - code.R
+
+targets:
+  all:
+    depends: knitr_file_dep.md
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  knitr_file_dep.md:
+    depends: data.csv
+    knitr: true

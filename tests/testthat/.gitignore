@@ -5,6 +5,7 @@ simple.R
 .maker
 figure
 knitr.md
+knitr_file_dep.md
 knitr_rename.md
 test
 test.zip
