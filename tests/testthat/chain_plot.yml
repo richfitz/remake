@@ -1,0 +1,16 @@
+sources:
+  - code.R
+
+targets:
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command:
+
+  plot.pdf:
+    plot: true
+    command:
+      - process_data("data.csv")
+      - myplot(.)

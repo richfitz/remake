@@ -259,6 +259,10 @@ test_that("knitr (invalid)", {
 
   expect_that(make_target("file.md", list(command="fn()", knitr=TRUE)),
               throws_error("knitr targets must have a NULL rule"))
+  ## Chains fail because commands fail:
+  expect_that(make_target("file.md",
+                          list(command=c("foo()", "bar(.)"), knitr=TRUE)),
+              throws_error("knitr targets must have a NULL rule"))
 
   expect_that(make_target("file.md", list(quiet="yes please",
                                           type="knitr"))$quiet,

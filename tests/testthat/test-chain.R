@@ -61,3 +61,55 @@ test_that("Chained rules", {
   expect_that(m$store$objects$contains("chained{1}"), is_true())
   expect_that(m$store$objects$contains("chained{2}"), is_true())
 })
+
+test_that("Chained rules -> file", {
+  cleanup()
+  m <- maker$new("chain_file.yml")
+  m$make("data.csv")
+  m$make("plot.pdf")
+
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+
+  ## This can't currently be tested, but the intermediate object won't
+  ## be rebuilt.
+  file.remove("plot.pdf")
+  m$make("plot.pdf")
+
+  m$make("clean")
+  expect_that(file.exists("plot.pdf"), is_false())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+
+  m$make("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  m$remove_target("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_false())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+})
+
+test_that("Chained rules -> plot", {
+  cleanup()
+  m <- maker$new("chain_plot.yml")
+  m$make("data.csv")
+  m$make("plot.pdf")
+
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+
+  ## This can't currently be tested, but the intermediate object won't
+  ## be rebuilt.
+  file.remove("plot.pdf")
+  m$make("plot.pdf")
+
+  m$make("clean")
+  expect_that(file.exists("plot.pdf"), is_false())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+
+  m$make("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  m$remove_target("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_false())
+  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+})
