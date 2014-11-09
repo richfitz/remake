@@ -362,25 +362,7 @@ maker <- R6Class(
     fmt=NULL,
 
     initialize_cleanup_targets=function() {
-      levels <- cleanup_target_names()
-      targets <- list()
-      for (i in seq_along(levels)) {
-        target_name <- levels[[i]]
-        if (target_name %in% self$target_names()) {
-          depends <- self$get_target(target_name)$depends
-          command <- self$get_target(target_name)$command
-        } else {
-          depends <- command <- NULL
-        }
-        if (i > 1L) {
-          depends <- c(depends, list(levels[[i - 1L]]))
-        }
-        ## TODO: new function 'make_target_cleanup'?
-        targets[[i]] <- make_target(target_name,
-                                    list(command=command,
-                                         depends=depends,
-                                         type="cleanup"))
-      }
+      targets <- lapply(cleanup_target_names(), make_target_cleanup, self)
       self$add_targets(targets, force=TRUE)
     },
 

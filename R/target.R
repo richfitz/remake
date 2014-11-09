@@ -588,6 +588,12 @@ target_cleanup <- R6Class(
       NULL
     },
 
+    ## This allows us to call the command but pass none of the
+    ## dependencies through.
+    dependencies_real=function() {
+      list()
+    },
+
     will_remove=function() {
       target_level <- sapply(self$maker$targets, function(x) x$cleanup_level)
       names(self$maker$targets)[target_level == self$name]
@@ -992,6 +998,41 @@ target_chain_match_dot <- function(x, pos, chain_names) {
       stop("missing")
     }
   }
+}
+
+make_target_cleanup <- function(name, maker) {
+  levels <- cleanup_target_names()
+  name <- match_value(name, levels)
+  i <- match(name, levels)
+  if (name %in% maker$target_names()) {
+    t <- maker$get_target(name)
+
+    ## These aren't tested:
+    if (!is.null(t$chain_kids)) {
+      stop("Cleanup target cannot contain a chain")
+    }
+    if (length(t$depends) > 0L) {
+      ## This is far from pretty.  Basically I need to know whether
+      ## the dependencies we have been given here came from a depends:
+      ## entry or from arguments to the command.  The former is fine,
+      ## the latter is not.  Previously this was what the
+      ## depends_is_fake argument was for.  The simplest way here is
+      ## just to parse the damn thing again:
+      if (length(parse_command(t$command)$depends) > 0L) {
+        stop("Cleanup target commands must have no arguments")
+      }
+    }
+    command <- t$command
+    depends <- t$depends
+
+    ## TODO: Ideally we'd also get quiet from the target here, too.
+  } else {
+    command <- depends <- NULL
+  }
+  if (i > 1L) {
+    depends <- c(depends, list(levels[[i - 1L]]))
+  }
+  make_target(name, list(command=command, depends=depends, type="cleanup"))
 }
 
 chained_rule_name <- function(name, i) {

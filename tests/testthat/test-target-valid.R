@@ -283,6 +283,29 @@ test_that("knitr (invalid)", {
               gives_warning("Ignoring 'auto_figure_prefix'"))
 })
 
+## This section is weird and pretty much just a regression test.  I
+## hope that this sort of functionality is not actually that useful.
+test_that("cleanup", {
+  cleanup()
+  m <- maker$new("maker_cleanup_hook.yml")
+  t <- m$get_target("clean")
+  expect_that(length(t$depends), equals(2))
+  expect_that(dependency_names(t$depends),
+              equals(c("data.csv", "tidy")))
+
+  expect_that(file.exists("data.csv"), is_false())
+  expect_that(m$make("clean"),
+              shows_message("running post-cleanup hook"))
+  expect_that(file.exists("data.csv"), is_true())
+  expect_that(m$make("purge"),
+              shows_message("running post-cleanup hook"))
+  expect_that(file.exists("data.csv"), is_false())
+
+  cleanup()
+  expect_that(maker$new("maker_cleanup_error.yml"),
+              throws_error("Cleanup target commands must have no arguments"))
+})
+
 ## Things that need activation:
 test_that("get/set/archive/del object targets", {
   cleanup()
