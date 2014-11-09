@@ -9,6 +9,14 @@ if (interactive()) {
 
 context("Targets (low level)")
 
+test_that("reserved names", {
+  reserved <- c("install_packages", "gitignore", "target_name", ".")
+  expect_that(sort(reserved), equals(sort(target_reserved_names())))
+  for (i in reserved) {
+    expect_that(make_target(i), throws_error("Target name .+ is reserved"))
+  }
+})
+
 ## The simplest target types:
 test_that("Fake targets", {
   t <- make_target("a_fake_target", list(type="fake"))
