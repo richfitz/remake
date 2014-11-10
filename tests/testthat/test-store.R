@@ -33,7 +33,7 @@ test_that("data store", {
 
   ## A different data store would see this:
   st2 <- maker:::object_store$new(path)
-  st2$contains("foo")
+  expect_that(st2$contains("foo"), is_true())
 
   ## Can export things:
   e <- new.env(parent=emptyenv())
@@ -66,6 +66,31 @@ test_that("data store", {
   expect_that(ls(e), equals(c("bar", "foo")))
   expect_that(e$foo, is_identical_to(st$get("bar")))
   expect_that(e$bar, is_identical_to(st$get("foo")))
+
+  ## Delayed assign:
+  e <- new.env(parent=emptyenv())
+  st$export(c("bar", "foo"), e, delayed=TRUE)
+  expect_that(ls(e), equals(c("bar", "foo")))
+  expect_that(e$bar, equals(st$get("bar")))
+  expect_that(e$foo, equals(st$get("foo")))
+
+  test_that("delayed assignments are promises", {
+    e <- new.env(parent=emptyenv())
+    st$export(c("bar", "foo"), e, delayed=TRUE)
+    attach(e, name="testing_delayed")
+    on.exit(detach("testing_delayed"))
+    expect_that(pryr::is_promise(bar), is_true())
+    expect_that(pryr::is_promise(bar), is_true())
+  })
+
+  test_that("immediate assignments are not promises", {
+    e <- new.env(parent=emptyenv())
+    st$export(c("bar", "foo"), e, delayed=FALSE)
+    attach(e, name="testing_immediate")
+    on.exit(detach("testing_immediate"))
+    expect_that(pryr::is_promise(bar), is_false())
+    expect_that(pryr::is_promise(bar), is_false())
+  })
 
   st$del("foo")
   expect_that(st$contains("foo"), is_false())

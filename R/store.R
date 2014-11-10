@@ -118,7 +118,7 @@ object_store <- R6Class(
 
     ## This is a *one way* function; changes won't be automatically
     ## propagated.
-    export=function(list=NULL, envir=.GlobalEnv) {
+    export=function(list=NULL, envir=.GlobalEnv, delayed=FALSE) {
       if (is.null(list)) {
         list <- self$ls()
       }
@@ -131,8 +131,17 @@ object_store <- R6Class(
         names_out[names_out == ""] <- list[names_out == ""]
       }
 
+      do_assign <- function(name_out, name_in) {
+        if (delayed) {
+          force(name_out)
+          force(name_in)
+          delayedAssign(name_out, self$get(name_in), assign.env=envir)
+        } else {
+          assign(name_out, self$get(name_in), envir=envir)
+        }
+      }
       for (i in seq_along(list)) {
-        assign(names_out[i], self$get(list[i]), envir=envir)
+        do_assign(names_out[i], list[i])
       }
     },
 

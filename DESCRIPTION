@@ -20,4 +20,5 @@ Suggests:
     optparse,
     rainbowrite,
     knitr,
-    devtools
+    devtools,
+    pryr
