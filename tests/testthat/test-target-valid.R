@@ -129,6 +129,13 @@ test_that("Object target", {
 
 ## TODO: These error messages are super inconsistent.
 test_that("Object target (invalid)", {
+  expect_that(make_target("foo", "bar"),
+              throws_error("While processing target 'foo':"))
+  expect_that(make_target("foo", "bar"),
+              throws_error("target data must be named"))
+  expect_that(make_target("foo", c(name="bar")),
+              throws_error("target data must be a list"))
+
   ## This is actually hard to achive:
   expect_that(make_target("real", list(type="object")),
               throws_error("Must not have a NULL rule"))
@@ -139,13 +146,16 @@ test_that("Object target (invalid)", {
               throws_error("Invalid keys: rule"))
 
   expect_that(make_target("real", list(command="foo()", quiet="quiet")),
-              throws_error("real: quiet must be logical"))
+              throws_error("quiet must be logical"))
   expect_that(make_target("real", list(command="foo()", quiet=c(TRUE, TRUE))),
-              throws_error("real: quiet must be a scalar"))
+              throws_error("quiet must be a scalar"))
 
   expect_that(make_target("real", list(command="foo()",
                                        cleanup_level="purge2")),
-              throws_error("real: cleanup_level must be one"))
+              throws_error("cleanup_level must be one"))
+
+  expect_that(make_target("real", list(command="foo()", check="exists2")),
+              throws_error("check must be one"))
 
   expect_that(make_target("real", list(command="foo()", other_opt="tidy")),
               throws_error("Invalid options for real: other_opt"))
@@ -274,16 +284,16 @@ test_that("knitr (invalid)", {
 
   expect_that(make_target("file.md", list(quiet="yes please",
                                           type="knitr"))$quiet,
-              throws_error("file.md: quiet must be logical"))
+              throws_error("quiet must be logical"))
 
   expect_that(make_target("file.md", list(unknown="opt", type="knitr")),
               throws_error("Invalid options for file.md"))
 
   expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
-              gives_warning("Unknown fields in file.md: knitr: auto_figure"))
+              gives_warning("Unknown fields in knitr: auto_figure"))
 
   expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
-              gives_warning("Unknown fields in file.md: knitr: auto_figure"))
+              gives_warning("Unknown fields in knitr: auto_figure"))
 
   dat <- list(knitr=list(options=list(fig.path="foo")),
               auto_figure_prefix=TRUE)
@@ -396,4 +406,9 @@ test_that("get/set/archive/del file targets", {
 
   expect_that(t$archive_export(path, missing_ok=TRUE), is_false())
   unlink(path, recursive=TRUE)
+})
+
+test_that("Error messages", {
+  expect_that(maker$new("maker_invalid.yml"),
+              throws_error("While processing target 'all'"))
 })

@@ -6,35 +6,45 @@ make_target <- function(name, dat) {
     stop(sprintf("Target name %s is reserved", name))
   }
 
-  type <- dat$type
-  if (!is.null(type)) {
-    assert_scalar_character(type)
-    dat <- dat[names(dat) != "type"]
-  }
+  ## This is just a wrapper function to improve the traceback on error.
+  make_target_dat <- function(dat) {
+    assert_named_list(dat, name="target data")
 
-  dat <- process_target_command(name, dat)
-
-  if (is.null(type)) {
-    type <- if (target_is_file(name)) "file" else  "object"
-    if ("knitr" %in% names(dat$opts)) {
-      type <- "knitr"
-    } else if ("plot" %in% names(dat$opts)) {
-      type <- "plot"
-    } else if (type == "object" && is.null(dat$command$rule)) {
-      type <- "fake"
+    type <- dat$type
+    if (!is.null(type)) {
+      assert_scalar_character(type)
+      dat <- dat[names(dat) != "type"]
     }
+
+    dat <- process_target_command(name, dat)
+
+    if (is.null(type)) {
+      type <- if (target_is_file(name)) "file" else  "object"
+      if ("knitr" %in% names(dat$opts)) {
+        type <- "knitr"
+      } else if ("plot" %in% names(dat$opts)) {
+        type <- "plot"
+      } else if (type == "object" && is.null(dat$command$rule)) {
+        type <- "fake"
+      }
+    }
+
+    ## TODO: Get utility into this?  Possibly not as they're pretty
+    ## different really having no command/deps
+    generators <- list(object=target_object,
+                       file=target_file,
+                       plot=target_plot,
+                       knitr=target_knitr,
+                       fake=target_fake,
+                       cleanup=target_cleanup)
+    type <- match_value(type, names(generators))
+    generators[[type]]$new(name, dat$command, dat$opts)
   }
 
-  ## TODO: Get utility into this?  Possibly not as they're pretty
-  ## different really having no command/deps
-  generators <- list(object=target_object,
-                     file=target_file,
-                     plot=target_plot,
-                     knitr=target_knitr,
-                     fake=target_fake,
-                     cleanup=target_cleanup)
-  type <- match_value(type, names(generators))
-  generators[[type]]$new(name, dat$command, dat$opts)
+  prefix <- sprintf("While processing target '%s':\n    ", name)
+  withCallingHandlers(make_target_dat(dat),
+                      error=catch_error_prefix(prefix),
+                      warning=catch_warning_prefix(prefix))
 }
 
 ## Will change name soon, but the basic idea is to sort out what it is
@@ -118,12 +128,11 @@ target_base <- R6Class(
 
       if (!is.null(opts$cleanup_level)) {
         self$cleanup_level <-
-          match_value(opts$cleanup_level, cleanup_levels(),
-                      paste(name, "cleanup_level", sep=": "))
+          match_value(opts$cleanup_level, cleanup_levels(), "cleanup_level")
       }
 
       if ("quiet" %in% names(opts)) {
-        assert_scalar_logical(opts$quiet, paste(name, "quiet", sep=": "))
+        assert_scalar_logical(opts$quiet, "quiet")
         self$quiet <- opts$quiet
         if (is.null(self$rule)) {
           warning("Using 'quiet' on a rule-less target has no effect")
@@ -131,8 +140,7 @@ target_base <- R6Class(
       }
 
       if ("check" %in% names(opts)) {
-        self$check <- match_value(opts$check, check_levels(),
-                                  paste(name, "quiet", sep=": "))
+        self$check <- match_value(opts$check, check_levels(), "check")
         if (is.null(self$rule)) {
           warning("Using 'check' on a rule-less target has no effect")
         }
@@ -674,7 +682,7 @@ target_plot <- R6Class(
       }
       ## This will not work well for cases where `...` is in the
       ## device name (such as jpeg, bmp, etc)
-      warn_unknown(paste0(name, ":plot"), plot, names(formals(dev)))
+      warn_unknown("plot", plot, names(formals(dev)))
       self$plot <- list(device=dev, args=plot)
     },
 
@@ -733,8 +741,7 @@ target_knitr <- R6Class(
       if (identical(knitr, TRUE) || is.null(knitr)) {
         knitr <- list()
       }
-      warn_unknown(paste(name, "knitr", sep=": "), knitr,
-                   c("input", "options"))
+      warn_unknown("knitr", knitr, c("input", "options"))
 
       ## Infer name if it's not present:
       if (is.null(knitr$input)) {

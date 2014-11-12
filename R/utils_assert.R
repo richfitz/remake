@@ -128,10 +128,10 @@ assert_named <- function(x,
   nx <- names(x)
   if (is.null(nx) || any(nx == "")) {
     if (length(x) > 0 || !empty_can_be_unnamed) {
-      stop(sprintf("%s must be named", name))
+      stop(sprintf("%s must be named", name), call.=FALSE)
     }
   } else if (any(duplicated(nx))) {
-    stop(sprintf("%s must have unique names", name))
+    stop(sprintf("%s must have unique names", name), call.=FALSE)
   }
 }
 

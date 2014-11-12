@@ -1,0 +1,16 @@
+# This version exercises the 'command' interface that will probably
+# become the standard.
+sources:
+  - code.R
+
+targets:
+  ## This is incorrect, but I typed this and want a nice error message:
+  all:
+    - processed
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command: process_data("data.csv")

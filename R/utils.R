@@ -34,7 +34,7 @@ warn_unknown <- function(name, defn, known) {
   if (length(unknown) > 0) {
     warning(sprintf("Unknown fields in %s: %s",
                     name, paste(unknown, collapse=", ")),
-            immediate.=TRUE)
+            immediate.=TRUE, call.=FALSE)
   }
 }
 
@@ -221,6 +221,23 @@ load_extra_packages <- function(packages) {
 unload_extra_packages <- function(packages) {
   for (p in packages) {
     detach(sprintf("package:%s", p), character.only=TRUE)
+  }
+}
+
+## For use with tryCatch and withCallingHandlers
+catch_error_prefix <- function(prefix) {
+  force(prefix)
+  function(e) {
+    e$message <- paste0(prefix, e$message)
+    stop(e)
+  }
+}
+catch_warning_prefix <- function(prefix) {
+  force(prefix)
+  function(e) {
+    e$message <- paste0(prefix, e$message)
+    warning(e)
+    invokeRestart("muffleWarning")
   }
 }
 
