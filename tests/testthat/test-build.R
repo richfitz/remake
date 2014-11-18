@@ -183,3 +183,10 @@ test_that("maker environment", {
   expect_that(ls(e), equals("processed"))
   expect_that(exists("download_data", e), is_true())
 })
+
+test_that("extra dependencies", {
+  cleanup()
+  m <- maker$new("maker_extra_deps.yml")
+  m$make("processed")
+  expect_that(file.exists("data.csv"), is_true())
+})

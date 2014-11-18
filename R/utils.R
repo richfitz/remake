@@ -241,6 +241,10 @@ catch_warning_prefix <- function(prefix) {
   }
 }
 
+rep_along <- function(x, along.with) {
+  rep_len(x, length(along.with))
+}
+
 ## This is just to avoid dealing with .onLoad
 painter <- R6Class(
   public=list(

@@ -54,6 +54,7 @@ parse_target_command <- function(target, command) {
                    paste(sprintf("%s (%d)", names(n), n), collapse=", ")))
     }
   }
+  dat$depends_is_arg <- rep_along(TRUE, dat$depends)
   dat
 }
 

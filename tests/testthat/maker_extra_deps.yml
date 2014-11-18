@@ -1,0 +1,20 @@
+# This version exercises the 'command' interface that will probably
+# become the standard.
+sources:
+  - code.R
+  - code_extra_deps.R
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    command: download_data(target_name)
+
+  processed:
+    command: process_data_hardcoded()
+    depends: data.csv
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true

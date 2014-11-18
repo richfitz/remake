@@ -84,7 +84,8 @@ status <- function(target_name, graph, m) {
     x <- m$get_target(t)
     dirty[[t]] <- !x$is_current()
     if (check_depends(x$check)) {
-      d <- dependency_names(x$dependencies_real())
+      deps <- filter_targets_by_type(x$depends, c("file", "object"))
+      d <- dependency_names(deps)
       ## TODO: This conditional goes away if we have a dependency
       ## names function that always returns a character vector.
       if (length(d) > 0L) {

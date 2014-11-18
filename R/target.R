@@ -53,7 +53,7 @@ make_target <- function(name, dat) {
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
   core <- c("command", "depends",
-            "rule", "target_argument", "quoted",
+            "rule", "target_argument", "quoted", "depends_is_arg",
             "chain")
 
   ## Quick check that may disappear later:
@@ -63,18 +63,27 @@ process_target_command <- function(name, dat) {
          paste(intersect(invalid, names(dat)), collapse=", "))
   }
 
-  if (!is.null(dat$command)) {
-    tmp <- parse_target_command(name, dat$command)
-    if (length(dat$depends) > 0 && length(tmp$depends) > 0) {
-      stop("This is not supported")
-    }
-    if ("depends" %in% names(dat)) {
-      tmp$depends <- dat$depends
-    }
-    dat[intersect(names(tmp), core)] <- tmp
-  }
-  is_command <- names(dat) %in% c(core)
+  dat$depends_is_arg <- rep(FALSE, length(dat$depends))
 
+  if (!is.null(dat$command)) {
+    cmd <- parse_target_command(name, dat$command)
+
+    if ("depends" %in% names(dat)) { # extra dependencies:
+      if (is.null(cmd$chain)) {
+        cmd$depends <- c(cmd$depends, dat$depends)
+        cmd$depends_is_arg <- c(cmd$depends_is_arg,
+                                dat$depends_is_arg)
+      } else {
+        cmd$chain[[1]]$depends <- c(cmd$chain[[1]]$depends, dat$depends)
+        cmd$chain[[1]]$depends_is_arg <- c(cmd$chain[[1]]$depends_is_arg,
+                                           dat$depends_is_arg)
+      }
+    }
+
+    dat[intersect(names(cmd), core)] <- cmd
+  }
+
+  is_command <- names(dat) %in% core
   list(command=dat[is_command], opts=dat[!is_command])
 }
 
@@ -84,6 +93,7 @@ target_base <- R6Class(
     name=NULL,
     command=NULL,
     depends=NULL,
+    depends_is_arg=NULL,
     ## Will change name soon:
     rule=NULL,
     type=NULL,
@@ -125,6 +135,11 @@ target_base <- R6Class(
       ## a bit annoying later.
       self$depends <- from_yaml_map_list(command$depends)
       sapply(self$depends, assert_scalar_character)
+      assert_length(command$depends_is_arg, length(command$depends))
+      if (length(command$depends_is_arg) > 0L) {
+        assert_logical(command$depends_is_arg)
+      }
+      self$depends_is_arg <- command$depends_is_arg
 
       if (!is.null(opts$cleanup_level)) {
         self$cleanup_level <-
@@ -235,19 +250,12 @@ target_base <- R6Class(
       ""
     },
 
-    ## Bad name, but the idea is simple: We want to return a list with
-    ## only dependencies that are interesting (i.e, file/plot/object
-    dependencies_real=function() {
-      filter_targets_by_type(self$depends,
-                             c("file", "plot", "object"))
-    },
-
     dependency_status=function(missing_ok=FALSE, check=NULL) {
       check <- with_default(check, self$check)
       depends <- code <- NULL
 
       if (check_depends(check)) {
-        depends <- self$dependencies_real()
+        depends <- filter_targets_by_type(self$depends, c("file", "object"))
         names(depends) <- dependency_names(depends)
         depends <- lapply(depends, function(x) x$get_hash(missing_ok))
       }
@@ -270,7 +278,9 @@ target_base <- R6Class(
       if (is.null(self$rule)) {
         list()
       } else {
-        lapply(self$dependencies_real(), function(x) x$get(fake, for_script))
+        deps <- self$depends[self$depends_is_arg]
+        deps <- filter_targets_by_type(deps, c("file", "object"))
+        lapply(deps, function(x) x$get(fake, for_script))
       }
     },
 
@@ -330,8 +340,9 @@ target_base <- R6Class(
     check_quoted=function() {
       quoted <- private$quoted
       if (!is.null(quoted) && length(quoted) > 0L) {
-        depends_name <- dependency_names(self$depends)
-        depends_type <- dependency_types(self$depends)
+        i <- self$depends_is_arg
+        depends_name <- dependency_names(self$depends[i])
+        depends_type <- dependency_types(self$depends[i])
         assert_length(quoted, length(depends_name))
         should_be_quoted <- depends_type == "file"
         if (any(should_be_quoted != quoted)) {
@@ -598,7 +609,7 @@ target_cleanup <- R6Class(
 
     ## This allows us to call the command but pass none of the
     ## dependencies through.
-    dependencies_real=function() {
+    dependencies_as_args=function() {
       list()
     },
 
@@ -776,6 +787,8 @@ target_knitr <- R6Class(
 
       ## Build a dependency on the input, for obvious reasons:
       command$depends <- c(command$depends, list(knitr$input))
+      ## This dependency is not an argument
+      command$depends_is_arg <- c(command$depends_is_arg, FALSE)
 
       ## Hack to let target_base know we're not implicit.  There does
       ## need to be something here as a few places test for null-ness.

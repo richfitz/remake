@@ -98,6 +98,8 @@ so that this object would never be deleted by maker.
 
 `quiet:` is a logical (`TRUE` / `FALSE`) flag that indicates if printed output from targets should be suppressed.  If `TRUE` it suppresses the output of `cat`, `print` and `message`, but *not* `warning` (warnings will still be printed to the screen: to quieten these you'll need to use `suppressWarnings` in your code, or prevent the warning from happening in the first place).
 
+`depends:` lists additional targets that must be built before a given target.  This is useful where additional *file* targets are needed to successfully build a target, but where the names of these files are not passed through as arguments.  This might be the case for things like stylesheets to a pandoc file.  You can also use this to depend on fake (grouping) targets such as a collection of figures if you are building a latex document.  This should not be a first resort though, mostly because any time you use this filenames appear in two disconnected places: the makerfile and your code.
+
 ### File targets
 
 There is one extra wrinkle for file targets (i.e., targets that produce files).  Sometimes it will be useful to pass the target name into the command that is building you function.  Suppose you are downloading some data.  You might have a rule:

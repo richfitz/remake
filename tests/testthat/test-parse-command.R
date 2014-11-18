@@ -116,16 +116,16 @@ test_that("Rules with multiple arguments", {
 
 test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo()"),
-              equals(list(rule="foo", depends=list(), quoted=logical(0))))
-
+              equals(list(rule="foo", depends=list(), quoted=logical(0),
+                          depends_is_arg=logical(0))))
   cmp_pos  <- list(rule="foo", depends=list(), quoted=logical(0),
-                   target_argument=1)
+                   target_argument=1, depends_is_arg=logical(0))
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
   cmp_name <- list(rule="foo", depends=empty_named_list(), quoted=logical(0),
-                   target_argument="arg")
+                   target_argument="arg", depends_is_arg=logical(0))
   expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
