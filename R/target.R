@@ -369,11 +369,13 @@ target_file <- R6Class(
   "target_file",
   inherit=target_base,
   public=list(
-    ## Additional data field:
+    ## Additional data fields:
     target_argument=NULL,
+    implicit=NULL,
 
     initialize=function(name, command, opts) {
-      if (is.null(command$rule)) {
+      self$implicit <- is.null(command$rule)
+      if (self$implicit) {
         ## NOTE: If the a rule is null (probably an implicit file)
         ## then we should never clean it up.  It's not clear that this
         ## should necessarily be an error but that will avoid
@@ -433,7 +435,7 @@ target_file <- R6Class(
     },
 
     status_string=function(current=self$is_current()) {
-      if (is.null(self$rule)) {
+      if (self$implicit) {
         ""
       } else if (current) {
         "OK"
