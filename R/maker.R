@@ -399,8 +399,9 @@ maker <- R6Class(
     initialize_message_format=function() {
       width <- getOption("width")
       w0 <- 10 # nchar("[ BUILD ] ")
-      target_width <- min(max(nchar(self$target_names())) + w0,
-                      ceiling(width / 2))
+      keep <- !sapply(self$targets, function(x) isTRUE(x$implicit))
+      target_names <- names(self$targets)[keep]
+      target_width <- max(nchar(target_names))
       private$fmt <- list(
         no_cmd="%s %s",
         with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),
