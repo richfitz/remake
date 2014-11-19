@@ -96,7 +96,7 @@ parse_command <- function(str) {
 
 check_command <- function(str) {
   assert_scalar_character(str)
-  res <- parse(text=as.character(str))
+  res <- parse(text=as.character(str), keep.source=FALSE)
   if (length(res) != 1L) {
     stop("Expected single expression")
   }
