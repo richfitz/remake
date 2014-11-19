@@ -194,22 +194,24 @@ test_that("File targets", {
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(c("b", C="c")))
   expect_that(t$target_argument, equals("name"))
-
-  t <- make_target("code.R", list())
-  expect_that(t$type, equals("file"))
 })
 
 test_that("Implicit file targets", {
-  t <- make_target("code.R", list(type="file"))
+  expect_that(make_target("code.R", list()),
+              throws_error("Must not have a NULL rule"))
+  t <- target_file_implicit$new("code.R")
+  expect_that(t$type, equals("file"))
+
+  t <- target_file_implicit$new("code.R")
   expect_that(t$name, equals("code.R"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, is_null())
   expect_that(t$depends, equals(list()))
-  expect_that(t$build(), throws_error("Can't build implicit targets"))
-  expect_that(t$run(), is_null())
+  expect_that(t$build(), throws_error("attempt to apply non-function"))
+  expect_that(t$run(), throws_error("attempt to apply non-function"))
   expect_that(t$run_fake(), is_null())
 
-  expect_that(t <- make_target("file.csv", list(type="file")),
+  expect_that(t <- target_file_implicit$new("file.csv"),
               gives_warning("Creating implicit target for nonexistant"))
   expect_that(t$name, equals("file.csv"))
   expect_that(t$type, equals("file"))
@@ -217,8 +219,8 @@ test_that("Implicit file targets", {
   ## TODO: empty depends should be character(0), or nonempty lists
   ## should be lists.
   expect_that(t$depends, equals(list()))
-  expect_that(t$build(), throws_error("Can't build implicit targets"))
-  expect_that(t$run(), is_null())
+  expect_that(t$build(), throws_error("attempt to apply non-function"))
+  expect_that(t$run(), throws_error("attempt to apply non-function"))
   expect_that(t$run_fake(), is_null())
 })
 

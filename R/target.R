@@ -212,8 +212,9 @@ target_base <- R6Class(
         if (!all(target_is_file(msg))) {
           stop("Implicitly created targets must all be files")
         }
-        implicit <- lapply(msg, target_file$new, NULL, NULL)
-        maker$add_targets(implicit, activate=TRUE)
+        implicit <- lapply(msg, target_file_implicit$new)
+        names(implicit) <- msg
+        maker$targets <- c(maker$targets, implicit)
       }
 
       ## This preserves the original names:
@@ -371,25 +372,12 @@ target_file <- R6Class(
   public=list(
     ## Additional data fields:
     target_argument=NULL,
-    implicit=NULL,
 
     initialize=function(name, command, opts) {
-      self$implicit <- is.null(command$rule)
-      if (self$implicit) {
-        ## NOTE: If the a rule is null (probably an implicit file)
-        ## then we should never clean it up.  It's not clear that this
-        ## should necessarily be an error but that will avoid
-        ## accidentally deleting something important.
-        opts$cleanup_level <- with_default(opts$cleanup_level, "never")
-        if (opts$cleanup_level != "never") {
-          stop("Probably unsafe to delete files we can't recreate")
-        }
-        if (!file.exists(name)) {
-          warning("Creating implicit target for nonexistant file ", name)
-        }
-      } else {
-        opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
+      if (is.null(command$rule)) {
+        stop("Must not have a NULL rule")
       }
+      opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
       super$initialize(name, command, opts, "file")
       self$target_argument <- command$target_argument
     },
@@ -435,9 +423,7 @@ target_file <- R6Class(
     },
 
     status_string=function(current=self$is_current()) {
-      if (self$implicit) {
-        ""
-      } else if (current) {
+      if (current) {
         "OK"
       } else {
         "BUILD"
@@ -446,7 +432,7 @@ target_file <- R6Class(
 
     dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
       args <- super$dependencies_as_args(fake, for_script)
-      if (!is.null(self$rule) && !is.null(self$target_argument)) {
+      if (!is.null(self$target_argument)) {
         if (is.character(self$target_argument)) {
           val <- self$get(fake, for_script)
           args[[self$target_argument]] <- self$get(fake, for_script)
@@ -501,6 +487,47 @@ target_file <- R6Class(
         file.copy(path, self$name, overwrite=TRUE)
       }
     }
+    ))
+
+target_file_implicit <- R6Class(
+  class=FALSE,
+  public=list(
+    name=NULL,
+    store=NULL,
+
+    type="file",
+    depends=list(), # needed?
+
+    ## This is the kicker:
+    implicit=TRUE,
+
+    initialize=function(name) {
+      if (!file.exists(name)) {
+        warning("Creating implicit target for nonexistant file ", name)
+      }
+      self$name <- name
+    },
+
+    ## Duplicated from target_file
+    get=function(fake=FALSE, for_script=FALSE) {
+      if (fake) {
+        sprintf('"%s"', self$name)
+      } else {
+        self$name
+      }
+    },
+
+    ## Need to implement a few things
+    is_current=function(check=NULL) {
+      TRUE
+    },
+    get_hash=function(missing_ok=FALSE) {
+      hash_files(self$name, FALSE)
+    },
+    run_fake=function(for_script=FALSE) {
+      NULL
+    }
+
     ))
 
 target_object <- R6Class(
