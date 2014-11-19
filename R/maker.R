@@ -351,10 +351,7 @@ maker <- R6Class(
     },
 
     dependency_graph=function() {
-      targets <- self$target_names(all=TRUE)
-      g <- lapply(targets, function(t)
-                  dependency_names(self$get_target(t)$depends))
-      names(g) <- targets
+      g <- lapply(self$targets, function(t) dependency_names(t$depends))
       topological_sort(g)
     },
 

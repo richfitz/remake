@@ -3,23 +3,31 @@
 ## and assumes that the graph is expressed as a *named* list.  The
 ## daughters of an element are its dependencies.
 topological_order <- function(graph) {
-  graph_sorted <- c()
+  ## Large numbers of implicit file targets cause the loops here to
+  ## get very slow, but we can immediately sort all targets that have
+  ## no dependencies *first*.  There are always targets that have no
+  ## dependencies in the graph, so this should always be a sensible
+  ## thing to do.
+  no_dep <- sapply(graph, length) == 0L
+  graph_sorted <- names(no_dep[no_dep])
+  graph <- graph[!no_dep]
+
   while (length(graph) > 0L) {
     acyclic <- FALSE
-    for (node in names(graph)) {
-      edges <- graph[[node]]
+    for (i in seq_along(graph)) {
+      edges <- graph[[i]]
       if (!any(edges %in% names(graph))) {
         acyclic <- TRUE
-        graph <- graph[names(graph) != node]
-        graph_sorted <- c(graph_sorted, node)
+        graph_sorted <- c(graph_sorted, names(graph[i]))
+        graph <- graph[-i]
         break
       }
     }
-
     if (!acyclic) {
       stop("A cyclic dependency detected")
     }
   }
+
   graph_sorted
 }
 
