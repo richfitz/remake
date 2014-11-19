@@ -145,10 +145,14 @@ maker <- R6Class(
       target <- self$get_target(target_name)
       current <- !force && target$is_current(check)
 
-      status <- target$status_string(current)
-      cmd <- if (current) NULL else target$run_fake()
-      style <- if (is.null(target$chain_parent)) "square" else "curly"
-      self$print_message(status, target_name, cmd, style)
+      skip <- isTRUE(target$implicit)
+      ## skip <- status == "" && target$type == "file" && is.null(target$rule)
+      if (!skip) {
+        status <- target$status_string(current)
+        cmd <- if (current) NULL else target$run_fake()
+        style <- if (is.null(target$chain_parent)) "square" else "curly"
+        self$print_message(status, target_name, cmd, style)
+      }
 
       if (!dry_run) {
         if (!current) {
