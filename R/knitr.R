@@ -4,7 +4,7 @@ knitr_default_fig_path <- function(filename) {
 
 knitr_from_maker <- function(input, output, store, export,
                              export_source=TRUE,
-                             knitr_options=NULL, ...) {
+                             knitr_options=NULL, chdir=FALSE, ...) {
   e <- new.env(parent=if (export_source) store$env$env else .GlobalEnv)
   store$objects$export(export, e)
   if (!is.null(knitr_options)) {
@@ -12,6 +12,12 @@ knitr_from_maker <- function(input, output, store, export,
     prev <- knitr::opts_chunk$get(names(knitr_options), drop=FALSE)
     on.exit(knitr::opts_chunk$set(prev))
     knitr::opts_chunk$set(knitr_options)
+  }
+  if (chdir) {
+    owd <- setwd(dirname(input))
+    on.exit(setwd(owd), add=TRUE)
+    input <- basename(input)
+    output <- basename(output)
   }
   knitr::knit(input, output, envir=e, ...)
 }

@@ -17,5 +17,5 @@ targets:
 
   knitr.md:
     depends: processed
-    knitr: true
-    auto_figure_prefix: true
+    knitr:
+      auto_figure_prefix: true

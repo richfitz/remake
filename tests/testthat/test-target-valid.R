@@ -245,13 +245,14 @@ test_that("knitr", {
   expect_that(t$knitr$input, equals("foo.Rmd"))
 
   ## Test auto_figure_prefix:
-  t <- make_target("file.md", list(knitr=TRUE, auto_figure_prefix=TRUE))
+  t <- make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE)))
   expect_that(t$knitr$options$fig.path, equals("figure/file__"))
 
   ## auto_figure_prefix works off the *target* name, not the Rmd name
   ## (when different)
-  t <- make_target("file.md", list(knitr=list(input="other_file.Rmd"),
-                                   auto_figure_prefix=TRUE))
+  t <- make_target("file.md", list(knitr=list(
+                                     input="other_file.Rmd",
+                                     auto_figure_prefix=TRUE)))
   expect_that(t$knitr$options$fig.path, equals("figure/file__"))
 
   prefix <- "figures/file-"
@@ -291,14 +292,13 @@ test_that("knitr (invalid)", {
   expect_that(make_target("file.md", list(unknown="opt", type="knitr")),
               throws_error("Invalid options for file.md"))
 
-  expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
-              gives_warning("Unknown fields in knitr: auto_figure"))
+  expect_that(make_target("file.md", list(knitr=TRUE,
+                                          auto_figure_prefix=TRUE)),
+              throws_error("Invalid options for file.md: auto_figure_prefix"))
 
-  expect_that(make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE))),
-              gives_warning("Unknown fields in knitr: auto_figure"))
-
-  dat <- list(knitr=list(options=list(fig.path="foo")),
-              auto_figure_prefix=TRUE)
+  dat <- list(knitr=list(
+                options=list(fig.path="foo"),
+                auto_figure_prefix=TRUE))
   expect_that(make_target("file.md", dat),
               gives_warning("Ignoring 'auto_figure_prefix'"))
 })

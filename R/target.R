@@ -772,22 +772,26 @@ target_knitr <- R6Class(
 
       opts$quiet <- with_default(opts$quiet, TRUE)
 
-      opts$auto_figure_prefix <-
-        with_default(opts$auto_figure_prefix, FALSE)
-      assert_scalar_logical(opts$auto_figure_prefix)
-
       ## Then the knitr options:
       knitr <- opts$knitr
       if (identical(knitr, TRUE) || is.null(knitr)) {
         knitr <- list()
       }
-      warn_unknown("knitr", knitr, c("input", "options"))
+      warn_unknown("knitr", knitr, c("input", "options", "chdir",
+                                     "auto_figure_prefix"))
 
       ## Infer name if it's not present:
       if (is.null(knitr$input)) {
         knitr$input <- knitr_infer_source(name)
       }
       assert_scalar_character(knitr$input)
+
+      knitr$auto_figure_prefix <-
+        with_default(knitr$auto_figure_prefix, FALSE)
+      assert_scalar_logical(knitr$auto_figure_prefix)
+
+      knitr$chdir <- with_default(knitr$chdir, FALSE)
+      assert_scalar_logical(knitr$chdir)
 
       ## NOTE: It might be useful to set fig.path here, so that we can
       ## work out what figures belong with different knitr targets.
@@ -799,14 +803,14 @@ target_knitr <- R6Class(
       if (is.null(knitr$options)) {
         knitr$options <- list()
       }
-      if (opts$auto_figure_prefix) {
+      if (knitr$auto_figure_prefix) {
         if (is.null(knitr$options$fig.path)) {
           knitr$options$fig.path <- knitr_default_fig_path(name)
         } else {
           warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
         }
       }
-      ## By default we *will* set error=TRUE.  It's hard to imagine a
+      ## By default we *will* set error=FALSE.  It's hard to imagine a
       ## workflow where that is not what is wanted.  Better might be
       ## to allow the compilation to continue but detect if there was
       ## an error and throw an error at the target level though.
@@ -832,7 +836,7 @@ target_knitr <- R6Class(
     },
 
     valid_options=function() {
-      c(super$valid_options(), "knitr", "auto_figure_prefix")
+      c(super$valid_options(), "knitr")
     },
 
     status_string=function(current=self$is_current()) {
@@ -844,7 +848,8 @@ target_knitr <- R6Class(
       knitr_from_maker(self$knitr$input, self$name, self$store,
                        object_names,
                        quiet=with_default(quiet, self$quiet),
-                       knitr_options=self$knitr$options)
+                       knitr_options=self$knitr$options,
+                       chdir=self$knitr$chdir)
     },
 
     run_fake=function(for_script=FALSE) {
