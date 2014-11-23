@@ -209,8 +209,11 @@ target_base <- R6Class(
 
       msg <- setdiff(depends_name, maker$target_names(all=TRUE))
       if (length(msg) > 0L) {
-        if (!all(target_is_file(msg))) {
-          stop("Implicitly created targets must all be files")
+        err <- !target_is_file(msg)
+        if (any(err)) {
+          stop(sprintf(
+            "Implicitly created targets must all be files (%s)",
+            paste(msg[err], collapse=", ")))
         }
         implicit <- lapply(msg, target_file_implicit$new)
         names(implicit) <- msg
