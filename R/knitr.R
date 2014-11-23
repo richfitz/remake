@@ -4,9 +4,15 @@ knitr_default_fig_path <- function(filename) {
 
 knitr_from_maker <- function(input, output, store, export,
                              export_source=TRUE,
-                             knitr_options=NULL, chdir=FALSE, ...) {
+                             knitr_options=NULL, chdir=FALSE,
+                             auto_figure_prefix=FALSE, ...) {
   e <- new.env(parent=if (export_source) store$env$env else .GlobalEnv)
   store$objects$export(export, e)
+
+  if (isTRUE(auto_figure_prefix) && is.null(knitr_options$fig.path)) {
+    knitr_options$fig.path <- knitr_default_fig_path(output)
+  }
+
   if (!is.null(knitr_options)) {
     ## Save the previous options:
     prev <- knitr::opts_chunk$get(names(knitr_options), drop=FALSE)

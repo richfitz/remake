@@ -806,12 +806,9 @@ target_knitr <- R6Class(
       if (is.null(knitr$options)) {
         knitr$options <- list()
       }
-      if (knitr$auto_figure_prefix) {
-        if (is.null(knitr$options$fig.path)) {
-          knitr$options$fig.path <- knitr_default_fig_path(name)
-        } else {
-          warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
-        }
+      if (knitr$auto_figure_prefix && !is.null(knitr$options$fig.path)) {
+        warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
+        knitr$auto_figure_prefix <- FALSE
       }
       ## By default we *will* set error=FALSE.  It's hard to imagine a
       ## workflow where that is not what is wanted.  Better might be
@@ -852,7 +849,8 @@ target_knitr <- R6Class(
                        object_names,
                        quiet=with_default(quiet, self$quiet),
                        knitr_options=self$knitr$options,
-                       chdir=self$knitr$chdir)
+                       chdir=self$knitr$chdir,
+                       auto_figure_prefix=self$knitr$auto_figure_prefix)
     },
 
     run_fake=function(for_script=FALSE) {

@@ -245,15 +245,11 @@ test_that("knitr", {
   expect_that(t$knitr$input, equals("foo.Rmd"))
 
   ## Test auto_figure_prefix:
-  t <- make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE)))
-  expect_that(t$knitr$options$fig.path, equals("figure/file__"))
-
+  ##
   ## auto_figure_prefix works off the *target* name, not the Rmd name
-  ## (when different)
-  t <- make_target("file.md", list(knitr=list(
-                                     input="other_file.Rmd",
-                                     auto_figure_prefix=TRUE)))
-  expect_that(t$knitr$options$fig.path, equals("figure/file__"))
+  ## (when different) -- this not not tested.
+  t <- make_target("file.md", list(knitr=list(auto_figure_prefix=TRUE)))
+  expect_that(t$knitr$auto_figure_prefix, is_true())
 
   prefix <- "figures/file-"
   t <- make_target("file.md",
