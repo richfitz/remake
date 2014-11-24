@@ -85,7 +85,7 @@ test_that("Depending on a file we don't make", {
   m$load_sources()
 
   expect_that(m$build("data.csv"),
-              throws_error("attempt to apply non-function"))
+              throws_error("Can't build implicit targets"))
   m$build("processed")
   m$build("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())

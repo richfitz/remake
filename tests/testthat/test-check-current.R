@@ -33,33 +33,34 @@ test_that("Manual", {
   cleanup()
   m <- maker$new("maker.yml")
   m$load_sources()
+  store <- m$store
 
   t <- m$get_target("data.csv")
-  expect_that(t$is_current(),          is_false())
-  expect_that(t$is_current("all"),     is_false())
-  expect_that(t$is_current("code"),    is_false())
-  expect_that(t$is_current("depends"), is_false())
-  expect_that(t$is_current("exists"),  is_false())
-  expect_that(t$is_current("invalid"),
+  expect_that(is_current(t, store),          is_false())
+  expect_that(is_current(t, store, "all"),     is_false())
+  expect_that(is_current(t, store, "code"),    is_false())
+  expect_that(is_current(t, store, "depends"), is_false())
+  expect_that(is_current(t, store, "exists"),  is_false())
+  expect_that(is_current(t, store, "invalid"),
               throws_error("check must be one of"))
 
-  t$run()
+  target_run(t, store)
   expect_that(file.exists("data.csv"), is_true())
 
   ## The target at this point has not been entered into the maker
   ## database (only running with make() will do this).
-  expect_that(t$is_current(),          is_false())
-  expect_that(t$is_current("all"),     is_false())
-  expect_that(t$is_current("code"),    is_false())
-  expect_that(t$is_current("depends"), is_false())
-  expect_that(t$is_current("exists"),  is_true())
+  expect_that(is_current(t, store),          is_false())
+  expect_that(is_current(t, store, "all"),     is_false())
+  expect_that(is_current(t, store, "code"),    is_false())
+  expect_that(is_current(t, store, "depends"), is_false())
+  expect_that(is_current(t, store, "exists"),  is_true())
 
   m$make("data.csv")
-  expect_that(t$is_current(),          is_true())
-  expect_that(t$is_current("all"),     is_true())
-  expect_that(t$is_current("code"),    is_true())
-  expect_that(t$is_current("depends"), is_true())
-  expect_that(t$is_current("exists"),  is_true())
+  expect_that(is_current(t, store),          is_true())
+  expect_that(is_current(t, store, "all"),     is_true())
+  expect_that(is_current(t, store, "code"),    is_true())
+  expect_that(is_current(t, store, "depends"), is_true())
+  expect_that(is_current(t, store, "exists"),  is_true())
 
   ## Now, mess about with the code record in the database.  This is
   ## mean.
@@ -67,47 +68,48 @@ test_that("Manual", {
   entry <- m$store$db$get("data.csv")
   entry$code$functions$download_data <- character(0)
   m$store$db$set("data.csv", entry)
-  expect_that(t$is_current(),          is_false())
-  expect_that(t$is_current("all"),     is_false())
-  expect_that(t$is_current("code"),    is_false())
-  expect_that(t$is_current("depends"), is_true())
-  expect_that(t$is_current("exists"),  is_true())
+  expect_that(is_current(t, store),          is_false())
+  expect_that(is_current(t, store, "all"),     is_false())
+  expect_that(is_current(t, store, "code"),    is_false())
+  expect_that(is_current(t, store, "depends"), is_true())
+  expect_that(is_current(t, store, "exists"),  is_true())
 
   ## And for the depends:
   m$make("data.csv")
   entry <- m$store$db$get("data.csv")
   entry$depends <- "Any information will cause failure"
   m$store$db$set("data.csv", entry)
-  expect_that(t$is_current(),          is_false())
-  expect_that(t$is_current("all"),     is_false())
-  expect_that(t$is_current("code"),    is_true())
-  expect_that(t$is_current("depends"), is_false())
-  expect_that(t$is_current("exists"),  is_true())
+  expect_that(is_current(t, store),          is_false())
+  expect_that(is_current(t, store, "all"),     is_false())
+  expect_that(is_current(t, store, "code"),    is_true())
+  expect_that(is_current(t, store, "depends"), is_false())
+  expect_that(is_current(t, store, "exists"),  is_true())
 })
 
 test_that("In target", {
   cleanup()
   m <- maker$new("maker_check.yml")
   m$load_sources()
+  store <- m$store
 
   t <- m$get_target("data.csv")
   expect_that(t$check, equals("exists"))
-  expect_that(t$is_current(), is_false())
+  expect_that(is_current(t, store), is_false())
 
-  t$run()
+  target_run(t, store)
   expect_that(file.exists("data.csv"), is_true())
-  expect_that(t$is_current(),      is_true())
-  expect_that(t$is_current("all"), is_false())
+  expect_that(is_current(t, store),      is_true())
+  expect_that(is_current(t, store, "all"), is_false())
 
   file_remove("data.csv")
   m$make("data.csv")
   expect_that(file.exists("data.csv"), is_true())
-  expect_that(t$is_current(),          is_true())
-  expect_that(t$is_current("all"),     is_true())
+  expect_that(is_current(t, store),          is_true())
+  expect_that(is_current(t, store, "all"),     is_true())
 
   m$store$db$del("data.csv")
-  expect_that(t$is_current(),      is_true())
-  expect_that(t$is_current("all"), is_false())
+  expect_that(is_current(t, store),      is_true())
+  expect_that(is_current(t, store, "all"), is_false())
   expect_that(m$is_current("data.csv"), is_true())
 
   expect_that(m$store$db$contains("data.csv"), is_false())
@@ -122,10 +124,11 @@ test_that("dependency_status", {
   cleanup()
   m <- maker$new("maker_check.yml")
   m$load_sources()
+  store <- m$store
 
   t <- m$get_target("data.csv")
   expect_that(t$check, equals("exists"))
-  expect_that(t$is_current(), is_false())
+  expect_that(is_current(t, store), is_false())
 
   status <- m$dependency_status("processed")
   expect_that(status$depends, equals(NULL))

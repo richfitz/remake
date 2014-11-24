@@ -90,10 +90,9 @@ status <- function(target_name, graph, m) {
   dirty <- dbd <- structure(logical(length(candidates)), names=candidates)
   for (t in candidates) {
     x <- m$get_target(t)
-    dirty[[t]] <- !x$is_current()
+    dirty[[t]] <- !is_current(x, m$store)
     if (check_depends(x$check)) {
-      deps <- filter_targets_by_type(x$depends, c("file", "object"))
-      d <- dependency_names(deps)
+      d <- x$depends[x$depends_type %in% c("file", "object")]
       ## TODO: This conditional goes away if we have a dependency
       ## names function that always returns a character vector.
       if (length(d) > 0L) {

@@ -39,17 +39,17 @@ test_that("Fake targets", {
   deps <- letters[1:3]
   t <- make_target("a_fake_target", list(depends=deps))
   expect_that(t$type, equals("fake"))
-  expect_that(t$depends, equals(as.list(deps)))
+  expect_that(t$depends, equals(deps))
 })
 
 test_that("Can't do much with fake targets", {
   t <- make_target("a_fake_target", list(type="fake"))
-  expect_that(t$get(), throws_error("Not something that can be"))
-  expect_that(t$set(), throws_error("Not something that can be"))
-  expect_that(t$set(1), throws_error("Not something that can be"))
-  expect_that(t$del(), throws_error("Not something that can be"))
-  expect_that(t$archive_export(), throws_error("Not something that can be"))
-  expect_that(t$archive_export(tempdir()), throws_error("Not something that can be"))
+  expect_that(target_get(t), throws_error("Not something that can be"))
+  expect_that(target_set(t), throws_error("Not something that can be"))
+  expect_that(archive_export_target(t),
+              throws_error("Not something that can be"))
+  expect_that(archive_export_target(t, tempdir()),
+              throws_error("Not something that can be"))
 })
 
 test_that("Fake targets (invalid)", {
@@ -98,7 +98,7 @@ test_that("Object target", {
   expect_that(t$quiet, equals(FALSE))
   expect_that(t$check, equals("all"))
 
-  expect_that(t$run_fake(), equals("real <- foo()"))
+  expect_that(target_run_fake(t), equals("real <- foo()"))
 
   ## Passing options:
   t <- make_target("real", list(command="foo()", quiet=TRUE))
@@ -169,7 +169,7 @@ test_that("File targets", {
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends, equals(list()))
   expect_that(t$target_argument, is_null())
-  expect_that(t$run_fake(), equals("foo()"))
+  expect_that(target_run_fake(t), equals("foo()"))
 
   t <- make_target("foo.csv", list(command="foo(a, b, c)"))
   expect_that(t$type, equals("file"))
@@ -199,19 +199,20 @@ test_that("File targets", {
 test_that("Implicit file targets", {
   expect_that(make_target("code.R", list()),
               throws_error("Must not have a NULL rule"))
-  t <- target_file_implicit$new("code.R")
+  t <- target_new_file_implicit("code.R")
   expect_that(t$type, equals("file"))
 
-  t <- target_file_implicit$new("code.R")
+  t <- target_new_file_implicit("code.R")
   expect_that(t$name, equals("code.R"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, is_null())
   expect_that(t$depends, equals(list()))
-  expect_that(t$build(), throws_error("attempt to apply non-function"))
-  expect_that(t$run(), throws_error("attempt to apply non-function"))
-  expect_that(t$run_fake(), is_null())
+  expect_that(target_build(t),
+              throws_error("Can't build implicit targets"))
+  expect_that(target_run(t, NULL), is_null())
+  expect_that(target_run_fake(t), is_null())
 
-  expect_that(t <- target_file_implicit$new("file.csv"),
+  expect_that(t <- target_new_file_implicit("file.csv"),
               gives_warning("Creating implicit target for nonexistant"))
   expect_that(t$name, equals("file.csv"))
   expect_that(t$type, equals("file"))
@@ -219,9 +220,10 @@ test_that("Implicit file targets", {
   ## TODO: empty depends should be character(0), or nonempty lists
   ## should be lists.
   expect_that(t$depends, equals(list()))
-  expect_that(t$build(), throws_error("attempt to apply non-function"))
-  expect_that(t$run(), throws_error("attempt to apply non-function"))
-  expect_that(t$run_fake(), is_null())
+  expect_that(target_build(t),
+              throws_error("Can't build implicit targets"))
+  expect_that(target_run(t), is_null())
+  expect_that(target_run_fake(t), is_null())
 })
 
 test_that("knitr", {
@@ -306,7 +308,7 @@ test_that("cleanup", {
   m <- maker$new("maker_cleanup_hook.yml")
   t <- m$get_target("clean")
   expect_that(length(t$depends), equals(2))
-  expect_that(dependency_names(t$depends),
+  expect_that(t$depends,
               equals(c("data.csv", "tidy")))
 
   expect_that(file.exists("data.csv"), is_false())
@@ -323,24 +325,24 @@ test_that("cleanup", {
 })
 
 ## Things that need activation:
-test_that("get/set/archive/del object targets", {
+test_that("get/set/archive object targets", {
   cleanup()
   m <- maker$new("maker.yml")
   m$make("processed")
   t <- m$get_target("processed")
-  expect_that(t$get(), is_a("data.frame"))
-  dep <- t$dependency_status()
+  expect_that(target_get(t, m$store), is_a("data.frame"))
+  dep <- dependency_status(t, m$store)
 
   path <- tempfile()
   dir.create(path)
-  t$archive_export(path)
+  archive_export_target(t, m$store, path)
 
   expect_that(dir(file.path(path, "objects")),
               equals(c("processed", "processed__hash")))
   expect_that(readRDS(file.path(path, "objects", "processed")),
-               equals(t$get()))
+               equals(target_get(t, m$store)))
   expect_that(readLines(file.path(path, "objects", "processed__hash")),
-               equals(digest::digest(t$get())))
+               equals(digest::digest(target_get(t, m$store))))
 
   name <- paste0(digest::digest(t$name), ".rds")
   expect_that(dir(file.path(path, "db")), equals(name))
@@ -348,36 +350,33 @@ test_that("get/set/archive/del object targets", {
   unlink(path, recursive=TRUE)
 
   ## Set this to rubbish values:
-  t$set("foo")
-  expect_that(t$get(), equals("foo"))
+  target_set(t, m$store, "foo")
+  expect_that(target_get(t, m$store), equals("foo"))
 
-  t$del()
-  expect_that(m$store$contains("processed", "object"), is_false())
-  expect_that(t$del(),
-              throws_error("processed not found in object store"))
-  expect_that(t$del(missing_ok=TRUE), is_false())
+  m$remove_target("processed")
 
   path <- tempfile()
   dir.create(path)
-  expect_that(t$archive_export(path),
+  expect_that(archive_export_target(t, m$store, path),
               throws_error("processed not found in object store"))
 
-  expect_that(t$archive_export(path, missing_ok=TRUE), is_false())
+  expect_that(archive_export_target(t, m$store, path, missing_ok=TRUE),
+              is_false())
   unlink(path, recursive=TRUE)
 })
 
 ## Things that need activation:
-test_that("get/set/archive/del file targets", {
+test_that("get/set/archive file targets", {
   cleanup()
   m <- maker$new("maker.yml")
   m$make("plot.pdf")
   t <- m$get_target("plot.pdf")
-  expect_that(t$get(), equals("plot.pdf"))
-  dep <- t$dependency_status()
+  expect_that(target_get(t, m$store), equals("plot.pdf"))
+  dep <- dependency_status(t, m$store)
 
   path <- tempfile()
   dir.create(path)
-  t$archive_export(path)
+  archive_export_target(t, m$store, path)
 
   md5 <- function(f) unname(tools::md5sum(f))
   expect_that(dir(file.path(path, "files")), equals("plot.pdf"))
@@ -389,20 +388,15 @@ test_that("get/set/archive/del file targets", {
   expect_that(readRDS(file.path(path, "db", name)), equals(dep))
   unlink(path, recursive=TRUE)
 
-  t$del()
-  expect_that(m$store$contains("plot.pdf", "file"), is_false())
-  expect_that(file.exists("plot.pdf"), is_false())
-
-  expect_that(t$del(),
-              throws_error("plot.pdf not found in file store"))
-  expect_that(t$del(missing_ok=TRUE), is_false())
+  m$remove_target("plot.pdf")
 
   path <- tempfile()
   dir.create(path)
-  expect_that(t$archive_export(path),
+  expect_that(archive_export_target(t, m$store, path),
               throws_error("plot.pdf not found in file store"))
 
-  expect_that(t$archive_export(path, missing_ok=TRUE), is_false())
+  expect_that(archive_export_target(t, m$store, path, missing_ok=TRUE),
+              is_false())
   unlink(path, recursive=TRUE)
 })
 

@@ -31,23 +31,6 @@ test_that("Script", {
   expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
 })
 
-test_that("knitr depends", {
-  cleanup()
-  m <- maker$new("knitr.yml")
-  t <- m$get_target("knitr.md")
-  expect_that(knitr_depends(t$maker, t$depends),
-              equals("processed"))
-
-  expect_that(knitr_depends(t$maker, unname(m$get_targets("processed"))),
-              equals("processed"))
-
-  expect_that(knitr_depends(t$maker, unname(m$get_targets("all"))),
-              equals(character(0)))
-
-  expect_that(knitr_depends(t$maker, list()),
-              equals(character(0)))
-})
-
 test_that("knitr depends (file only)", {
   cleanup()
   m <- maker$new("knitr_file_dep.yml")
@@ -97,6 +80,7 @@ test_that("Errors during compilation propagate", {
   t <- m$get_target("knitr_rename.md")
   expect_that(t$knitr$options$error, is_false())
   t$knitr$options$error <- TRUE
+  m$targets[["knitr_rename.md"]] <- t
   expect_that(m$make("knitr_rename.md"), not(throws_error()))
 })
 

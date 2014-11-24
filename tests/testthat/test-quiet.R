@@ -10,64 +10,66 @@ test_that("Quieten targets", {
   cleanup()
   m <- maker$new("quiet.yml")
   m$load_sources()
+  store <- m$store
 
   msg <- "make some noise"
 
   t <- m$get_target("noisy_message")
   expect_that(t$quiet, is_false())
-  expect_that(t$run(),            shows_message(msg))
-  expect_that(t$run(quiet=TRUE),  not(shows_message()))
-  expect_that(t$run(quiet=FALSE), shows_message(msg))
+  expect_that(target_run(t, store),              shows_message(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  not(shows_message()))
+  expect_that(target_run(t, store, quiet=FALSE), shows_message(msg))
 
   t <- m$get_target("noisy_cat")
   expect_that(t$quiet, is_false())
-  expect_that(t$run(),            prints_text(msg))
-  expect_that(t$run(quiet=TRUE),  not(prints_text(msg)))
-  expect_that(t$run(quiet=FALSE), prints_text(msg))
+  expect_that(target_run(t, store),              prints_text(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  not(prints_text(msg)))
+  expect_that(target_run(t, store, quiet=FALSE), prints_text(msg))
 
   t <- m$get_target("noisy_warning")
   expect_that(t$quiet, is_false())
-  expect_that(t$run(),            gives_warning(msg))
-  expect_that(t$run(quiet=TRUE),  gives_warning(msg))
-  expect_that(t$run(quiet=FALSE), gives_warning(msg))
+  expect_that(target_run(t, store),              gives_warning(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  gives_warning(msg))
+  expect_that(target_run(t, store, quiet=FALSE), gives_warning(msg))
 
   t <- m$get_target("noisy_error")
   expect_that(t$quiet, is_false())
-  expect_that(t$run(),            throws_error(msg))
-  expect_that(t$run(quiet=TRUE),  throws_error(msg))
-  expect_that(t$run(quiet=FALSE), throws_error(msg))
+  expect_that(target_run(t, store),              throws_error(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  throws_error(msg))
+  expect_that(target_run(t, store, quiet=FALSE), throws_error(msg))
 })
 
 test_that("Quiet targets", {
   cleanup()
   m <- maker$new("quiet.yml")
   m$load_sources()
+  store <- m$store
 
   msg <- "make some noise"
 
   t <- m$get_target("quiet_message")
   expect_that(t$quiet, is_true())
-  expect_that(t$run(),            not(shows_message()))
-  expect_that(t$run(quiet=TRUE),  not(shows_message()))
-  expect_that(t$run(quiet=FALSE),     shows_message())
+  expect_that(target_run(t, store),              not(shows_message()))
+  expect_that(target_run(t, store, quiet=TRUE),  not(shows_message()))
+  expect_that(target_run(t, store, quiet=FALSE),     shows_message())
 
   t <- m$get_target("quiet_cat")
   expect_that(t$quiet, is_true())
-  expect_that(t$run(),            not(prints_text(msg)))
-  expect_that(t$run(quiet=TRUE),  not(prints_text(msg)))
-  expect_that(t$run(quiet=FALSE),     prints_text(msg))
+  expect_that(target_run(t, store),              not(prints_text(msg)))
+  expect_that(target_run(t, store, quiet=TRUE),  not(prints_text(msg)))
+  expect_that(target_run(t, store, quiet=FALSE),     prints_text(msg))
 
   t <- m$get_target("quiet_warning")
   expect_that(t$quiet, is_true())
-  expect_that(t$run(),            gives_warning(msg))
-  expect_that(t$run(quiet=TRUE),  gives_warning(msg))
-  expect_that(t$run(quiet=FALSE), gives_warning(msg))
+  expect_that(target_run(t, store),              gives_warning(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  gives_warning(msg))
+  expect_that(target_run(t, store, quiet=FALSE), gives_warning(msg))
 
   t <- m$get_target("quiet_error")
   expect_that(t$quiet, is_true())
-  expect_that(t$run(),            throws_error(msg))
-  expect_that(t$run(quiet=TRUE),  throws_error(msg))
-  expect_that(t$run(quiet=FALSE), throws_error(msg))
+  expect_that(target_run(t, store),              throws_error(msg))
+  expect_that(target_run(t, store, quiet=TRUE),  throws_error(msg))
+  expect_that(target_run(t, store, quiet=FALSE), throws_error(msg))
 })
 
 test_that("From maker", {

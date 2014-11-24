@@ -1,3 +1,17 @@
+target_infer_type <- function(name, type, dat) {
+  if (is.null(type)) {
+    type <- if (target_is_file(name)) "file" else  "object"
+    if ("knitr" %in% names(dat$opts)) {
+      type <- "knitr"
+    } else if ("plot" %in% names(dat$opts)) {
+      type <- "plot"
+    } else if (type == "object" && is.null(dat$command$rule)) {
+      type <- "fake"
+    }
+  }
+  type
+}
+
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
 make_target <- function(name, dat) {
@@ -10,6 +24,7 @@ make_target <- function(name, dat) {
   make_target_dat <- function(dat) {
     assert_named_list(dat, name="target data")
 
+    ## TODO: process type within process_target_command, I think.
     type <- dat$type
     if (!is.null(type)) {
       assert_scalar_character(type)
@@ -17,28 +32,18 @@ make_target <- function(name, dat) {
     }
 
     dat <- process_target_command(name, dat)
-
-    if (is.null(type)) {
-      type <- if (target_is_file(name)) "file" else  "object"
-      if ("knitr" %in% names(dat$opts)) {
-        type <- "knitr"
-      } else if ("plot" %in% names(dat$opts)) {
-        type <- "plot"
-      } else if (type == "object" && is.null(dat$command$rule)) {
-        type <- "fake"
-      }
-    }
+    type <- target_infer_type(name, type, dat)
 
     ## TODO: Get utility into this?  Possibly not as they're pretty
     ## different really having no command/deps
-    generators <- list(object=target_object,
-                       file=target_file,
-                       plot=target_plot,
-                       knitr=target_knitr,
-                       fake=target_fake,
-                       cleanup=target_cleanup)
+    generators <- list(object=target_new_object,
+                       file=target_new_file,
+                       plot=target_new_plot,
+                       knitr=target_new_knitr,
+                       fake=target_new_fake,
+                       cleanup=target_new_cleanup)
     type <- match_value(type, names(generators))
-    generators[[type]]$new(name, dat$command, dat$opts)
+    generators[[type]](name, dat$command, dat$opts)
   }
 
   prefix <- sprintf("While processing target '%s':\n    ", name)
@@ -47,816 +52,248 @@ make_target <- function(name, dat) {
                       warning=catch_warning_prefix(prefix))
 }
 
-## Will change name soon, but the basic idea is to sort out what it is
-## that we have to run:
-##
-## TODO: Need some tests here, throughout
-process_target_command <- function(name, dat) {
-  core <- c("command", "depends",
-            "rule", "target_argument", "quoted", "depends_is_arg",
-            "chain")
-
-  ## Quick check that may disappear later:
-  invalid <- c("rule", "target_argument", "quoted")
-  if (any(invalid %in% names(dat))) {
-    stop("Invalid keys: ",
-         paste(intersect(invalid, names(dat)), collapse=", "))
-  }
-
-  dat$depends_is_arg <- rep(FALSE, length(dat$depends))
-
-  if (!is.null(dat$command)) {
-    cmd <- parse_target_command(name, dat$command)
-
-    if ("depends" %in% names(dat)) { # extra dependencies:
-      if (is.null(cmd$chain)) {
-        cmd$depends <- c(cmd$depends, dat$depends)
-        cmd$depends_is_arg <- c(cmd$depends_is_arg,
-                                dat$depends_is_arg)
-      } else {
-        cmd$chain[[1]]$depends <- c(cmd$chain[[1]]$depends, dat$depends)
-        cmd$chain[[1]]$depends_is_arg <- c(cmd$chain[[1]]$depends_is_arg,
-                                           dat$depends_is_arg)
-      }
-    }
-
-    dat[intersect(names(cmd), core)] <- cmd
-  }
-
-  is_command <- names(dat) %in% core
-  list(command=dat[is_command], opts=dat[!is_command])
+target_default_cleanup <- function(type) {
+  switch(type,
+         file="clean",
+         object="tidy",
+         "never")
 }
 
-target_base <- R6Class(
-  "target_base",
-  public=list(
-    name=NULL,
-    command=NULL,
-    depends=NULL,
-    depends_is_arg=NULL,
-    ## Will change name soon:
-    rule=NULL,
-    type=NULL,
-    cleanup_level="never",
-    check="all",
-    store=NULL,
-    quiet=FALSE,
-    packages=NULL,
-    chain_parent=NULL, # controlling target of a chain
-    chain_kids=NULL,   # dependent rules of a chain
+target_new_base <- function(name, command, opts, type="base",
+                            valid_options=NULL) {
+  assert_scalar_character(name)
+  assert_scalar_character(type)
+  if ("target_argument" %in% names(command) && type != "file") {
+    stop("'target_argument' field invalid for arguments of type ", type)
+  }
 
-    initialize=function(name, command, opts, type="base") {
-      assert_scalar_character(name)
-      self$name <- name
-      assert_scalar_character(type)
-      self$type <- type
+  ret <- list(name=name, type=type)
+  ret$command <- command$command
+  ret$quoted <- command$quoted
 
-      if ("target_argument" %in% names(command) && type != "file") {
-        stop("'target_argument' field invalid for arguments of type ", type)
-      }
+  ## TODO: Could do this with warn_unknown, or implement stop_unknown?
+  ## TODO: This is really ugly - would be easier if we passed in the
+  ## correct type at the beginning, and then we can use
+  ## target_valid_options.
+  valid_options <- c("quiet", "check", "packages", valid_options)
+  err <- setdiff(names(opts), valid_options)
+  if (length(err) > 0) {
+    stop(sprintf("Invalid options for %s: %s",
+                 name, paste(err, collapse=", ")))
+  }
 
-      ## TODO: This is a mess!  What we really have with the incoming
-      ## 'command' is a processed set of commands.  We don't actually
-      ## store this, but all the bits are scattered around.  'quoted'
-      ## is used only during validation.
-      self$command <- command$command
-      private$quoted <- command$quoted
+  if (!is.null(command$rule)) {
+    assert_scalar_character(command$rule, "rule")
+    ret$rule <- command$rule
+  }
 
-      opts <- self$check_opts(opts)
+  ## TODO: Do all this checking during the process command section.
+  ## No need for this to clutter this up, as it applies everywhere.
+  if (length(command$depends) > 0) {
+    depends <- from_yaml_map_list(command$depends)
+    sapply(depends, assert_scalar_character)
+    ret$depends <- unlist(depends)
+  } else {
+    ret$depends <- list()
+  }
+  if (any(duplicated(ret$depends))) {
+    stop("Dependency listed more than once")
+  }
+  if (any(duplicated(setdiff(names(ret$depends), "")))) {
+    stop("All named depends targets must be unique")
+  }
 
-      if (!is.null(command$rule)) {
-        assert_scalar_character(command$rule,
-                                paste(name, "rule", sep=": "))
-      }
-      self$rule <- command$rule
+  assert_length(command$depends_is_arg, length(command$depends))
+  if (length(command$depends_is_arg) > 0L) {
+    assert_logical(command$depends_is_arg)
+  }
+  ret$depends_is_arg <- command$depends_is_arg
 
-      ## TODO: It would be useful here to require this to become a
-      ## character vector.  Empty depends sets become list(), which is
-      ## a bit annoying later.
-      self$depends <- from_yaml_map_list(command$depends)
-      sapply(self$depends, assert_scalar_character)
-      assert_length(command$depends_is_arg, length(command$depends))
-      if (length(command$depends_is_arg) > 0L) {
-        assert_logical(command$depends_is_arg)
-      }
-      self$depends_is_arg <- command$depends_is_arg
+  ## Use with_default here?
+  if (is.null(opts$cleanup_level)) {
+    ret$cleanup_level <- "never"
+  } else {
+    ret$cleanup_level <-
+      match_value(opts$cleanup_level, cleanup_levels(), "cleanup_level")
+  }
 
-      if (!is.null(opts$cleanup_level)) {
-        self$cleanup_level <-
-          match_value(opts$cleanup_level, cleanup_levels(), "cleanup_level")
-      }
-
-      if ("quiet" %in% names(opts)) {
-        assert_scalar_logical(opts$quiet, "quiet")
-        self$quiet <- opts$quiet
-        if (is.null(self$rule)) {
-          warning("Using 'quiet' on a rule-less target has no effect")
-        }
-      }
-
-      if ("check" %in% names(opts)) {
-        self$check <- match_value(opts$check, check_levels(), "check")
-        if (is.null(self$rule)) {
-          warning("Using 'check' on a rule-less target has no effect")
-        }
-      }
-
-      if ("packages" %in% names(opts)) {
-        self$packages <- opts$packages
-        assert_character(opts$packages)
-      }
-
-      if ("chain" %in% names(command)) {
-        self$chain_kids <- target_chain(command$chain, self, opts)
-      }
-    },
-
-    valid_options=function() {
-      c("quiet", "check", "packages")
-    },
-
-    check_opts=function(opts) {
-      err <- setdiff(names(opts), self$valid_options())
-      if (length(err) > 0) {
-        stop(sprintf("Invalid options for %s: %s",
-                     self$name, paste(err, collapse=", ")))
-      }
-      opts
-    },
-
-    activate=function(maker) {
-      self$store <- maker$store
-      if (length(self$depends) == 0L) {
-        return()
-      }
-
-      ## TODO: Need to get some good testing in here:
-      depends_name <- sapply(self$depends, "[[", 1)
-      if (any(duplicated(depends_name))) {
-        stop("Dependency listed more than once")
-      }
-      if (any(duplicated(setdiff(names(self$depends), "")))) {
-        stop("All named depends targets must be unique")
-      }
-
-      ## This section matches the dependencies with their location in
-      ## the database's set of targets. Missing file targets will be
-      ## created and added to the database (which being passed by
-      ## reference will propagate backwards).
-      if (!is.null(self$chain_kids)) {
-        maker$add_targets(self$chain_kids, activate=TRUE)
-      }
-
-      msg <- setdiff(depends_name, maker$target_names(all=TRUE))
-      if (length(msg) > 0L) {
-        err <- !target_is_file(msg)
-        if (any(err)) {
-          stop(sprintf(
-            "Implicitly created targets must all be files (%s)",
-            paste(msg[err], collapse=", ")))
-        }
-        implicit <- lapply(msg, target_file_implicit$new)
-        names(implicit) <- msg
-        maker$targets <- c(maker$targets, implicit)
-      }
-
-      ## This preserves the original names:
-      self$depends[] <- maker$get_targets(depends_name)
-      private$check_quoted()
-    },
-
-    is_active=function() {
-      !is.null(self$store)
-    },
-
-    ## These basically prevent using target_base
-    get=function(fake=FALSE, for_script=FALSE) {
-      stop("Not something that can be got")
-    },
-    set=function(value) {
-      stop("Not something that can be set")
-    },
-    del=function(missing_ok=FALSE) {
-      stop("Not something that can be deleted")
-    },
-    archive_export=function(path, missing_ok=FALSE) {
-      stop("Not something that can be copied")
-    },
-    archive_import=function(path) {
-      stop("Not something that can be imported")
-    },
-
-    is_current=function(check=NULL) {
-      is_current(self, self$store, check)
-    },
-
-    status_string=function(current=NULL) {
-      ""
-    },
-
-    dependency_status=function(missing_ok=FALSE, check=NULL) {
-      check <- with_default(check, self$check)
-      depends <- code <- NULL
-
-      if (check_depends(check)) {
-        depends <- filter_targets_by_type(self$depends, c("file", "object"))
-        names(depends) <- dependency_names(depends)
-        depends <- lapply(depends, function(x) x$get_hash(missing_ok))
-      }
-
-      if (check_code(check)) {
-        code <- self$store$env$deps$info(self$rule)
-      }
-
-      list(version=self$store$version,
-           name=self$name,
-           depends=depends,
-           code=code)
-    },
-
-    get_hash=function(missing_ok=FALSE) {
-      self$store$get_hash(self$name, self$type, missing_ok)
-    },
-
-    dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
-      if (is.null(self$rule)) {
-        list()
-      } else {
-        deps <- self$depends[self$depends_is_arg]
-        deps <- filter_targets_by_type(deps, c("file", "object"))
-        lapply(deps, function(x) x$get(fake, for_script))
-      }
-    },
-
-    run=function(quiet=NULL) {
-      if (is.null(self$rule)) {
-        return()
-      }
-      args <- self$dependencies_as_args()
-
-      ## Setting quiet in a target always overrides any runtime
-      ## option.
-      ## TODO: quiet is not getting sanitised here.  Run via isTRUE?
-      quiet <- with_default(quiet, self$quiet)
-      ## Suppressing cat() is hard:
-      if (quiet) {
-        temp <- file()
-        sink(temp)
-        on.exit(sink())
-        on.exit(close(temp), add=TRUE)
-      }
-      ## NOTE: it's actually pretty easy here to print the output
-      ## later if needed (e.g. if we catch errors in this bit).
-      ## However it will not be possible to interleave the message
-      ## stream and the output stream.
-      withCallingHandlers(
-        do.call(self$rule, args, envir=self$store$env$env),
-        message=function(e) if (quiet) invokeRestart("muffleMessage"))
-    },
-
-    ## TODO: Compute on initialise
-    run_fake=function(for_script=FALSE) {
-      if (is.null(self$rule)) {
-        NULL
-      } else {
-        fake <- TRUE
-        do_call_fake(self$rule, self$dependencies_as_args(fake, for_script))
-      }
-    },
-
-    ## This method exists so that classes can define methods to run
-    ## things before or after the run function.  See target_clean and
-    ## target_file, which both do this.
-    build=function(quiet=NULL) {
-      self$run(quiet=quiet)
+  ## TODO: with_default?
+  if ("quiet" %in% names(opts)) {
+    assert_scalar_logical(opts$quiet, "quiet")
+    ret$quiet <- opts$quiet
+    if (is.null(ret$rule)) {
+      warning("Using 'quiet' on a rule-less target has no effect")
     }
-    ),
-  private=list(
-    quoted=NULL,
+  } else {
+    ret$quiet <- FALSE
+  }
 
-    ## This whole section is a bit silly, but will save some
-    ## confusion down the track.  Basically; file targets must be
-    ## quoted, object targets must not be.  This lets us mimic R
-    ## calls.  It's not actually required by any of the parsing
-    ## machinery, but it means the files will be easier to
-    ## interpret.
-
-    check_quoted=function() {
-      quoted <- private$quoted
-      if (!is.null(quoted) && length(quoted) > 0L) {
-        i <- self$depends_is_arg
-        depends_name <- dependency_names(self$depends[i])
-        depends_type <- dependency_types(self$depends[i])
-        assert_length(quoted, length(depends_name))
-        should_be_quoted <- depends_type == "file"
-        if (any(should_be_quoted != quoted)) {
-          err_quote <- depends_name[should_be_quoted  & !quoted]
-          err_plain <- depends_name[!should_be_quoted &  quoted]
-          msg <- character(0)
-          if (length(err_quote) > 0) {
-            msg <- c(msg, paste("Should be quoted:",
-                                paste(err_quote, collapse=", ")))
-          }
-          if (length(err_plain) > 0) {
-            msg <- c(msg, paste("Should not be quoted:",
-                                paste(err_plain, collapse=", ")))
-          }
-          stop(sprintf("Incorrect quotation in target '%s':\n%s",
-                       self$name, paste(msg, collapse="\n")))
-        }
-      }
+  ## TODO: with_default?
+  if ("check" %in% names(opts)) {
+    ret$check <- match_value(opts$check, check_levels(), "check")
+    if (is.null(ret$rule)) {
+      warning("Using 'check' on a rule-less target has no effect")
     }
-    ))
-
-
-target_file <- R6Class(
-  "target_file",
-  inherit=target_base,
-  public=list(
-    ## Additional data fields:
-    target_argument=NULL,
-
-    initialize=function(name, command, opts) {
-      if (is.null(command$rule)) {
-        stop("Must not have a NULL rule")
-      }
-      opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
-      super$initialize(name, command, opts, "file")
-      self$target_argument <- command$target_argument
-    },
-
-    valid_options=function() {
-      c(super$valid_options(), "cleanup_level")
-    },
-
-    get=function(fake=FALSE, for_script=FALSE) {
-      if (fake) {
-        sprintf('"%s"', self$name)
-      } else {
-        self$name
-      }
-    },
-
-    ## NOTE: this ignores the value.
-    set=function(value) {
-      self$store$db$set(self$name, self$dependency_status(check="all"))
-    },
-
-    del=function(missing_ok=FALSE) {
-      did_delete_obj <- self$store$files$del(self$name, missing_ok)
-      did_delete_db  <- self$store$db$del(self$name, missing_ok)
-      invisible(did_delete_obj || did_delete_db)
-    },
-
-    archive_export=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
-      assert_directory(path)
-      path_files <- file.path(path, "files")
-      path_db <- file.path(path, "db")
-      dir.create(path_files, FALSE)
-      dir.create(path_db, FALSE)
-      self$store$files$archive_export(self$name, path_files, missing_ok)
-      self$store$db$archive_export(self$name, path_db, missing_ok_db)
-    },
-
-    archive_import=function(path) {
-      path_files <- file.path(path, "files")
-      path_db <- file.path(path, "db")
-      self$store$db$archive_import(self$name, path_db)
-      self$store$files$archive_import(self$name, path_files)
-    },
-
-    status_string=function(current=self$is_current()) {
-      if (current) {
-        "OK"
-      } else {
-        "BUILD"
-      }
-    },
-
-    dependencies_as_args=function(fake=FALSE, for_script=FALSE) {
-      args <- super$dependencies_as_args(fake, for_script)
-      if (!is.null(self$target_argument)) {
-        if (is.character(self$target_argument)) {
-          val <- self$get(fake, for_script)
-          args[[self$target_argument]] <- self$get(fake, for_script)
-        } else {
-          args <- insert_at(args, self$get(fake, for_script),
-                            self$target_argument)
-        }
-      }
-      args
-    },
-
-    build=function(quiet=NULL) {
-      ## These are implicit, and can't be built directly:
-      if (is.null(self$rule)) {
-        stop("Can't build implicit targets")
-      }
-      ## This avoids either manually creating directories, or obscure
-      ## errors when R can't save a file to a place.  Possibly this
-      ## should be a configurable behaviour, but we're guaranteed to
-      ## be working with genuine files so this should be harmless.
-      dir.create(dirname(self$name), showWarnings=FALSE, recursive=TRUE)
-
-      ## NOTE: I'm using withCallingHandlers here because that does
-      ## allow options(error=recover) to behave in the expected way
-      ## (i.e., the target function remains on the stack and can be
-      ## inspected/browsed).
-      path <- self$backup()
-      withCallingHandlers(super$build(),
-                          error=function(e) {
-                            self$restore(path)
-                            stop(e)
-                          })
-      ## This only happens if the error is not raised above:
-      self$set(res)
-      invisible(self$name)
-    },
-
-    ## Used in build/restore
-    backup=function() {
-      if (file.exists(self$name)) {
-        path <- file.path(tempfile(), self$name)
-        dir.create(dirname(path), showWarnings=FALSE, recursive=TRUE)
-        file.copy(self$name, path)
-        path
-      } else {
-        NULL
-      }
-    },
-    restore=function(path) {
-      if (!is.null(path)) {
-        message("Restoring previous version of ", self$name)
-        file.copy(path, self$name, overwrite=TRUE)
-      }
-    }
-    ))
-
-target_file_implicit <- R6Class(
-  class=FALSE,
-  public=list(
-    name=NULL,
-    store=NULL,
-
-    type="file",
-    depends=list(), # needed?
-
-    ## This is the kicker:
-    implicit=TRUE,
-
-    initialize=function(name) {
-      if (!file.exists(name)) {
-        warning("Creating implicit target for nonexistant file ", name)
-      }
-      self$name <- name
-    },
-
-    ## Duplicated from target_file
-    get=function(fake=FALSE, for_script=FALSE) {
-      if (fake) {
-        sprintf('"%s"', self$name)
-      } else {
-        self$name
-      }
-    },
-
-    ## Need to implement a few things
-    is_current=function(check=NULL) {
-      TRUE
-    },
-    get_hash=function(missing_ok=FALSE) {
-      hash_files(self$name, FALSE)
-    },
-    run_fake=function(for_script=FALSE) {
-      NULL
-    }
-
-    ))
-
-target_object <- R6Class(
-  "target_object",
-  inherit=target_base,
-  public=list(
-    initialize=function(name, command, opts=NULL,
-      filter_options=FALSE) {
-      if (is.null(command$rule)) {
-        stop("Must not have a NULL rule")
-      }
-      opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
-      if (filter_options) {
-        opts <- opts[names(opts) %in% self$valid_options()]
-      }
-      super$initialize(name, command, opts, "object")
-    },
-
-    valid_options=function() {
-      c(super$valid_options(), "cleanup_level")
-    },
-
-    get=function(fake=FALSE, for_script=FALSE) {
-      if (fake) {
-        self$name
-      } else {
-        self$store$objects$get(self$name)
-      }
-    },
-
-    ## NOTE: When creating the entry in the database, we add *all* of
-    ## the dependency information, even if this target won't use it
-    ## all.  This is possibly slower than ideal, especially for things
-    ## that depend on very large files.
-    set=function(value) {
-      self$store$objects$set(self$name, value)
-      self$store$db$set(self$name, self$dependency_status(check="all"))
-    },
-
-    del=function(missing_ok=FALSE) {
-      did_delete_obj <- self$store$objects$del(self$name, missing_ok)
-      did_delete_db  <- self$store$db$del(self$name, missing_ok)
-      invisible(did_delete_obj || did_delete_db)
-    },
-
-    archive_export=function(path, missing_ok=FALSE, missing_ok_db=missing_ok) {
-      assert_directory(path)
-      path_objects <- file.path(path, "objects")
-      path_db <- file.path(path, "db")
-      dir.create(path_objects, FALSE)
-      dir.create(path_db, FALSE)
-      self$store$objects$archive_export(self$name, path_objects, missing_ok)
-      self$store$db$archive_export(self$name, path_db, missing_ok_db)
-    },
-
-    archive_import=function(path) {
-      assert_directory(path)
-      path_objects <- file.path(path, "objects")
-      path_db <- file.path(path, "db")
-      self$store$objects$archive_import(self$name, path_objects)
-      self$store$db$archive_import(self$name, path_db)
-    },
-
-    status_string=function(current=self$is_current()) {
-      if (current) "OK" else "BUILD"
-    },
-
-    build=function(quiet=NULL) {
-      res <- super$build(quiet=quiet)
-      self$set(res)
-      invisible(res)
-    },
-
-    run_fake=function(for_script=FALSE) {
-      paste(self$get(TRUE, for_script), "<-", super$run_fake(for_script))
-    }
-    ))
-
-target_cleanup <- R6Class(
-  "target_cleanup",
-  inherit=target_base,
-  public=list(
-    ## Special cleanup target needs a reference back to the original
-    ## maker object, as we call back to that for the actual removal.
-    maker=NULL,
-
-    initialize=function(name, command, opts) {
-      super$initialize(name, command, opts, "cleanup")
-    },
-
-    activate=function(maker) {
-      super$activate(maker)
-      self$maker <- maker
-    },
-
-    status_string=function(current) {
-      "CLEAN"
-    },
-
-    build=function(quiet=NULL) {
-      self$maker$remove_targets(self$will_remove())
-      super$build(quiet=quiet) # runs any clean hooks
-    },
-
-    run_fake=function(for_script=FALSE) {
-      NULL
-    },
-
-    ## This allows us to call the command but pass none of the
-    ## dependencies through.
-    dependencies_as_args=function() {
-      list()
-    },
-
-    will_remove=function() {
-      target_level <- sapply(self$maker$targets, function(x) x$cleanup_level)
-      names(self$maker$targets)[target_level == self$name]
-    }
-    ))
-
-target_fake <- R6Class(
-  "target_fake",
-  inherit=target_base,
-  public=list(
-    initialize=function(name, command, opts) {
-      if (!is.null(command$rule)) {
-        stop("fake targets must have a NULL rule (how did you do this?)")
-      }
-      super$initialize(name, command, opts, "fake")
-    }
-    ))
-
-## Note that this is *totally* different to the above, at least for
-## now.
-target_utility <- R6Class(
-  "target_utility",
-  inherit=target_base,
-  public=list(
-    utility=NULL,
-    maker=NULL,
-
-    initialize=function(name, utility, maker) {
-      super$initialize(name, NULL, NULL, "utility")
-      self$utility <- utility
-      self$maker <- maker
-    },
-
-    run=function(quiet=NULL) {
-      self$utility(self$maker)
-    },
-
-    status_string=function(current=NULL) {
-      "UTIL"
-    }
-    ))
-
-target_plot <- R6Class(
-  "target_plot",
-  inherit=target_file,
-  public=list(
-    plot=NULL,
-
-    initialize=function(name, command, opts) {
-      if (is.null(command$rule)) {
-        stop("Cannot have a NULL rule")
-      }
-      super$initialize(name, command, opts)
-      self$plot <- opts$plot # checked at activate()
-    },
-
-    valid_options=function() {
-      c(super$valid_options(), "plot")
-    },
-
-    activate=function(maker) {
-      super$activate(maker)
-      dev <- get_device(tools::file_ext(self$name))
-
-      plot <- self$plot
-      if (identical(plot, TRUE) || is.null(plot)) {
-        plot <- list()
-      } else if (is.character(plot) && length(plot) == 1) {
-        if (plot %in% names(maker$plot_options)) {
-          plot <- maker$plot_options[[plot]]
-        } else {
-          stop(sprintf("Unknown plot_options '%s' in target '%s'",
-                       plot, self$name))
-        }
-      } else {
-        assert_list(plot)
-        assert_named(plot)
-      }
-      ## This will not work well for cases where `...` is in the
-      ## device name (such as jpeg, bmp, etc)
-      warn_unknown("plot", plot, names(formals(dev)))
-      self$plot <- list(device=dev, args=plot)
-    },
-
-    run=function(quiet=NULL) {
-      open_device(self$plot$device, self$plot_args(), self$store$env$env)
-      on.exit(dev.off())
-      super$run(quiet=quiet)
-    },
-
-    run_fake=function(for_script=FALSE) {
-      cmd <- super$run_fake(for_script)
-      if (for_script) {
-        open <- do_call_fake(self$plot$device,
-                             format_fake_args(self$plot_args(fake=TRUE)))
-        c(open, cmd, "dev.off()")
-      } else {
-        paste(cmd, "# ==>", self$name)
-      }
-    },
-
-    plot_args=function(fake=FALSE, for_script=FALSE) {
-      ## TODO: If nonscalar arguments are passed into the plotting
-      ## (not sure what takes them, but it's totally possible) then
-      ## some care will be needed here.  It might be better to pick
-      ## that up in `format_fake_args` though.
-      c(list(self$get(fake, for_script)), self$plot$args)
-    }
-    ))
-
-target_knitr <- R6Class(
-  "target_knitr",
-  inherit=target_file,
-  public=list(
-    knitr=NULL,
-    maker=NULL,
-
-    ## Ideas here:
-    ##  - export_all: export all objects in the store?
-    ##  - export_source: export the source functions (or rather, don't)
-    ##  - set knitr options as a hook on run?
-    ##  - render to html, etc.
-    initialize=function(name, command, opts) {
-      if (!is.null(command$rule)) {
-        stop(sprintf("%s: knitr targets must have a NULL rule",
-                     name))
-      }
-
-      opts$quiet <- with_default(opts$quiet, TRUE)
-
-      ## Then the knitr options:
-      knitr <- opts$knitr
-      if (identical(knitr, TRUE) || is.null(knitr)) {
-        knitr <- list()
-      }
-      warn_unknown("knitr", knitr, c("input", "options", "chdir",
-                                     "auto_figure_prefix"))
-
-      ## Infer name if it's not present:
-      if (is.null(knitr$input)) {
-        knitr$input <- knitr_infer_source(name)
-      }
-      assert_scalar_character(knitr$input)
-
-      knitr$auto_figure_prefix <-
-        with_default(knitr$auto_figure_prefix, FALSE)
-      assert_scalar_logical(knitr$auto_figure_prefix)
-
-      knitr$chdir <- with_default(knitr$chdir, FALSE)
-      assert_scalar_logical(knitr$chdir)
-
-      ## NOTE: It might be useful to set fig.path here, so that we can
-      ## work out what figures belong with different knitr targets.
-      ## What I'm going to do though is *not* do that at the moment
-      ## though.  Better would be to have a key (e.g.,
-      ## fig.path.disambiguate) that indicate that the prefix should
-      ## be set using the fig_default_fig_path function.  Then the
-      ## default gets the same behaviour as default knitr.
-      if (is.null(knitr$options)) {
-        knitr$options <- list()
-      }
-      if (knitr$auto_figure_prefix && !is.null(knitr$options$fig.path)) {
-        warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
-        knitr$auto_figure_prefix <- FALSE
-      }
-      ## By default we *will* set error=FALSE.  It's hard to imagine a
-      ## workflow where that is not what is wanted.  Better might be
-      ## to allow the compilation to continue but detect if there was
-      ## an error and throw an error at the target level though.
-      if (is.null(knitr$options$error)) {
-        knitr$options$error <- FALSE
-      }
-
-      ## Build a dependency on the input, for obvious reasons:
-      command$depends <- c(command$depends, list(knitr$input))
-      ## This dependency is not an argument
-      command$depends_is_arg <- c(command$depends_is_arg, FALSE)
-
-      ## Hack to let target_base know we're not implicit.  There does
-      ## need to be something here as a few places test for null-ness.
-      command$rule <- ".__knitr__"
-      super$initialize(name, command, opts)
-      self$knitr <- knitr
-    },
-
-    activate=function(maker) {
-      super$activate(maker)
-      self$maker <- maker
-    },
-
-    valid_options=function() {
-      c(super$valid_options(), "knitr")
-    },
-
-    status_string=function(current=self$is_current()) {
-      if (current) "OK" else "KNIT"
-    },
-
-    run=function(quiet=NULL) {
-      object_names <- knitr_depends(self$maker, self$depends)
-      knitr_from_maker(self$knitr$input, self$name, self$store,
-                       object_names,
-                       quiet=with_default(quiet, self$quiet),
-                       knitr_options=self$knitr$options,
-                       chdir=self$knitr$chdir,
-                       auto_figure_prefix=self$knitr$auto_figure_prefix)
-    },
-
-    run_fake=function(for_script=FALSE) {
-      sprintf('knitr::knit("%s", "%s")', self$knitr$input, self$name)
-    }
-  ))
+  } else {
+    ret$check <- "all"
+  }
+
+  ret$status_string <- ""
+
+  if ("packages" %in% names(opts)) {
+    ret$packages <- opts$packages
+    assert_character(opts$packages)
+  }
+
+  if ("chain" %in% names(command)) {
+    chain <- target_chain(command$chain, ret, opts)
+    ret <- chain$parent
+    ret$chain_kids <- chain$kids
+  }
+
+  class(ret) <- "target_base"
+  ret
+}
+
+target_new_object <- function(name, command, opts, valid_options=NULL) {
+  if (is.null(command$rule)) {
+    stop("Must not have a NULL rule")
+  }
+  opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
+  valid_options <- c("cleanup_level", valid_options)
+  ret <- target_new_base(name, command, opts, "object", valid_options)
+  ret$status_string <- "BUILD"
+  class(ret) <- c("target_object", class(ret))
+  ret
+}
+
+target_new_file <- function(name, command, opts, valid_options=NULL) {
+  if (is.null(command$rule)) {
+    stop("Must not have a NULL rule")
+  }
+  opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
+  valid_options <- c("cleanup_level", valid_options)
+  ret <- target_new_base(name, command, opts, "file", valid_options)
+  ret$target_argument <- command$target_argument
+  ret$status_string <- "BUILD"
+  class(ret) <- c("target_file", class(ret))
+  ret
+}
+
+## This is called directly by maker, and skips going through
+## target_new.  That will probably change back shortly.
+target_new_file_implicit <- function(name) {
+  if (!file.exists(name)) {
+    warning("Creating implicit target for nonexistant file ", name)
+  }
+  ret <- list(name=name,
+              type="file",
+              depends=list(),
+              implicit=TRUE,
+              check="exists")
+  class(ret) <- c("target_file_implicit", "target_file") # not target_base
+  ret
+}
+
+target_new_plot <- function(name, command, opts) {
+  if (is.null(command$rule)) {
+    stop("Cannot have a NULL rule")
+  }
+  ret <- target_new_file(name, command, opts, "plot")
+  ret$plot <- opts$plot # checked at activate()
+  class(ret) <- c("target_plot", class(ret))
+  ret
+}
+
+target_new_knitr <- function(name, command, opts) {
+  if (!is.null(command$rule)) {
+    stop(sprintf("%s: knitr targets must have a NULL rule",
+                 name))
+  }
+
+  opts$quiet <- with_default(opts$quiet, TRUE)
+
+  ## Then the knitr options:
+  knitr <- opts$knitr
+  if (identical(knitr, TRUE) || is.null(knitr)) {
+    knitr <- list()
+  }
+  warn_unknown("knitr", knitr, c("input", "options", "chdir",
+                                 "auto_figure_prefix"))
+
+  ## Infer name if it's not present:
+  if (is.null(knitr$input)) {
+    knitr$input <- knitr_infer_source(name)
+  }
+  assert_scalar_character(knitr$input)
+
+  knitr$auto_figure_prefix <-
+    with_default(knitr$auto_figure_prefix, FALSE)
+  assert_scalar_logical(knitr$auto_figure_prefix)
+
+  knitr$chdir <- with_default(knitr$chdir, FALSE)
+  assert_scalar_logical(knitr$chdir)
+
+  ## NOTE: It might be useful to set fig.path here, so that we can
+  ## work out what figures belong with different knitr targets.
+  ## What I'm going to do though is *not* do that at the moment
+  ## though.  Better would be to have a key (e.g.,
+  ## fig.path.disambiguate) that indicate that the prefix should
+  ## be set using the fig_default_fig_path function.  Then the
+  ## default gets the same behaviour as default knitr.
+  if (is.null(knitr$options)) {
+    knitr$options <- list()
+  }
+  if (knitr$auto_figure_prefix && !is.null(knitr$options$fig.path)) {
+    warning("Ignoring 'auto_figure_prefix' in favour of 'fig.path'")
+    knitr$auto_figure_prefix <- FALSE
+  }
+  ## By default we *will* set error=FALSE.  It's hard to imagine a
+  ## workflow where that is not what is wanted.  Better might be
+  ## to allow the compilation to continue but detect if there was
+  ## an error and throw an error at the target level though.
+  if (is.null(knitr$options$error)) {
+    knitr$options$error <- FALSE
+  }
+
+  ## Build a dependency on the input, for obvious reasons:
+  command$depends <- c(command$depends, list(knitr$input))
+  ## This dependency is not an argument
+  command$depends_is_arg <- c(command$depends_is_arg, FALSE)
+
+  ## Hack to let target_base know we're not implicit.  There does
+  ## need to be something here as a few places test for null-ness.
+  command$rule <- ".__knitr__"
+  ret <- target_new_file(name, command, opts, "knitr")
+  class(ret) <- c("target_knitr", class(ret))
+  ret$knitr <- knitr
+  ret
+}
+
+target_new_cleanup <- function(name, command, opts) {
+  ret <- target_new_base(name, command, opts, "cleanup")
+  ret$status_string <- "CLEAN"
+  class(ret) <- c("target_cleanup", class(ret))
+  ret
+}
+
+target_new_fake <- function(name, command, opts) {
+  if (!is.null(command$rule)) {
+    stop("fake targets must have a NULL rule (how did you do this?)")
+  }
+  ret <- target_new_base(name, command, opts, "fake")
+  class(ret) <- c("target_fake", class(ret))
+  ret
+}
+
+target_new_utility <- function(name, utility, maker) {
+  ret <- target_new_base(name, NULL, NULL, "utility")
+  ret$utility <- utility
+  ret$maker <- maker
+  ret$status_string <- "UTIL"
+  class(ret) <- c("target_utility", class(ret))
+  ret
+}
 
 ##' Returns the vector of known file extensions.  If a target ends in
 ##' one of these, then it will be considered a file, rather than an
@@ -920,8 +357,8 @@ is_current <- function(target, store, check=NULL) {
     ## don't care about the code or the dependencies.
     return(check == "exists")
   } else {
-    ## TODO: This is all being done at once.  However, if targets
-    ## offer a $compare_dependency_status() method, we can do this
+    ## TODO: This is all being done at once.  However, if we implement
+    ## a compare_dependency_status() function, we can do this
     ## incrementally, returning FALSE as soon as the first failure is
     ## found.
     ##
@@ -929,9 +366,33 @@ is_current <- function(target, store, check=NULL) {
     ## code).
     return(compare_dependency_status(
       store$db$get(target$name),
-      target$dependency_status(missing_ok=TRUE, check=check),
+      dependency_status(target, store, missing_ok=TRUE, check=check),
       check))
   }
+}
+
+dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
+  check <- with_default(check, target$check)
+  depends <- code <- NULL
+
+  if (check_depends(check)) {
+    depends_type <- target$depends_type
+    depends_name <- target$depends
+    keep <- depends_type %in% c("file", "object")
+    depends <- lapply(which(keep), function(i)
+                      store$get_hash(depends_name[[i]],
+                                     depends_type[[i]], missing_ok))
+    names(depends) <- depends_name[keep]
+  }
+
+  if (check_code(check)) {
+    code <- store$env$deps$info(target$rule)
+  }
+
+  list(version=store$version,
+       name=target$name,
+       depends=depends,
+       code=code)
 }
 
 compare_dependency_status <- function(prev, curr, check) {
@@ -1018,25 +479,25 @@ dependency_types <- function(x) {
 ##
 ## Special testing will be required to get that right.  Basically only
 ## the terminating bit of rule here will accept nonstandard options.
-## I can't trick the R6 classes into allowing static access to a
-## method either.
 target_chain <- function(chain, parent, opts) {
   if (!(parent$type %in% c("file", "object"))) {
     stop("Can't use chained rules on targets of type ", parent)
   }
   len <- length(chain)
   chain_names <- chained_rule_name(parent$name, seq_len(len))
-  target_chain_match_dot(parent, len + 1L, chain_names)
+  parent <- target_chain_match_dot(parent, len + 1L, chain_names)
 
+  ## TODO: Duplication of object valid options here.
+  opts_chain <- opts[names(opts) %in%
+                     c("quiet", "check", "packages", "cleanup_level")]
   f <- function(i) {
-    x <- target_object$new(chain_names[[i]], chain[[i]], opts,
-                           filter_options=TRUE)
+    x <- target_new_object(chain_names[[i]], chain[[i]], opts_chain)
     x$chain_parent <- parent
     target_chain_match_dot(x, i, chain_names)
-    x
   }
 
-  lapply(seq_len(len), f)
+  kids <- lapply(seq_len(len), f)
+  list(parent=parent, kids=kids)
 }
 
 target_chain_match_dot <- function(x, pos, chain_names) {
@@ -1053,6 +514,7 @@ target_chain_match_dot <- function(x, pos, chain_names) {
       stop("missing")
     }
   }
+  x
 }
 
 make_target_cleanup <- function(name, maker) {
@@ -1103,4 +565,277 @@ check_code <- function(x) {
 }
 check_depends <- function(x) {
   x %in% c("all", "depends")
+}
+
+target_get <- function(target, store, fake=FALSE) {
+  if (target$type == "file") {
+    if (fake) {
+      sprintf('"%s"', target$name)
+    } else {
+      target$name
+    }
+  } else if (target$type == "object") {
+    if (fake) {
+      target$name
+    } else {
+      store$objects$get(target$name)
+    }
+  } else {
+    stop("Not something that can be got")
+  }
+}
+target_set <- function(target, store, value) {
+  if (target$type == "file") {
+    ## NOTE: value ignored here, will be NULL probably.
+    store$db$set(target$name,
+                 dependency_status(target, store, check="all"))
+  } else if (target$type == "object") {
+    store$objects$set(target$name, value)
+    store$db$set(target$name,
+                 dependency_status(target, store, check="all"))
+  } else {
+    stop("Not something that can be set")
+  }
+}
+
+## This whole section is a bit silly, but will save some confusion
+## down the track.  Basically; file targets must be quoted, object
+## targets must not be.  This lets us mimic R calls.  It's not
+## actually required by any of the parsing machinery, but it means the
+## files will be easier to interpret.
+target_check_quoted <- function(target) {
+  quoted <- target$quoted
+  if (!is.null(quoted) && length(quoted) > 0L) {
+    i <- target$depends_is_arg
+    depends_name <- target$depends[i]
+    depends_type <- target$depends_type[i]
+    assert_length(quoted, length(depends_name))
+    should_be_quoted <- depends_type == "file"
+    if (any(should_be_quoted != quoted)) {
+      err_quote <- depends_name[should_be_quoted  & !quoted]
+      err_plain <- depends_name[!should_be_quoted &  quoted]
+      msg <- character(0)
+      if (length(err_quote) > 0) {
+        msg <- c(msg, paste("Should be quoted:",
+                            paste(err_quote, collapse=", ")))
+      }
+      if (length(err_plain) > 0) {
+        msg <- c(msg, paste("Should not be quoted:",
+                            paste(err_plain, collapse=", ")))
+      }
+      stop(sprintf("Incorrect quotation in target '%s':\n%s",
+                   target$name, paste(msg, collapse="\n")))
+    }
+  }
+}
+
+dependencies_as_args <- function(target, store, fake=FALSE) {
+  if (is.null(target$rule)) {
+    list()
+  } else {
+    deps_name <- target$depends[target$depends_is_arg]
+    deps_type <- target$depends_type[target$depends_is_arg]
+    keep <- deps_type %in% c("file", "object")
+
+    ## TODO: A hack for now.
+    deps <- lapply(which(keep), function(i)
+                   list(name=deps_name[[i]],
+                        type=deps_type[[i]]))
+    names(deps) <- names(target$depends)[keep]
+
+    args <- lapply(deps, function(x) target_get(x, store, fake))
+    if (!is.null(target$target_argument)) {
+      val <- target_get(target, store, fake)
+      if (is.character(target$target_argument)) {
+        args[[target$target_argument]] <- val
+      } else {
+        args <- insert_at(args, val, target$target_argument)
+      }
+    }
+    args
+  }
+}
+
+plot_args <- function(target, fake=FALSE) {
+  str <- if (fake) sprintf('"%s"', target$name) else target$name
+  c(str, target$plot$args)
+}
+
+## target_valid_options <- function(type) {
+##   base <- c("quiet", "check", "packages")
+##   if (type == "file") {
+##     valid <- c(base, "cleanup_level")
+##   } else if (type == "object") {
+##     valid <- c(base, "cleanup_level")
+##   } else if (type == "plot") {
+##     valid <- c(base, "cleanup_level", "plot")
+##   } else if (type == "knitr") {
+##     valid <- c(base, "cleanup_level", "knitr")
+##   } else {
+##     valid <- base
+##   }
+##   valid
+## }
+
+## Might compute these things at startup, given they are constants
+## over the life of the object.
+target_run_fake <- function(target, for_script=FALSE) {
+  if (is.null(target$rule) || target$type == "cleanup") {
+    NULL
+  } else {
+    res <- do_call_fake(target$rule,
+                        dependencies_as_args(target, NULL, TRUE))
+    if (inherits(target, "target_plot")) {
+      if (for_script) {
+        open <- do_call_fake(target$plot$device,
+                             format_fake_args(plot_args(target, fake=TRUE)))
+        res <- c(open, res, "dev.off()")
+      } else {
+        res <- paste(res, "# ==>", target$name)
+      }
+    } else if (inherits(target, "target_knitr")) {
+      res <- sprintf('knitr::knit("%s", "%s")',
+                     target$knitr$input, target$name)
+    } else if (target$type == "object") {
+      res <- paste(target$name, "<-", res)
+    }
+    res
+  }
+}
+
+target_build <- function(target, store, quiet=NULL) {
+  if (target$type == "file") {
+    if (is.null(target$rule)) {
+      ## NOTE: Not sure this is desirable - should just pass?
+      stop("Can't build implicit targets")
+    }
+    ## This avoids either manually creating directories, or obscure
+    ## errors when R can't save a file to a place.  Possibly this
+    ## should be a configurable behaviour, but we're guaranteed to
+    ## be working with genuine files so this should be harmless.
+    dir.create(dirname(target$name), showWarnings=FALSE, recursive=TRUE)
+    ## NOTE: I'm using withCallingHandlers here because that does
+    ## allow options(error=recover) to behave in the expected way
+    ## (i.e., the target function remains on the stack and can be
+    ## inspected/browsed).
+    path <- backup(target$name)
+    withCallingHandlers(target_run(target, store, quiet),
+                        error=function(e) {
+                          restore(target$name, path)
+                          stop(e)
+                        })
+    ## This only happens if the error is not raised above:
+    target_set(target, store, NULL)
+    invisible(target$name)
+  } else if (target$type == "object") {
+    res <- target_run(target, store, quiet)
+    target_set(target, store, res)
+    invisible(res)
+  } else if (target$type == "cleanup") {
+    target_level <- sapply(target$maker$targets, function(x) x$cleanup_level)
+    will_remove <- names(target$maker$targets)[target_level == target$name]
+    target$maker$remove_targets(will_remove)
+    target_run(target, store, quiet)
+  }
+}
+
+target_run <- function(target, store, quiet=NULL) {
+  if (is.null(target$rule)) {
+    return()
+  } else if (target$type == "utility") {
+    return(target$utility(target$maker))
+  } else if (inherits(target, "target_knitr")) {
+    object_names <- target$depends[target$depends_type == "object"]
+    return(
+      knitr_from_maker(target$knitr$input, target$name, store,
+                       object_names,
+                       quiet=with_default(quiet, target$quiet),
+                       knitr_options=target$knitr$options,
+                       chdir=target$knitr$chdir,
+                       auto_figure_prefix=target$knitr$auto_figure_prefix))
+
+  }
+
+  if (inherits(target, "target_plot")) {
+    open_device(target$plot$device, plot_args(target), store$env$env)
+    on.exit(dev.off())
+  }
+
+  args <- dependencies_as_args(target, store)
+
+  ## Setting quiet in a target always overrides any runtime
+  ## option.
+  ## TODO: quiet is not getting sanitised here.  Run via isTRUE?
+  quiet <- with_default(quiet, target$quiet)
+  ## Suppressing cat() is hard:
+  if (quiet) {
+    temp <- file()
+    sink(temp)
+    on.exit(sink())
+    on.exit(close(temp), add=TRUE)
+  }
+  ## NOTE: it's actually pretty easy here to print the output
+  ## later if needed (e.g. if we catch errors in this bit).
+  ## However it will not be possible to interleave the message
+  ## stream and the output stream.
+  withCallingHandlers(
+    do.call(target$rule, args, envir=store$env$env),
+    message=function(e) if (quiet) invokeRestart("muffleMessage"))
+}
+
+target_activate <- function(target, maker) {
+  if (target$type == "cleanup" || target$type == "maker") {
+    target$maker <- maker
+  } else if (inherits(target, "target_plot")) {
+    ## NOTE: This is done during activate because we need access to
+    ## the set of plot options.  That seems suboptimal.
+    dev <- get_device(tools::file_ext(target$name))
+    plot <- target$plot
+    if (identical(plot, TRUE) || is.null(plot)) {
+      plot <- list()
+    } else if (is.character(plot) && length(plot) == 1) {
+      if (plot %in% names(maker$plot_options)) {
+        plot <- maker$plot_options[[plot]]
+      } else {
+        stop(sprintf("Unknown plot_options '%s' in target '%s'",
+                     plot, target$name))
+      }
+    } else {
+      assert_list(plot)
+      assert_named(plot)
+    }
+    ## This will not work well for cases where `...` is in the
+    ## device name (such as jpeg, bmp, etc)
+    warn_unknown("plot", plot, names(formals(dev)))
+    target$plot <- list(device=dev, args=plot)
+  }
+  if (length(target$depends) == 0L) {
+    return(target)
+  }
+
+  ## This section matches the dependencies with their location in
+  ## the database's set of targets. Missing file targets will be
+  ## created and added to the database (which being passed by
+  ## reference will propagate backwards).
+  ##
+  if (!is.null(target$chain_kids)) {
+    maker$add_targets(target$chain_kids, activate=TRUE)
+  }
+
+  msg <- setdiff(target$depends, maker$target_names(all=TRUE))
+  if (length(msg) > 0L) {
+    err <- !target_is_file(msg)
+    if (any(err)) {
+      stop(sprintf(
+        "Implicitly created targets must all be files (%s)",
+        paste(msg[err], collapse=", ")))
+    }
+    implicit <- lapply(msg, target_new_file_implicit)
+    names(implicit) <- msg
+    maker$targets <- c(maker$targets, implicit)
+  }
+
+  target$depends_type <- dependency_types(maker$get_targets(target$depends))
+  target_check_quoted(target)
+  target
 }

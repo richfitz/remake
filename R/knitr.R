@@ -34,8 +34,3 @@ knitr_infer_source <- function(name) {
   }
   sub("\\.md$", "\\.Rmd", name)
 }
-
-knitr_depends <- function(maker, depends) {
-  depends_objects <- filter_targets_by_type(depends, "object")
-  dependency_names(depends_objects)
-}

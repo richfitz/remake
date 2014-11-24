@@ -74,6 +74,7 @@ object_store <- R6Class(
     },
 
     archive_export=function(key, path, missing_ok=FALSE) {
+      dir.create(path, FALSE, TRUE)
       assert_directory(path)
       exists <- self$contains(key)
       if (!exists && !missing_ok) {
@@ -194,6 +195,7 @@ file_store <- R6Class(
     },
 
     archive_export=function(filename, path, missing_ok=FALSE) {
+      dir.create(path, FALSE, TRUE)
       assert_directory(path)
       exists <- self$contains(filename)
       if (exists) {
@@ -265,6 +267,7 @@ maker_db <- R6Class(
     },
 
     archive_export=function(key, path, missing_ok=FALSE) {
+      dir.create(path, FALSE, TRUE)
       assert_directory(path)
       exists <- self$contains(key)
       if (exists) {

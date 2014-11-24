@@ -65,8 +65,7 @@ maker <- R6Class(
       }
       self$print_message("ENV", t$name, style="angle")
       self$make1(target_name, ..., dependencies_only=TRUE)
-      deps <- filter_targets_by_type(t$depends, "object")
-      deps_name <- dependency_names(deps)
+      deps_name <- t$depends[t$depends_type == "object"]
 
       invisible(maker_environment(self, deps_name, t))
     },
@@ -113,18 +112,13 @@ maker <- R6Class(
                      function(x) sprintf('source("%s")', x))
       ## Probably best to filter by "real" here?
       cmds <- lapply(self$plan(target_name), function(i)
-                     self$get_target(i)$run_fake(for_script=TRUE))
+                     target_run_fake(self$get_target(i), for_script=TRUE))
 
       src <- c(unlist(pkgs),
                unlist(srcs),
                unlist(cmds))
       class(src) <- "maker_script"
       src
-    },
-
-    script_entry=function(target_name) {
-      target <- self$get_target(target_name)$run_fake()
-      target$run_fake()
     },
 
     load_sources=function() {
@@ -143,13 +137,13 @@ maker <- R6Class(
       quiet_target=self$quiet_target, check=NULL, return_target=TRUE) {
       #
       target <- self$get_target(target_name)
-      current <- !force && target$is_current(check)
+      current <- !force && is_current(target, self$store, check)
 
       skip <- isTRUE(target$implicit)
       ## skip <- status == "" && target$type == "file" && is.null(target$rule)
       if (!skip) {
-        status <- target$status_string(current)
-        cmd <- if (current) NULL else target$run_fake()
+        status <- if (current) "OK" else target$status_string
+        cmd <- if (current) NULL else target_run_fake(target)
         style <- if (is.null(target$chain_parent)) "square" else "curly"
         self$print_message(status, target_name, cmd, style)
       }
@@ -161,11 +155,11 @@ maker <- R6Class(
           ## dependencies).  This does not leave packages loaded for
           ## dependent taragets though.
           extra <- load_extra_packages(target$packages)
-          ret <- target$build(quiet=quiet_target)
+          ret <- target_build(target, self$store, quiet=quiet_target)
           unload_extra_packages(extra)
           invisible(ret)
         } else if (return_target) {
-          invisible(target$get())
+          invisible(target_get(target, self$store))
         }
       }
     },
@@ -217,13 +211,13 @@ maker <- R6Class(
     },
 
     archive_export=function(target_name, recursive=TRUE, filename="maker.zip") {
-      maker_archive_export(self, target_name, recursive, filename)
+      archive_export_maker(self, target_name, recursive, filename)
     },
 
     ## TODO: Provide candidate set of targets to import?
     ## TODO: Import files/objects?
     archive_import=function(filename) {
-      maker_archive_import(self, filename)
+      archive_import_maker(self, filename)
     },
 
     remove_targets=function(target_names, chain=TRUE) {
@@ -239,7 +233,20 @@ maker <- R6Class(
         self$remove_targets(chain_names, chain=FALSE)
       }
 
-      did_remove <- target$del(missing_ok=TRUE)
+      store <- self$store
+
+      if (target$type == "file") {
+        did_remove_obj <- store$files$del(target$name, TRUE)
+        did_remove_db  <- store$db$del(target$name, TRUE)
+        did_remove <- did_remove_obj || did_remove_db
+      } else if (target$type == "object") {
+        did_remove_obj <- store$objects$del(target$name, TRUE)
+        did_remove_db  <- store$db$del(target$name, TRUE)
+        did_remove <- did_remove_obj || did_remove_db
+      } else {
+        stop("Not something that can be deleted")
+      }
+
       if (did_remove) {
         status <- "DEL"
         fn <- if (target$type == "object") "rm" else "file.remove"
@@ -284,7 +291,7 @@ maker <- R6Class(
       if (any(duplicated(target_names))) {
         stop("All target names must be unique")
       }
-      if (any(target_names %in% self$target_names())) {
+      if (any(target_names %in% self$target_names(all=TRUE))) {
         if (force) {
           to_drop <- self$target_names() %in% target_names
           if (any(to_drop)) {
@@ -297,11 +304,10 @@ maker <- R6Class(
         }
       }
       names(x) <- target_names
+      i <- seq_along(x) + length(self$targets)
       self$targets <- c(self$targets, x)
       if (activate) {
-        for (t in x) {
-          t$activate(self)
-        }
+        self$targets[i] <- lapply(self$targets[i], target_activate, self)
       }
     },
 
@@ -339,19 +345,21 @@ maker <- R6Class(
       self$store$objects$export(names, envir)
     },
 
-    ## Things that just pass through to the targets:
+    ## These two are really only used in the tests.
     is_current=function(target_name, check=NULL) {
-      self$get_target(target_name)$is_current(check)
+      is_current(self$get_target(target_name), self$store, check)
     },
     dependency_status=function(target_name, missing_ok=FALSE, check=NULL) {
-      self$get_target(target_name)$dependency_status(missing_ok, check)
+      dependency_status(self$get_target(target_name),
+                        self$store, missing_ok, check)
     },
+
     build=function(target_name, quiet_target=self$quiet_target) {
-      self$get_target(target_name)$build(quiet=quiet_target)
+      target_build(self$get_target(target_name), self$store, quiet_target)
     },
 
     dependency_graph=function() {
-      g <- lapply(self$targets, function(t) dependency_names(t$depends))
+      g <- lapply(self$targets, function(t) t$depends)
       topological_sort(g)
     },
 
@@ -368,9 +376,9 @@ maker <- R6Class(
     },
 
     initialize_utility_targets=function() {
-      add <- list(target_utility$new("install_packages",
+      add <- list(target_new_utility("install_packages",
                                      utility_install_packages, self),
-                  target_utility$new("gitignore", utility_gitignore, self))
+                  target_new_utility("gitignore", utility_gitignore, self))
       self$add_targets(add)
     },
 
@@ -391,9 +399,11 @@ maker <- R6Class(
     },
 
     initialize_targets_activate=function() {
-      for (t in self$targets) {
-        t$activate(self)
-      }
+      ## Special care here because this might create new, implicit,
+      ## targets while it runs.  Those will be added to the end of the
+      ## targets vector.
+      i <- seq_along(self$targets)
+      self$targets[i] <- lapply(self$targets, target_activate, self)
     },
 
     initialize_message_format=function() {

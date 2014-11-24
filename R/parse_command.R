@@ -1,3 +1,43 @@
+## Will change name soon, but the basic idea is to sort out what it is
+## that we have to run:
+##
+## TODO: Need some tests here, throughout
+process_target_command <- function(name, dat) {
+  core <- c("command", "depends",
+            "rule", "target_argument", "quoted", "depends_is_arg",
+            "chain")
+
+  ## Quick check that may disappear later:
+  invalid <- c("rule", "target_argument", "quoted")
+  if (any(invalid %in% names(dat))) {
+    stop("Invalid keys: ",
+         paste(intersect(invalid, names(dat)), collapse=", "))
+  }
+
+  dat$depends_is_arg <- rep(FALSE, length(dat$depends))
+
+  if (!is.null(dat$command)) {
+    cmd <- parse_target_command(name, dat$command)
+
+    if ("depends" %in% names(dat)) { # extra dependencies:
+      if (is.null(cmd$chain)) {
+        cmd$depends <- c(cmd$depends, dat$depends)
+        cmd$depends_is_arg <- c(cmd$depends_is_arg,
+                                dat$depends_is_arg)
+      } else {
+        cmd$chain[[1]]$depends <- c(cmd$chain[[1]]$depends, dat$depends)
+        cmd$chain[[1]]$depends_is_arg <- c(cmd$chain[[1]]$depends_is_arg,
+                                           dat$depends_is_arg)
+      }
+    }
+
+    dat[intersect(names(cmd), core)] <- cmd
+  }
+
+  is_command <- names(dat) %in% core
+  list(command=dat[is_command], opts=dat[!is_command])
+}
+
 ## There will be *two* possible way of getting
 ## target_argument in:
 ##  - use the target name, *in quotes*

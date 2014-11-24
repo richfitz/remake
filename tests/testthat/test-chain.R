@@ -24,14 +24,15 @@ test_that("Chained rules", {
   t1 <- m$get_target("chained{1}")
   expect_that(t1, is_a("target_base"))
   expect_that(t1, is_a("target_object"))
-  expect_that(t1$chain_parent, equals(t))
+  expect_that(t1$chain_parent$name, equals(t$name))
   expect_that(t1$depends, equals(list()))
 
   t2 <- m$get_target("chained{2}")
   expect_that(t2, is_a("target_base"))
   expect_that(t2, is_a("target_object"))
-  expect_that(t2$chain_parent, equals(t))
-  expect_that(t2$depends, equals(list(t1)))
+  expect_that(t2$chain_parent$name, equals(t$name))
+  expect_that(t2$depends, equals(t1$name))
+  expect_that(unname(t2$depends_type), equals("object"))
 
   expect_that(length(t$chain_kids), equals(2))
 

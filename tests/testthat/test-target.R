@@ -13,10 +13,11 @@ test_that("Targets return their output on build", {
   ## TODO: there's a really obscure error if this is not run but
   ## targets are.  Really need to catch that somewhere.
   m$load_sources()
+  store <- m$store
 
   ## File targets will invisibly return their filename:
   t <- m$get_target("data.csv")
-  expect_that(t$build(), equals("data.csv"))
+  expect_that(target_build(t, store), equals("data.csv"))
   expect_that(m$build("data.csv"), equals("data.csv"))
 
   m$remove_target("data.csv")
@@ -29,7 +30,7 @@ test_that("Targets return their output on build", {
 
   ## While object targets invisibly return their contents
   t <- m$get_target("processed")
-  expect_that(t$build(), is_a("data.frame"))
+  expect_that(target_build(t, store), is_a("data.frame"))
   expect_that(m$build("processed"), is_a("data.frame"))
 
   m$remove_target("processed")
@@ -42,7 +43,7 @@ test_that("Targets return their output on build", {
 
   ## Fake targets return nothing:
   t <- m$get_target("all")
-  expect_that(t$build(), is_null())
+  expect_that(target_build(t, store), is_null())
   expect_that(m$build("all"), is_null())
 
   expect_that(m$remove_target("all"),

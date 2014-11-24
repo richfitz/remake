@@ -5,7 +5,7 @@ maker_environment_info <- function(e) {
   } else {
     message("Maker environment for building ", t$name)
     message("    rule: ", t$rule)
-    message("    command: ", t$run_fake())
+    message("    command: ", target_run_fake(t))
   }
   message("    objects:")
   message(paste(strwrap(paste(ls(e), collapse=", "),

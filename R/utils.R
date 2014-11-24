@@ -263,3 +263,21 @@ painter <- R6Class(
       self$do_paint(..., normal_is_bright=normal_is_bright)
     }
     ))
+
+backup <- function(file) {
+  if (file.exists(file)) {
+    path <- file.path(tempfile(), file)
+    dir.create(dirname(path), showWarnings=FALSE, recursive=TRUE)
+    file.copy(file, path)
+    path
+  } else {
+    NULL
+  }
+}
+
+restore <- function(file, path) {
+  if (!is.null(path)) {
+    message("Restoring previous version of ", file)
+    file.copy(path, file, overwrite=TRUE)
+  }
+}
