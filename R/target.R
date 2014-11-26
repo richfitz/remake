@@ -1,6 +1,6 @@
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
-make_target <- function(name, dat) {
+make_target <- function(name, dat, extra=NULL) {
   assert_scalar_character(name)
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
@@ -17,7 +17,7 @@ make_target <- function(name, dat) {
                        fake=target_new_fake,
                        cleanup=target_new_cleanup)
     type <- match_value(dat$type, names(generators))
-    generators[[type]](name, dat$command, dat$opts)
+    generators[[type]](name, dat$command, dat$opts, extra)
   }
 
   prefix <- sprintf("While processing target '%s':\n    ", name)
@@ -26,8 +26,8 @@ make_target <- function(name, dat) {
                       warning=catch_warning_prefix(prefix))
 }
 
-target_new_base <- function(name, command, opts, type="base",
-                            valid_options=NULL) {
+target_new_base <- function(name, command, opts, extra=NULL,
+                            type="base", valid_options=NULL) {
   assert_scalar_character(name)
   assert_scalar_character(type)
   if ("target_argument" %in% names(command) && type != "file") {
@@ -85,25 +85,27 @@ target_new_base <- function(name, command, opts, type="base",
   ret
 }
 
-target_new_object <- function(name, command, opts, valid_options=NULL) {
+target_new_object <- function(name, command, opts, extra=NULL,
+                              valid_options=NULL) {
   if (is.null(command$rule)) {
     stop("Must not have a NULL rule")
   }
   opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
   valid_options <- c("cleanup_level", valid_options)
-  ret <- target_new_base(name, command, opts, "object", valid_options)
+  ret <- target_new_base(name, command, opts, extra, "object", valid_options)
   ret$status_string <- "BUILD"
   class(ret) <- c("target_object", class(ret))
   ret
 }
 
-target_new_file <- function(name, command, opts, valid_options=NULL) {
+target_new_file <- function(name, command, opts, extra=NULL,
+                            valid_options=NULL) {
   if (is.null(command$rule)) {
     stop("Must not have a NULL rule")
   }
   opts$cleanup_level <- with_default(opts$cleanup_level, "clean")
   valid_options <- c("cleanup_level", valid_options)
-  ret <- target_new_base(name, command, opts, "file", valid_options)
+  ret <- target_new_base(name, command, opts, extra, "file", valid_options)
   ret$target_argument <- command$target_argument
   ret$status_string <- "BUILD"
   class(ret) <- c("target_file", class(ret))
@@ -126,18 +128,42 @@ target_new_file_implicit <- function(name) {
   ret
 }
 
-target_new_plot <- function(name, command, opts) {
+target_new_plot <- function(name, command, opts, extra=NULL) {
   if (is.null(command$rule)) {
     stop("Cannot have a NULL rule")
   }
-  ret <- target_new_file(name, command, opts, "plot")
-  ret$plot <- opts$plot # checked at activate()
+  ret <- target_new_file(name, command, opts, extra, "plot")
+  ##  ret$plot <- opts$plot # checked at activate()
+
+  ## NOTE: This is done during activate because we need access to
+  ## the set of plot options.  That seems suboptimal.
+  dev <- get_device(tools::file_ext(name))
+  plot_args <- opts$plot
+  if (identical(plot_args, TRUE) || is.null(plot_args)) {
+    plot_args <- empty_named_list()
+  } else if (is.character(plot_args) && length(plot_args) == 1) {
+    if (plot_args %in% names(extra$plot_options)) {
+      plot_args <- extra$plot_options[[plot_args]]
+    } else {
+      stop(sprintf("Unknown plot_options '%s' in target '%s'",
+                   plot_args, name))
+    }
+  }
+  assert_list(plot_args)
+  assert_named(plot_args)
+
+  ## This will not work well for cases where `...` is in the
+  ## device name (such as jpeg, bmp, etc), but we can work around that
+  ## later.
+  warn_unknown("plot", plot_args, names(formals(dev)))
+  ret$plot <- list(device=dev, args=plot_args)
+
   ret$status_string <- "PLOT"
   class(ret) <- c("target_plot", class(ret))
   ret
 }
 
-target_new_knitr <- function(name, command, opts) {
+target_new_knitr <- function(name, command, opts, extra=NULL) {
   if (!is.null(command$rule)) {
     stop(sprintf("%s: knitr targets must have a NULL rule",
                  name))
@@ -196,30 +222,30 @@ target_new_knitr <- function(name, command, opts) {
   ## Hack to let target_base know we're not implicit.  There does
   ## need to be something here as a few places test for null-ness.
   command$rule <- ".__knitr__"
-  ret <- target_new_file(name, command, opts, "knitr")
+  ret <- target_new_file(name, command, opts, extra, "knitr")
   class(ret) <- c("target_knitr", class(ret))
   ret$knitr <- knitr
   ret
 }
 
-target_new_cleanup <- function(name, command, opts) {
-  ret <- target_new_base(name, command, opts, "cleanup")
+target_new_cleanup <- function(name, command, opts, extra=NULL) {
+  ret <- target_new_base(name, command, opts, extra, "cleanup")
   ret$status_string <- "CLEAN"
   class(ret) <- c("target_cleanup", class(ret))
   ret
 }
 
-target_new_fake <- function(name, command, opts) {
+target_new_fake <- function(name, command, opts, extra=NULL) {
   if (!is.null(command$rule)) {
     stop("fake targets must have a NULL rule (how did you do this?)")
   }
-  ret <- target_new_base(name, command, opts, "fake")
+  ret <- target_new_base(name, command, opts, extra, "fake")
   class(ret) <- c("target_fake", class(ret))
   ret
 }
 
 target_new_utility <- function(name, utility, maker) {
-  ret <- target_new_base(name, NULL, NULL, "utility")
+  ret <- target_new_base(name, NULL, NULL, NULL, "utility")
   ret$utility <- utility
   ret$maker <- maker
   ret$status_string <- "UTIL"
@@ -704,28 +730,6 @@ target_run <- function(target, store, quiet=NULL) {
 target_activate <- function(target, maker, target_names=NULL) {
   if (target$type == "cleanup" || target$type == "maker") {
     target$maker <- maker
-  } else if (inherits(target, "target_plot")) {
-    ## NOTE: This is done during activate because we need access to
-    ## the set of plot options.  That seems suboptimal.
-    dev <- get_device(tools::file_ext(target$name))
-    plot <- target$plot
-    if (identical(plot, TRUE) || is.null(plot)) {
-      plot <- list()
-    } else if (is.character(plot) && length(plot) == 1) {
-      if (plot %in% names(maker$plot_options)) {
-        plot <- maker$plot_options[[plot]]
-      } else {
-        stop(sprintf("Unknown plot_options '%s' in target '%s'",
-                     plot, target$name))
-      }
-    } else {
-      assert_list(plot)
-      assert_named(plot)
-    }
-    ## This will not work well for cases where `...` is in the
-    ## device name (such as jpeg, bmp, etc)
-    warn_unknown("plot", plot, names(formals(dev)))
-    target$plot <- list(device=dev, args=plot)
   }
   if (length(target$depends_name) == 0L) {
     target$depends_type <- character(0)

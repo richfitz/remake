@@ -26,13 +26,12 @@ test_that("Plot options", {
 
   style <- list(width=8, height=4)
 
-  expect_that(m$plot_options$mystyle, equals(style))
   expect_that(t1$plot$args, equals(style))
   expect_that(t2$plot$args, equals(style))
 
   ## No arguments on these two:
-  expect_that(t3$plot$args, equals(list()))
-  expect_that(t4$plot$args, equals(list()))
+  expect_that(t3$plot$args, equals(empty_named_list()))
+  expect_that(t4$plot$args, equals(empty_named_list()))
 
   m$make()
 

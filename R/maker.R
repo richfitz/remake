@@ -9,7 +9,6 @@ maker <- R6Class(
     hash=NULL,
     path=NULL,
     store=NULL,
-    plot_options=NULL,
     targets=NULL,
     ## NOTE: *verbose* applies to maker, while *quiet_target* applies
     ## to targets.  I might move to quiet here, instead.
@@ -30,7 +29,6 @@ maker <- R6Class(
       self$store <- store$new(self$path)
       config <- read_maker_file(self$file)
       self$hash <- config$hash
-      self$plot_options <- config$plot_options
       self$targets <- NULL
       self$add_targets(config$targets)
       private$initialize_cleanup_targets()
@@ -462,9 +460,6 @@ read_maker_file <- function(filename, seen=character(0)) {
   dat$packages <- with_default(dat$packages, character(0))
   dat$sources  <- with_default(dat$sources,  character(0))
 
-  ## TODO: checking plot options (as done by make_target) will have to
-  ## wait until after all includes have been read (i.e. at activate)
-  ## once includes are supported.
   if (!is.null(dat$plot_options)) {
     assert_named_list(dat$plot_options)
     for (i in names(dat$plot_options)) {
@@ -473,8 +468,6 @@ read_maker_file <- function(filename, seen=character(0)) {
     }
   }
 
-  dat$targets <- lnapply(dat$targets, make_target)
-
   if (!is.null(dat$include)) {
     assert_character(dat$include)
     ## TODO: Even after sorting out main file restriction, this one
@@ -482,6 +475,11 @@ read_maker_file <- function(filename, seen=character(0)) {
     ## relative paths, or leave relative paths going against the main
     ## file.  Not sure what the right answer here is, so requiring new
     ## files to be in the current working directory.
+    ##
+    ## TODO: I think the correct answer is to assume everything
+    ## relative to the main makerfile.  Possibly support a
+    ## include-and-chdir approach too, where rules are rewritten to
+    ## support relative paths, but that's going be hairy.
     if (any(dirname(dat$include) != ".")) {
       stop("All included makerfiles must be in the current directory")
     }
@@ -522,6 +520,11 @@ read_maker_file <- function(filename, seen=character(0)) {
         stop("plot_options in included makerfiles not yet supported")
       }
     }
+  }
+
+  if (length(seen) == 0L) { # main file only
+    extra <- list(plot_options=dat$plot_options)
+    dat$targets <- lnapply(dat$targets, make_target, extra=extra)
   }
 
   dat
