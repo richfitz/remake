@@ -1,17 +1,3 @@
-target_infer_type <- function(name, type, dat) {
-  if (is.null(type)) {
-    type <- if (target_is_file(name)) "file" else  "object"
-    if ("knitr" %in% names(dat$opts)) {
-      type <- "knitr"
-    } else if ("plot" %in% names(dat$opts)) {
-      type <- "plot"
-    } else if (type == "object" && is.null(dat$command$rule)) {
-      type <- "fake"
-    }
-  }
-  type
-}
-
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
 make_target <- function(name, dat) {
@@ -23,26 +9,14 @@ make_target <- function(name, dat) {
   ## This is just a wrapper function to improve the traceback on error.
   make_target_dat <- function(dat) {
     assert_named_list(dat, name="target data")
-
-    ## TODO: process type within process_target_command, I think.
-    type <- dat$type
-    if (!is.null(type)) {
-      assert_scalar_character(type)
-      dat <- dat[names(dat) != "type"]
-    }
-
     dat <- process_target_command(name, dat)
-    type <- target_infer_type(name, type, dat)
-
-    ## TODO: Get utility into this?  Possibly not as they're pretty
-    ## different really having no command/deps
     generators <- list(object=target_new_object,
                        file=target_new_file,
                        plot=target_new_plot,
                        knitr=target_new_knitr,
                        fake=target_new_fake,
                        cleanup=target_new_cleanup)
-    type <- match_value(type, names(generators))
+    type <- match_value(dat$type, names(generators))
     generators[[type]](name, dat$command, dat$opts)
   }
 
@@ -52,13 +26,6 @@ make_target <- function(name, dat) {
                       warning=catch_warning_prefix(prefix))
 }
 
-target_default_cleanup <- function(type) {
-  switch(type,
-         file="clean",
-         object="tidy",
-         "never")
-}
-
 target_new_base <- function(name, command, opts, type="base",
                             valid_options=NULL) {
   assert_scalar_character(name)
@@ -66,34 +33,20 @@ target_new_base <- function(name, command, opts, type="base",
   if ("target_argument" %in% names(command) && type != "file") {
     stop("'target_argument' field invalid for arguments of type ", type)
   }
+  valid_options <- c("type", "quiet", "check", "packages", valid_options)
+  stop_unknown(name, opts, valid_options)
 
   ret <- list(name=name, type=type)
   ret$command <- command$command
   ret$quoted <- command$quoted
-
-  ## TODO: Could do this with warn_unknown, or implement stop_unknown?
-  ## TODO: This is really ugly - would be easier if we passed in the
-  ## correct type at the beginning, and then we can use
-  ## target_valid_options.
-  valid_options <- c("quiet", "check", "packages", valid_options)
-  err <- setdiff(names(opts), valid_options)
-  if (length(err) > 0) {
-    stop(sprintf("Invalid options for %s: %s",
-                 name, paste(err, collapse=", ")))
-  }
+  ret$status_string <- ""
 
   if (!is.null(command$rule)) {
     assert_scalar_character(command$rule, "rule")
     ret$rule <- command$rule
   }
 
-  if (length(command$depends) > 0) {
-    ret$depends_name <- command$depends
-  } else {
-    ## Things like utility targets that come in with NULL data have
-    ## NULL here, so this just squares things away nicely.
-    ret$depends_name <- character(0)
-  }
+  ret$depends_name <- with_default(command$depends, character(0))
   if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
   }
@@ -107,36 +60,15 @@ target_new_base <- function(name, command, opts, type="base",
   }
   ret$depends_is_arg <- command$depends_is_arg
 
-  ## Use with_default here?
-  if (is.null(opts$cleanup_level)) {
-    ret$cleanup_level <- "never"
-  } else {
-    ret$cleanup_level <-
-      match_value(opts$cleanup_level, cleanup_levels(), "cleanup_level")
-  }
+  ret$cleanup_level <- with_default(opts$cleanup_level, "never")
+  ret$cleanup_level <-
+    match_value(ret$cleanup_level, cleanup_levels(), "cleanup_level")
 
-  ## TODO: with_default?
-  if ("quiet" %in% names(opts)) {
-    assert_scalar_logical(opts$quiet, "quiet")
-    ret$quiet <- opts$quiet
-    if (is.null(ret$rule)) {
-      warning("Using 'quiet' on a rule-less target has no effect")
-    }
-  } else {
-    ret$quiet <- FALSE
-  }
+  ret$quiet <- with_default(opts$quiet, FALSE)
+  assert_scalar_logical(ret$quiet, "quiet")
 
-  ## TODO: with_default?
-  if ("check" %in% names(opts)) {
-    ret$check <- match_value(opts$check, check_levels(), "check")
-    if (is.null(ret$rule)) {
-      warning("Using 'check' on a rule-less target has no effect")
-    }
-  } else {
-    ret$check <- "all"
-  }
-
-  ret$status_string <- ""
+  ret$check <- with_default(opts$check, "all")
+  ret$check <- match_value(ret$check, check_levels(), "check")
 
   if ("packages" %in% names(opts)) {
     ret$packages <- opts$packages
@@ -179,7 +111,7 @@ target_new_file <- function(name, command, opts, valid_options=NULL) {
 }
 
 ## This is called directly by maker, and skips going through
-## target_new.  That will probably change back shortly.
+## target_new_base.  That will probably change back shortly.
 target_new_file_implicit <- function(name) {
   if (!file.exists(name)) {
     warning("Creating implicit target for nonexistant file ", name)
@@ -200,6 +132,7 @@ target_new_plot <- function(name, command, opts) {
   }
   ret <- target_new_file(name, command, opts, "plot")
   ret$plot <- opts$plot # checked at activate()
+  ret$status_string <- "PLOT"
   class(ret) <- c("target_plot", class(ret))
   ret
 }
@@ -217,8 +150,8 @@ target_new_knitr <- function(name, command, opts) {
   if (identical(knitr, TRUE) || is.null(knitr)) {
     knitr <- list()
   }
-  warn_unknown("knitr", knitr, c("input", "options", "chdir",
-                                 "auto_figure_prefix"))
+  warn_unknown("knitr", knitr,
+               c("input", "options", "chdir", "auto_figure_prefix"))
 
   ## Infer name if it's not present:
   if (is.null(knitr$input)) {
@@ -310,25 +243,6 @@ extensions <- function() {
     "jpg", "jpeg", "png", "pdf", "eps", "ps", "bmp", "tiff", "svg",
     # Archives
     "zip", "gz", "tar", "bz2")
-}
-
-##' Determine if a target is treated as a file or not.
-##'
-##' A target is a file if it contains a slash anywhere in the name, or
-##' if it ends in one of the known extensions.  The current set of
-##' known file extensions is available as \code{\link{extensions}()},
-##' but soon will become configurable.
-##' @title Determine if target is a file
-##' @param x Vector of target names
-##' @return A logical vector, the same length as \code{x}
-##' @export
-target_is_file <- function(x) {
-  is_file <- grepl("/", x, fixed=TRUE)
-  check <- !is_file
-  if (any(check)) {
-    is_file[check] <- tolower(file_extension(x[check])) %in% extensions()
-  }
-  is_file
 }
 
 ## Determine if things are up to date.  That is the case if:

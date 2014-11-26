@@ -544,6 +544,7 @@ status_colour <- function(str) {
          DEL="red",
          UTIL="darkorchid3",
          READ="yellow",
+         PLOT="dodgerblue2",
          KNIT="hotpink",
          MAKE="deepskyblue",
          ENV="deepskyblue",

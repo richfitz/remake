@@ -29,13 +29,21 @@ with_default <- function(x, default=NULL) {
 }
 
 ## Warn if keys are found in an object that are not in a known set.
-warn_unknown <- function(name, defn, known) {
+stop_unknown <- function(name, defn, known, error=TRUE) {
   unknown <- setdiff(names(defn), known)
   if (length(unknown) > 0) {
-    warning(sprintf("Unknown fields in %s: %s",
-                    name, paste(unknown, collapse=", ")),
-            immediate.=TRUE, call.=FALSE)
+    msg <- sprintf("Unknown fields in %s: %s",
+                   name, paste(unknown, collapse=", "))
+    if (error) {
+      stop(msg, call.=FALSE)
+    } else {
+      warning(msg, immediate.=TRUE, call.=FALSE)
+    }
   }
+}
+
+warn_unknown <- function(name, defn, known) {
+  stop_unknown(name, defn, known, FALSE)
 }
 
 ## Pattern where we have a named list and we want to call function

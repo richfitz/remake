@@ -24,6 +24,8 @@ process_target_command <- function(name, dat) {
     ## The contortions below do a reasonable job of dealing with this,
     ## but it's not enough.
     dat$depends <- unlist(from_yaml_map_list(dat$depends))
+  } else {
+    dat$depends <- character(0)
   }
 
   dat$depends_is_arg <- rep(FALSE, length(dat$depends))
@@ -46,8 +48,10 @@ process_target_command <- function(name, dat) {
     dat[intersect(names(cmd), core)] <- cmd
   }
 
+  type <- target_infer_type(name, dat)
+
   is_command <- names(dat) %in% core
-  list(command=dat[is_command], opts=dat[!is_command])
+  list(command=dat[is_command], opts=dat[!is_command], type=type)
 }
 
 ## There will be *two* possible way of getting
@@ -181,4 +185,40 @@ check_command_rule <- function(x) {
     stop("Rule must be a character or name")
   }
   x
+}
+
+target_infer_type <- function(name, dat) {
+  type <- dat$type
+  if (is.null(type)) {
+    type <- if (target_is_file(name)) "file" else  "object"
+    if ("knitr" %in% names(dat)) {
+      type <- "knitr"
+    } else if ("plot" %in% names(dat)) {
+      type <- "plot"
+    } else if (type == "object" && is.null(dat$command)) {
+      type <- "fake"
+    }
+  } else {
+    assert_scalar_character(type)
+  }
+  type
+}
+
+##' Determine if a target is treated as a file or not.
+##'
+##' A target is a file if it contains a slash anywhere in the name, or
+##' if it ends in one of the known extensions.  The current set of
+##' known file extensions is available as \code{\link{extensions}()},
+##' but soon will become configurable.
+##' @title Determine if target is a file
+##' @param x Vector of target names
+##' @return A logical vector, the same length as \code{x}
+##' @export
+target_is_file <- function(x) {
+  is_file <- grepl("/", x, fixed=TRUE)
+  check <- !is_file
+  if (any(check)) {
+    is_file[check] <- tolower(file_extension(x[check])) %in% extensions()
+  }
+  is_file
 }

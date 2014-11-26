@@ -57,14 +57,10 @@ test_that("Fake targets (invalid)", {
               throws_error("fake targets must have a NULL rule"))
   expect_that(make_target("fake", list(target_argument="foo", type="fake")),
               throws_error("Invalid keys: target_argument"))
-  expect_that(make_target("fake", list(quiet=TRUE, type="fake")),
-              gives_warning("has no effect"))
-  expect_that(make_target("fake", list(check="exists", type="fake")),
-              gives_warning("has no effect"))
   expect_that(make_target("fake", list(cleanup_level="tidy", type="fake")),
-              throws_error("Invalid options for fake: cleanup_level"))
+              throws_error("Unknown fields in fake: cleanup_level"))
   expect_that(make_target("fake", list(other_opt="tidy", type="fake")),
-              throws_error("Invalid options for fake: other_opt"))
+              throws_error("Unknown fields in fake: other_opt"))
 })
 
 test_that("Dependency parsing", {
@@ -158,7 +154,7 @@ test_that("Object target (invalid)", {
               throws_error("check must be one"))
 
   expect_that(make_target("real", list(command="foo()", other_opt="tidy")),
-              throws_error("Invalid options for real: other_opt"))
+              throws_error("Unknown fields in real: other_opt"))
 })
 
 test_that("File targets", {
@@ -288,11 +284,11 @@ test_that("knitr (invalid)", {
               throws_error("quiet must be logical"))
 
   expect_that(make_target("file.md", list(unknown="opt", type="knitr")),
-              throws_error("Invalid options for file.md"))
+              throws_error("Unknown fields in file.md"))
 
   expect_that(make_target("file.md", list(knitr=TRUE,
                                           auto_figure_prefix=TRUE)),
-              throws_error("Invalid options for file.md: auto_figure_prefix"))
+              throws_error("Unknown fields in file.md: auto_figure_prefix"))
 
   dat <- list(knitr=list(
                 options=list(fig.path="foo"),
