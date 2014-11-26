@@ -26,7 +26,7 @@ test_that("Fake targets", {
   expect_that(t$type, equals("fake"))
 
   expect_that(t$name, equals("a_fake_target"))
-  expect_that(t$depends, equals(list()))
+  expect_that(t$depends_name, equals(character(0)))
   expect_that(t$rule, equals(NULL))
   expect_that(t$cleanup_level, equals("never"))
   expect_that(t$quiet, equals(FALSE))
@@ -39,7 +39,7 @@ test_that("Fake targets", {
   deps <- letters[1:3]
   t <- make_target("a_fake_target", list(depends=deps))
   expect_that(t$type, equals("fake"))
-  expect_that(t$depends, equals(deps))
+  expect_that(t$depends_name, equals(deps))
 })
 
 test_that("Can't do much with fake targets", {
@@ -92,7 +92,7 @@ test_that("Object target", {
   expect_that(t$type, equals("object"))
 
   expect_that(t$name, equals("real"))
-  expect_that(t$depends, equals(list()))
+  expect_that(t$depends_name, equals(character(0)))
   expect_that(t$rule, equals("foo"))
   expect_that(t$cleanup_level, equals("tidy"))
   expect_that(t$quiet, equals(FALSE))
@@ -111,17 +111,17 @@ test_that("Object target", {
   expect_that(t$cleanup_level, equals("purge"))
 
   ## With dependencies:
-  t <- make_target("real", list(command="foo()", depends=list("a")))
+  t <- make_target("real", list(command="foo()", depends="a"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals("a"))
+  expect_that(t$depends_name, equals("a"))
 
   t <- make_target("real", list(command="foo(a)"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals("a"))
+  expect_that(t$depends_name, equals("a"))
 
   t <- make_target("real", list(command="foo(a, b=c)"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("a", b="c")))
+  expect_that(t$depends_name, equals(c("a", b="c")))
 
   t <- make_target("code.R", list(command="foo()", type="object"))
   expect_that(t$type, equals("object"))
@@ -167,32 +167,32 @@ test_that("File targets", {
   expect_that(t, is_a("target_file"))
   expect_that(t, is_a("target_base"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(list()))
+  expect_that(t$depends_name, equals(character(0)))
   expect_that(t$target_argument, is_null())
   expect_that(target_run_fake(t), equals("foo()"))
 
   t <- make_target("foo.csv", list(command="foo(a, b, c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("a", "b", "c")))
+  expect_that(t$depends_name, equals(c("a", "b", "c")))
   expect_that(t$target_argument, is_null())
 
   t <- make_target("foo.csv", list(command="foo(a, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("a", "b", C="c")))
+  expect_that(t$depends_name, equals(c("a", "b", C="c")))
   expect_that(t$target_argument, is_null())
 
   t <- make_target("foo.csv", list(command="foo(target_name, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("b", C="c")))
+  expect_that(t$depends_name, equals(c("b", C="c")))
   expect_that(t$target_argument, equals(1))
 
   t <- make_target("foo.csv", list(command="foo(name='foo.csv', b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends, equals(c("b", C="c")))
+  expect_that(t$depends_name, equals(c("b", C="c")))
   expect_that(t$target_argument, equals("name"))
 })
 
@@ -206,7 +206,7 @@ test_that("Implicit file targets", {
   expect_that(t$name, equals("code.R"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, is_null())
-  expect_that(t$depends, equals(list()))
+  expect_that(t$depends_name, equals(character(0)))
   expect_that(target_build(t),
               throws_error("Can't build implicit targets"))
   expect_that(target_run(t, NULL), is_null())
@@ -219,7 +219,7 @@ test_that("Implicit file targets", {
   expect_that(t$rule, is_null())
   ## TODO: empty depends should be character(0), or nonempty lists
   ## should be lists.
-  expect_that(t$depends, equals(list()))
+  expect_that(t$depends_name, equals(character(0)))
   expect_that(target_build(t),
               throws_error("Can't build implicit targets"))
   expect_that(target_run(t), is_null())
@@ -307,9 +307,8 @@ test_that("cleanup", {
   cleanup()
   m <- maker$new("maker_cleanup_hook.yml")
   t <- m$get_target("clean")
-  expect_that(length(t$depends), equals(2))
-  expect_that(t$depends,
-              equals(c("data.csv", "tidy")))
+  expect_that(length(t$depends_name), equals(2))
+  expect_that(t$depends_name, equals(c("data.csv", "tidy")))
 
   expect_that(file.exists("data.csv"), is_false())
   expect_that(m$make("clean"),

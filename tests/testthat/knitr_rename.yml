@@ -11,5 +11,5 @@ targets:
 
   knitr_rename.md:
     depends:
-      data: processed
+      - data: processed
     knitr: true

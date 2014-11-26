@@ -65,7 +65,7 @@ maker <- R6Class(
       }
       self$print_message("ENV", t$name, style="angle")
       self$make1(target_name, ..., dependencies_only=TRUE)
-      deps_name <- t$depends[t$depends_type == "object"]
+      deps_name <- t$depends_name[t$depends_type == "object"]
 
       invisible(maker_environment(self, deps_name, t))
     },
@@ -359,7 +359,7 @@ maker <- R6Class(
     },
 
     dependency_graph=function() {
-      g <- lapply(self$targets, function(t) t$depends)
+      g <- lapply(self$targets, function(t) t$depends_name)
       topological_sort(g)
     },
 
@@ -403,7 +403,9 @@ maker <- R6Class(
       ## targets while it runs.  Those will be added to the end of the
       ## targets vector.
       i <- seq_along(self$targets)
-      self$targets[i] <- lapply(self$targets, target_activate, self)
+      target_names <- sort(self$target_names(all=TRUE))
+      self$targets[i] <- lapply(self$targets, target_activate,
+                                self, target_names)
     },
 
     initialize_message_format=function() {

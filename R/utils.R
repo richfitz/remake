@@ -95,6 +95,9 @@ abbreviate <- function(str, width, cutoff="...") {
 empty_named_list <- function() {
   structure(list(), names=character(0))
 }
+empty_character <- function() {
+  structure(character(0), names=character(0))
+}
 
 strip_whitespace <- function(str) {
   gsub("(^\\s+|\\s+$)", "", str)
@@ -280,4 +283,9 @@ restore <- function(file, path) {
     message("Restoring previous version of ", file)
     file.copy(path, file, overwrite=TRUE)
   }
+}
+
+file_extension <- function(x) {
+  pos <- regexpr("\\.([^.]+)$", x, perl=TRUE)
+  ifelse(pos > -1L, substring(x, pos + 1L), "")
 }

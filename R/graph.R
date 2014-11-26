@@ -92,7 +92,7 @@ status <- function(target_name, graph, m) {
     x <- m$get_target(t)
     dirty[[t]] <- !is_current(x, m$store)
     if (check_depends(x$check)) {
-      d <- x$depends[x$depends_type %in% c("file", "object")]
+      d <- x$depends_name[x$depends_type %in% c("file", "object")]
       ## TODO: This conditional goes away if we have a dependency
       ## names function that always returns a character vector.
       if (length(d) > 0L) {

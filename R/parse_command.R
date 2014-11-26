@@ -14,6 +14,18 @@ process_target_command <- function(name, dat) {
          paste(intersect(invalid, names(dat)), collapse=", "))
   }
 
+  if (length(dat$depends) > 0) {
+    ## TODO: this might come through as a proper yaml map list
+    ##   depends:
+    ##    - data: processed
+    ## or improperly as
+    ##   depends:
+    ##     data: processed
+    ## The contortions below do a reasonable job of dealing with this,
+    ## but it's not enough.
+    dat$depends <- unlist(from_yaml_map_list(dat$depends))
+  }
+
   dat$depends_is_arg <- rep(FALSE, length(dat$depends))
 
   if (!is.null(dat$command)) {
@@ -53,7 +65,7 @@ parse_target_command <- function(target, command) {
   dat <- parse_command(command)
   if (length(dat$depends) > 0L) {
     ## This whole section tries to work out the target_argument field.
-    targets <- sapply(dat$depends, "[[", 1)
+    targets <- dat$depends
 
     ## Deal with dots first.
     if (any(targets == "." & dat$quoted)) {
@@ -130,7 +142,7 @@ parse_command <- function(str) {
   depends <- lapply(res[-1], check_command_arg)
   quoted <- vapply(depends, function(x) attr(x, "quoted"), logical(1),
                    USE.NAMES=FALSE)
-  depends <- lapply(depends, as.character)
+  depends <- vapply(depends, as.character, character(1))
   list(rule=rule, depends=depends, quoted=quoted)
 }
 

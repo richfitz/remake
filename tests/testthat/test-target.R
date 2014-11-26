@@ -56,3 +56,7 @@ test_that("Targets return their output on build", {
   expect_that(m$make("all"), is_null())
   expect_that(m$make("all"), is_null())
 })
+
+test_that("Extensions", {
+  expect_that(extensions(), is_identical_to(tolower(extensions())))
+})

@@ -87,19 +87,17 @@ target_new_base <- function(name, command, opts, type="base",
     ret$rule <- command$rule
   }
 
-  ## TODO: Do all this checking during the process command section.
-  ## No need for this to clutter this up, as it applies everywhere.
   if (length(command$depends) > 0) {
-    depends <- from_yaml_map_list(command$depends)
-    sapply(depends, assert_scalar_character)
-    ret$depends <- unlist(depends)
+    ret$depends_name <- command$depends
   } else {
-    ret$depends <- list()
+    ## Things like utility targets that come in with NULL data have
+    ## NULL here, so this just squares things away nicely.
+    ret$depends_name <- character(0)
   }
-  if (any(duplicated(ret$depends))) {
+  if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
   }
-  if (any(duplicated(setdiff(names(ret$depends), "")))) {
+  if (any(duplicated(setdiff(names(ret$depends_name), "")))) {
     stop("All named depends targets must be unique")
   }
 
@@ -188,7 +186,8 @@ target_new_file_implicit <- function(name) {
   }
   ret <- list(name=name,
               type="file",
-              depends=list(),
+              depends_name=character(0),
+              depends_type=character(0),
               implicit=TRUE,
               check="exists")
   class(ret) <- c("target_file_implicit", "target_file") # not target_base
@@ -257,7 +256,7 @@ target_new_knitr <- function(name, command, opts) {
   }
 
   ## Build a dependency on the input, for obvious reasons:
-  command$depends <- c(command$depends, list(knitr$input))
+  command$depends <- c(command$depends, knitr$input)
   ## This dependency is not an argument
   command$depends_is_arg <- c(command$depends_is_arg, FALSE)
 
@@ -306,7 +305,7 @@ extensions <- function() {
     # Free form
     "txt", "log", "yml", "yaml", "xml",
     # Text
-    "md", "tex", "R", "Rmd", "Rnw", "html", "htm", "bib",
+    "md", "tex", "r", "rmd", "rnw", "html", "htm", "bib",
     # Graphics
     "jpg", "jpeg", "png", "pdf", "eps", "ps", "bmp", "tiff", "svg",
     # Archives
@@ -324,8 +323,12 @@ extensions <- function() {
 ##' @return A logical vector, the same length as \code{x}
 ##' @export
 target_is_file <- function(x) {
-  ext_pattern <- sprintf("\\.(%s)$", paste(extensions(), collapse="|"))
-  grepl("/", x) | grepl(ext_pattern, x, ignore.case=TRUE)
+  is_file <- grepl("/", x, fixed=TRUE)
+  check <- !is_file
+  if (any(check)) {
+    is_file[check] <- tolower(file_extension(x[check])) %in% extensions()
+  }
+  is_file
 }
 
 ## Determine if things are up to date.  That is the case if:
@@ -377,7 +380,7 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
 
   if (check_depends(check)) {
     depends_type <- target$depends_type
-    depends_name <- target$depends
+    depends_name <- target$depends_name
     keep <- depends_type %in% c("file", "object")
     depends <- lapply(which(keep), function(i)
                       store$get_hash(depends_name[[i]],
@@ -463,7 +466,7 @@ dependency_names <- function(x) {
 }
 dependency_types <- function(x) {
   if (length(x) > 0) {
-    sapply(x, function(el) el$type)
+    unlist(lapply(x, function(el) el$type))
   } else {
     character(0)
   }
@@ -501,12 +504,12 @@ target_chain <- function(chain, parent, opts) {
 }
 
 target_chain_match_dot <- function(x, pos, chain_names) {
-  j <- which(as.character(x$depends) == ".")
+  j <- which(as.character(x$depends_name) == ".")
   if (length(j) == 1L) {
     if (j > length(chain_names)) {
       stop("Attempt to select impossible chain element") # defensive only
     }
-    x$depends[[j]] <- chain_names[[pos - 1L]]
+    x$depends_name[[j]] <- chain_names[[pos - 1L]]
   } else { # defensive - should be safe here.
     if (length(j) > 1L) {
       stop("never ok")
@@ -528,7 +531,7 @@ make_target_cleanup <- function(name, maker) {
     if (!is.null(t$chain_kids)) {
       stop("Cleanup target cannot contain a chain")
     }
-    if (length(t$depends) > 0L) {
+    if (length(t$depends_name) > 0L) {
       ## This is far from pretty.  Basically I need to know whether
       ## the dependencies we have been given here came from a depends:
       ## entry or from arguments to the command.  The former is fine,
@@ -540,14 +543,15 @@ make_target_cleanup <- function(name, maker) {
       }
     }
     command <- t$command
-    depends <- t$depends
+    depends <- t$depends_name # watch out
 
     ## TODO: Ideally we'd also get quiet from the target here, too.
   } else {
-    command <- depends <- NULL
+    command <- NULL
+    depends <- character(0)
   }
   if (i > 1L) {
-    depends <- c(depends, list(levels[[i - 1L]]))
+    depends <- c(depends, levels[[i - 1L]])
   }
   make_target(name, list(command=command, depends=depends, type="cleanup"))
 }
@@ -607,7 +611,7 @@ target_check_quoted <- function(target) {
   quoted <- target$quoted
   if (!is.null(quoted) && length(quoted) > 0L) {
     i <- target$depends_is_arg
-    depends_name <- target$depends[i]
+    depends_name <- target$depends_name[i]
     depends_type <- target$depends_type[i]
     assert_length(quoted, length(depends_name))
     should_be_quoted <- depends_type == "file"
@@ -633,7 +637,7 @@ dependencies_as_args <- function(target, store, fake=FALSE) {
   if (is.null(target$rule)) {
     list()
   } else {
-    deps_name <- target$depends[target$depends_is_arg]
+    deps_name <- target$depends_name[target$depends_is_arg]
     deps_type <- target$depends_type[target$depends_is_arg]
     keep <- deps_type %in% c("file", "object")
 
@@ -641,7 +645,7 @@ dependencies_as_args <- function(target, store, fake=FALSE) {
     deps <- lapply(which(keep), function(i)
                    list(name=deps_name[[i]],
                         type=deps_type[[i]]))
-    names(deps) <- names(target$depends)[keep]
+    names(deps) <- names(target$depends_name)[keep]
 
     args <- lapply(deps, function(x) target_get(x, store, fake))
     if (!is.null(target$target_argument)) {
@@ -745,7 +749,7 @@ target_run <- function(target, store, quiet=NULL) {
   } else if (target$type == "utility") {
     return(target$utility(target$maker))
   } else if (inherits(target, "target_knitr")) {
-    object_names <- target$depends[target$depends_type == "object"]
+    object_names <- target$depends_name[target$depends_type == "object"]
     return(
       knitr_from_maker(target$knitr$input, target$name, store,
                        object_names,
@@ -783,7 +787,7 @@ target_run <- function(target, store, quiet=NULL) {
     message=function(e) if (quiet) invokeRestart("muffleMessage"))
 }
 
-target_activate <- function(target, maker) {
+target_activate <- function(target, maker, target_names=NULL) {
   if (target$type == "cleanup" || target$type == "maker") {
     target$maker <- maker
   } else if (inherits(target, "target_plot")) {
@@ -809,7 +813,8 @@ target_activate <- function(target, maker) {
     warn_unknown("plot", plot, names(formals(dev)))
     target$plot <- list(device=dev, args=plot)
   }
-  if (length(target$depends) == 0L) {
+  if (length(target$depends_name) == 0L) {
+    target$depends_type <- character(0)
     return(target)
   }
 
@@ -820,9 +825,14 @@ target_activate <- function(target, maker) {
   ##
   if (!is.null(target$chain_kids)) {
     maker$add_targets(target$chain_kids, activate=TRUE)
+    target_names <- NULL
   }
 
-  msg <- setdiff(target$depends, maker$target_names(all=TRUE))
+  if (is.null(target_names)) {
+    target_names <- maker$target_names(all=TRUE)
+  }
+
+  msg <- setdiff(target$depends_name, target_names)
   if (length(msg) > 0L) {
     err <- !target_is_file(msg)
     if (any(err)) {
@@ -835,7 +845,7 @@ target_activate <- function(target, maker) {
     maker$targets <- c(maker$targets, implicit)
   }
 
-  target$depends_type <- dependency_types(maker$get_targets(target$depends))
+  target$depends_type <- dependency_types(maker$targets[target$depends_name])
   target_check_quoted(target)
   target
 }
