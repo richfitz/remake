@@ -281,11 +281,11 @@ maker <- R6Class(
       filter_targets_by_type(self$targets, types)
     },
 
-    add_targets=function(x, force=FALSE, activate=FALSE) {
-      if (!all(sapply(x, inherits, "target_base"))) {
+    add_targets=function(x, force=FALSE) {
+      if (!all(vlapply(x, inherits, "target_base"))) {
         stop("All elements must be targets")
       }
-      target_names <- vapply(x, "[[", character(1), "name")
+      target_names <- vcapply(x, "[[", "name")
       if (any(duplicated(target_names))) {
         stop("All target names must be unique")
       }
@@ -302,21 +302,12 @@ maker <- R6Class(
         }
       }
       names(x) <- target_names
-      i <- seq_along(x) + length(self$targets)
       self$targets <- c(self$targets, x)
-      if (activate) {
-        self$targets[i] <- lapply(self$targets[i], target_activate, self)
-      }
     },
 
-    ## TODO:
-    ## * all=FALSE (excludes chain jobs, and/or all rules starting with
-    ##   a period)
-    ## * type=whatever
     target_names=function(all=FALSE) {
       if (!all) {
-        ok <- as.logical(sapply(self$targets, function(x)
-                                is.null(x$chain_parent)))
+        ok <- vlapply(self$targets, function(x) is.null(x$chain_parent))
         names(self$targets[ok])
       } else {
         names(self$targets)
@@ -397,19 +388,50 @@ maker <- R6Class(
     },
 
     initialize_targets_activate=function() {
-      ## Special care here because this might create new, implicit,
-      ## targets while it runs.  Those will be added to the end of the
-      ## targets vector.
-      i <- seq_along(self$targets)
-      target_names <- sort(self$target_names(all=TRUE))
-      self$targets[i] <- lapply(self$targets, target_activate,
-                                self, target_names)
+      ## Add all targets that exist only as part of a chain.
+      chain_kids <- unlist(lapply(self$targets, "[[", "chain_kids"),
+                           FALSE)
+      if (length(chain_kids) > 0L) {
+        self$add_targets(chain_kids)
+      }
+
+      ## Identify and verify all "implicit" file targets
+      deps <- lapply(self$targets, "[[", "depends_name")
+      deps_uniq <- unique(unlist(unname(deps)))
+      deps_msg <- setdiff(deps_uniq, names(self$targets))
+      if (length(deps_msg) > 0L) {
+        err <- !target_is_file(deps_msg)
+        if (any(err)) {
+          stop(sprintf(
+            "Implicitly created targets must all be files (%s)",
+            paste(msg[err], collapse=", ")))
+        }
+        deps_msg_missing <- !file.exists(deps_msg)
+        if (any(deps_msg_missing)) {
+          warning("Creating implicit target for nonexistant files:\n",
+                  paste0("\t", deps_msg[deps_msg_missing], collapse="\n"))
+        }
+        extra <- lapply(deps_msg, target_new_file_implicit, FALSE)
+        names(extra) <- deps_msg
+        self$targets <- c(self$targets, extra)
+      }
+
+      ## Associate all type information for targets (this is the slow part)
+      types <- dependency_types(self$targets)
+      check1 <- function(t) {
+        if (length(t$depends_name) > 0L) {
+          t$depends_type <- types[t$depends_name]
+          target_check_quoted(t)
+        }
+        t
+      }
+      self$targets <- lapply(self$targets, check1)
     },
 
     initialize_message_format=function() {
       width <- getOption("width")
       w0 <- 10 # nchar("[ BUILD ] ")
-      keep <- !sapply(self$targets, function(x) isTRUE(x$implicit))
+      keep <- !vlapply(self$targets, function(x) isTRUE(x$implicit))
       target_names <- names(self$targets)[keep]
       target_width <- max(nchar(target_names))
       private$fmt <- list(
@@ -496,13 +518,14 @@ read_maker_file <- function(filename, seen=character(0)) {
         stop(sprintf("%s contains duplicate plot_options %s",
                      f, paste(dups, collapse=", ")))
       }
+      dat$plot_options <- c(dat$plot_options, dat_sub$plot_options)
 
       if ("all" %in% names(dat_sub$targets)) {
         warning(f, " contains target 'all', which I am removing")
         dat_sub$targets$all <- NULL
       }
 
-      ## TODO: This will be a repeated pattern for plot_options
+      ## TODO: This will be a repeated pattern, similar to plot_options
       ## TODO: Should track which files have duplicates
       dups <- intersect(names(dat_sub$targets), names(dat$targets))
       if (length(dups) > 0L) {
@@ -512,13 +535,6 @@ read_maker_file <- function(filename, seen=character(0)) {
                         f, paste(dups, collapse=", ")))
       }
       dat$targets  <- c(dat$targets, dat_sub$targets)
-
-      ## TODO :THis is easy to add, but the logic around duplicates
-      ## will proliferate unpleasantly.  Fix this for targets *first*,
-      ## and then add this complication.
-      if ("plot_options" %in% names(dat_sub)) {
-        stop("plot_options in included makerfiles not yet supported")
-      }
     }
   }
 

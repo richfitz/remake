@@ -40,7 +40,7 @@ assert_maker_archive <- function(filename) {
 maker_archive_tld <- function(filename, error=TRUE) {
   contents <- unzip(filename, list=TRUE)
   paths <- path_split(contents$Name)
-  tld <- unique(sapply(paths, function(x) x[[1]]))
+  tld <- unique(vcapply(paths, function(x) x[[1]]))
   if (length(tld) > 1L && error) {
     stop("Not a maker archive: expected single top level directory")
   }
@@ -57,7 +57,7 @@ maker_archive_contents <- function(filename) {
   re <- paste0("^", file.path(tld, "db"), ".*\\.rds")
   keep <- contents$Name[grepl(re, contents$Name)]
   res <- unzip(filename, exdir=path, files=keep)
-  unname(sapply(res, function(x) readRDS(x)$name))
+  vcapply(res, function(x) readRDS(x)$name, USE.NAMES=FALSE)
 }
 
 archive_export_maker <- function(maker, target_name, recursive=TRUE,

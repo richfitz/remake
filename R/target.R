@@ -114,8 +114,8 @@ target_new_file <- function(name, command, opts, extra=NULL,
 
 ## This is called directly by maker, and skips going through
 ## target_new_base.  That will probably change back shortly.
-target_new_file_implicit <- function(name) {
-  if (!file.exists(name)) {
+target_new_file_implicit <- function(name, check_exists=TRUE) {
+  if (check_exists && !file.exists(name)) {
     warning("Creating implicit target for nonexistant file ", name)
   }
   ret <- list(name=name,
@@ -123,6 +123,7 @@ target_new_file_implicit <- function(name) {
               depends_name=character(0),
               depends_type=character(0),
               implicit=TRUE,
+              cleanup_level="never",
               check="exists")
   class(ret) <- c("target_file_implicit", "target_file") # not target_base
   ret
@@ -398,18 +399,10 @@ filter_targets_by_type <- function(targets, types) {
 }
 
 dependency_names <- function(x) {
-  if (length(x) > 0) {
-    sapply(x, function(el) el$name)
-  } else {
-    character(0)
-  }
+  vapply(x, "[[", "name", FUN.VALUE=character(1))
 }
 dependency_types <- function(x) {
-  if (length(x) > 0) {
-    unlist(lapply(x, function(el) el$type))
-  } else {
-    character(0)
-  }
+  vapply(x, "[[", "type", FUN.VALUE=character(1))
 }
 
 ## TODO: There is an issue here for getting options for rules that
@@ -493,7 +486,9 @@ make_target_cleanup <- function(name, maker) {
   if (i > 1L) {
     depends <- c(depends, levels[[i - 1L]])
   }
-  make_target(name, list(command=command, depends=depends, type="cleanup"))
+  t <- make_target(name, list(command=command, depends=depends, type="cleanup"))
+  t$maker <- maker
+  t
 }
 
 chained_rule_name <- function(name, i) {
@@ -605,22 +600,6 @@ plot_args <- function(target, fake=FALSE) {
   c(str, target$plot$args)
 }
 
-## target_valid_options <- function(type) {
-##   base <- c("quiet", "check", "packages")
-##   if (type == "file") {
-##     valid <- c(base, "cleanup_level")
-##   } else if (type == "object") {
-##     valid <- c(base, "cleanup_level")
-##   } else if (type == "plot") {
-##     valid <- c(base, "cleanup_level", "plot")
-##   } else if (type == "knitr") {
-##     valid <- c(base, "cleanup_level", "knitr")
-##   } else {
-##     valid <- base
-##   }
-##   valid
-## }
-
 ## Might compute these things at startup, given they are constants
 ## over the life of the object.
 target_run_fake <- function(target, for_script=FALSE) {
@@ -676,7 +655,7 @@ target_build <- function(target, store, quiet=NULL) {
     target_set(target, store, res)
     invisible(res)
   } else if (target$type == "cleanup") {
-    target_level <- sapply(target$maker$targets, function(x) x$cleanup_level)
+    target_level <- vcapply(target$maker$targets, function(x) x$cleanup_level)
     will_remove <- names(target$maker$targets)[target_level == target$name]
     target$maker$remove_targets(will_remove)
     target_run(target, store, quiet)
@@ -725,45 +704,4 @@ target_run <- function(target, store, quiet=NULL) {
   withCallingHandlers(
     do.call(target$rule, args, envir=store$env$env),
     message=function(e) if (quiet) invokeRestart("muffleMessage"))
-}
-
-target_activate <- function(target, maker, target_names=NULL) {
-  if (target$type == "cleanup" || target$type == "maker") {
-    target$maker <- maker
-  }
-  if (length(target$depends_name) == 0L) {
-    target$depends_type <- character(0)
-    return(target)
-  }
-
-  ## This section matches the dependencies with their location in
-  ## the database's set of targets. Missing file targets will be
-  ## created and added to the database (which being passed by
-  ## reference will propagate backwards).
-  ##
-  if (!is.null(target$chain_kids)) {
-    maker$add_targets(target$chain_kids, activate=TRUE)
-    target_names <- NULL
-  }
-
-  if (is.null(target_names)) {
-    target_names <- maker$target_names(all=TRUE)
-  }
-
-  msg <- setdiff(target$depends_name, target_names)
-  if (length(msg) > 0L) {
-    err <- !target_is_file(msg)
-    if (any(err)) {
-      stop(sprintf(
-        "Implicitly created targets must all be files (%s)",
-        paste(msg[err], collapse=", ")))
-    }
-    implicit <- lapply(msg, target_new_file_implicit)
-    names(implicit) <- msg
-    maker$targets <- c(maker$targets, implicit)
-  }
-
-  target$depends_type <- dependency_types(maker$targets[target$depends_name])
-  target_check_quoted(target)
-  target
 }

@@ -118,7 +118,8 @@ parse_target_chain <- function(target, chain) {
   chain <- lapply(chain, parse_target_command, target=target)
 
   ## TODO: Check >1 dot
-  has_dot <- sapply(chain, function(x) "." %in% x$depends)
+  ## TODO: Drop "%in%"
+  has_dot <- vlapply(chain, function(x) "." %in% x$depends)
 
   if (has_dot[[1]]) {
     stop("The first element in a chain cannot contain a dot ('.')")
@@ -128,7 +129,7 @@ parse_target_chain <- function(target, chain) {
   }
 
   len <- length(chain)
-  has_target_argument <- sapply(chain, function(x) !is.null(x$target_argument))
+  has_target_argument <- !vlapply(chain, function(x) is.null(x$target_argument))
   if (any(has_target_argument & seq_len(len) < len)) {
     stop("Can only refer to target in the final element of a chain")
   }

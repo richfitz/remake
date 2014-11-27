@@ -295,7 +295,7 @@ maker_db <- R6Class(
 
     ls=function() {
       files <- dir(self$path, pattern="\\.rds$", full.names=TRUE)
-      sapply(files, function(x) readRDS(x)$name)
+      vcapply(files, function(x) readRDS(x)$name)
     },
 
     ## We hash keys here so that things like file paths (with slashes,

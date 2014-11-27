@@ -77,7 +77,7 @@ from_yaml_map_list <- function(x) {
   if (length(x) == 0L || is.character(x)) {
     x <- as.list(x)
   } else if (is.list(x)) {
-    if (!all(sapply(x, length) == 1L)) {
+    if (!all(viapply(x, length) == 1L)) {
       stop("Expected all elements to be scalar")
     }
     x <- unlist(x, FALSE)
@@ -295,5 +295,18 @@ restore <- function(file, path) {
 
 file_extension <- function(x) {
   pos <- regexpr("\\.([^.]+)$", x, perl=TRUE)
-  ifelse(pos > -1L, substring(x, pos + 1L), "")
+  ret <- rep_along("", length(x))
+  i <- pos > -1L
+  ret[i] <- substring(x[i], pos[i] + 1L)
+  ret
+}
+
+vlapply <- function(X, FUN, ...) {
+  vapply(X, FUN, logical(1), ...)
+}
+viapply <- function(X, FUN, ...) {
+  vapply(X, FUN, integer(1), ...)
+}
+vcapply <- function(X, FUN, ...) {
+  vapply(X, FUN, character(1), ...)
 }

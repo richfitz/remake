@@ -8,7 +8,7 @@ topological_order <- function(graph) {
   ## no dependencies *first*.  There are always targets that have no
   ## dependencies in the graph, so this should always be a sensible
   ## thing to do.
-  no_dep <- sapply(graph, length) == 0L
+  no_dep <- viapply(graph, length) == 0L
   graph_sorted <- names(no_dep[no_dep])
   graph <- graph[!no_dep]
 

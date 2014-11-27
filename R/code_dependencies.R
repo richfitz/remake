@@ -45,7 +45,7 @@ functions_in_environment <- function(env) {
   }
   obj <- lapply(pos, function(x) keep_if_fn(get(x, env)))
   names(obj) <- pos
-  obj[!sapply(obj, is.null)]
+  obj[!vlapply(obj, is.null)]
 }
 
 code_deps <- R6Class(
