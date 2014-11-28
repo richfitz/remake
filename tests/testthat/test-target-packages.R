@@ -14,7 +14,7 @@ test_that("bootstrap", {
 
 test_that("target with no extra packages", {
   cleanup()
-  m <- maker$new("maker_target_packages.yml")
+  m <- maker("maker_target_packages.yml")
   t <- m$get_target("will_not_load")
   expect_that(t$packages, is_null())
   x <- m$make("will_not_load")
@@ -23,7 +23,7 @@ test_that("target with no extra packages", {
 
 test_that("target that loads extra package", {
   cleanup()
-  m <- maker$new("maker_target_packages.yml")
+  m <- maker("maker_target_packages.yml")
   t <- m$get_target("will_load")
   expect_that(t$packages, equals("devtools"))
   x <- m$make("will_load")

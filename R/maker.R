@@ -1,8 +1,5 @@
-##' The actual maker object to interact with.
-##' @title Main maker object
-##' @export
 ##' @importFrom R6 R6Class
-maker <- R6Class(
+.R6_maker <- R6Class(
   "maker",
   public=list(
     file=NULL,
@@ -453,6 +450,20 @@ maker <- R6Class(
       }
     }
     ))
+
+##' Creates a maker instance to interact with.
+##' @title Create a maker object
+##' @param maker_file Name of the makerfile (by default
+##' \code{maker.yml})
+##' @param verbose Controls whether maker is verbose or not.  By
+##' default it is (\code{TRUE}), which prints out what is going on.
+##' @param quiet_target Controls whether maker quietens all targets by
+##' default (default is \code{FALSE}).
+##' @export
+maker <- function(maker_file="maker.yml", verbose=TRUE,
+                  quiet_target=NULL) {
+  .R6_maker$new(maker_file, verbose=verbose, quiet_target=quiet_target)
+}
 
 ## TODO: There is far too much going on in here: split this into
 ## logical chunks.

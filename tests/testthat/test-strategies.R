@@ -8,7 +8,7 @@ context("Build strategies")
 
 test_that("Plan", {
   cleanup()
-  m <- maker$new()
+  m <- maker()
   p <- m$plan("plot.pdf")
 
   cmp <- c("data.csv", "processed", "plot.pdf")

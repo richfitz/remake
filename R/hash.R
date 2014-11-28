@@ -1,6 +1,6 @@
 ## Hashing wrappers.  First, lock in the current behaviour:
 hash_object <- function(value) {
-  digest(value)
+  digest::digest(value)
 }
 
 hash_files <- function(filenames, named=TRUE) {

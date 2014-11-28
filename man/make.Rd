@@ -4,9 +4,9 @@
 \alias{make_script}
 \title{Make a single target}
 \usage{
-make(target_names = NULL, maker_file = "maker.yml", path = ".")
+make(target_names = NULL, maker_file = "maker.yml")
 
-make_script(target_names = NULL, maker_file = "maker.yml", path = ".")
+make_script(target_names = NULL, maker_file = "maker.yml")
 }
 \arguments{
 \item{target_names}{Vector of names of targets to build, or
@@ -14,10 +14,7 @@ make_script(target_names = NULL, maker_file = "maker.yml", path = ".")
 makerfile).}
 
 \item{maker_file}{Name of the makerfile (by default
-\code{maker.yml}).  This is passed to \code{maker$new()}.}
-
-\item{path}{Path to build in (by default the current directory).
-Probably safest to leave this as-is.}
+\code{maker.yml}).  This is passed to \code{maker()}.}
 }
 \description{
 These are convenience functions that creates a maker object and

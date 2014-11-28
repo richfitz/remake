@@ -31,7 +31,7 @@ test_that("Types of levels", {
 
 test_that("Manual", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   m$load_sources()
   store <- m$store
 
@@ -88,7 +88,7 @@ test_that("Manual", {
 
 test_that("In target", {
   cleanup()
-  m <- maker$new("maker_check.yml")
+  m <- maker("maker_check.yml")
   m$load_sources()
   store <- m$store
 
@@ -122,7 +122,7 @@ test_that("In target", {
 
 test_that("dependency_status", {
   cleanup()
-  m <- maker$new("maker_check.yml")
+  m <- maker("maker_check.yml")
   m$load_sources()
   store <- m$store
 
@@ -141,7 +141,7 @@ test_that("dependency_status", {
 
 test_that("In maker", {
   cleanup()
-  m <- maker$new("maker_check.yml")
+  m <- maker("maker_check.yml")
   m$load_sources()
 
   expect_that(m$is_current("data.csv"), is_false())

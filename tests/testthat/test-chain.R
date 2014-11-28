@@ -8,7 +8,7 @@ context("Chained rules")
 
 test_that("Chained rules", {
   cleanup()
-  m <- maker$new("chain.yml")
+  m <- maker("chain.yml")
 
   res <- m$make("manual")
   expect_that(res, equals(6))
@@ -65,7 +65,7 @@ test_that("Chained rules", {
 
 test_that("Chained rules -> file", {
   cleanup()
-  m <- maker$new("chain_file.yml")
+  m <- maker("chain_file.yml")
   m$make("data.csv")
   m$make("plot.pdf")
 
@@ -91,7 +91,7 @@ test_that("Chained rules -> file", {
 
 test_that("Chained rules -> plot", {
   cleanup()
-  m <- maker$new("chain_plot.yml")
+  m <- maker("chain_plot.yml")
   m$make("data.csv")
   m$make("plot.pdf")
 

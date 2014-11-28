@@ -8,7 +8,7 @@ context("Build")
 
 test_that("Build works", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
 
   m$make("plot.pdf", dry_run=TRUE)
   m$make("plot.pdf", dry_run=FALSE)
@@ -19,7 +19,7 @@ test_that("Build works", {
 
 test_that("Cleanup works", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
 
@@ -38,7 +38,7 @@ test_that("Cleanup works", {
 
 test_that("Fake targets", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   expect_that(m$is_current("data.csv"), is_false())
   expect_that(m$is_current("processed"), is_false())
   expect_that(m$is_current("plot.pdf"), is_false())
@@ -56,7 +56,7 @@ test_that("Depending on a file we don't make", {
   source("code.R", e)
   e$download_data("data.csv")
   expect_that(file.exists("data.csv"), is_true())
-  m <- maker$new("maker2.yml")
+  m <- maker("maker2.yml")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$make("plot.pdf"), not(throws_error()))
   expect_that(file.exists("plot.pdf"), is_true())
@@ -68,7 +68,7 @@ test_that("Depending on a file we don't make", {
 
 test_that("Expiring targets", {
   cleanup()
-  m <- maker$new()
+  m <- maker()
   m$make("plot.pdf")
 
   ## Sanity check:
@@ -108,7 +108,7 @@ test_that("Expiring targets", {
 test_that("Error in source file", {
   cleanup()
   writeLines(c(readLines("code.R"), "}"), "code2.R")
-  m <- maker$new()
+  m <- maker()
   ## Ugly, and might not work in future:
   m$store$env$sources <- "code2.R"
   expect_that(m$load_sources(),
@@ -122,13 +122,13 @@ test_that("Error in source file", {
 
 test_that("Error in yaml", {
   cleanup()
-  expect_that(m <- maker$new("nonexistant.yml"),
+  expect_that(m <- maker("nonexistant.yml"),
               throws_error("'nonexistant.yml' does not exist"))
   writeLines(sub("command: download_data", " command: download_data",
                  readLines("maker.yml")),
              "maker_error.yml")
 
-  expect_that(maker$new("maker_error.yml"),
+  expect_that(maker("maker_error.yml"),
               throws_error("while reading 'maker_error.yml'"))
   cleanup()
 })
@@ -142,7 +142,7 @@ test_that("simple interface", {
 
 test_that("make_dependencies", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   e <- m$make_dependencies("plot.pdf")
   expect_that(e, is_a("maker_environment"))
 
@@ -174,7 +174,7 @@ test_that("make_dependencies", {
 
 test_that("maker environment", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   expect_that(m$environment("processed"),
               throws_error("not found in object store"))
   m$make("processed")
@@ -186,7 +186,7 @@ test_that("maker environment", {
 
 test_that("extra dependencies", {
   cleanup()
-  m <- maker$new("maker_extra_deps.yml")
+  m <- maker("maker_extra_deps.yml")
   m$make("processed")
   expect_that(file.exists("data.csv"), is_true())
 })

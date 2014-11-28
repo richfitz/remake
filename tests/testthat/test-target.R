@@ -9,7 +9,7 @@ context("Targets")
 
 test_that("Targets return their output on build", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   ## TODO: there's a really obscure error if this is not run but
   ## targets are.  Really need to catch that somewhere.
   m$load_sources()

@@ -16,7 +16,7 @@ main <- function(args=commandArgs(TRUE)) {
     print_version()
     return(invisible())
   }
-  m <- maker$new(opts$file, verbose=!opts$quiet)
+  m <- maker(opts$file, verbose=!opts$quiet)
   if (opts$print_targets) {
     print_targets(m)
     return(invisible())
@@ -91,7 +91,7 @@ install_maker <- function(dest) {
   if (!file.exists(dest) || !is_directory(dest)) {
     stop("Destination must be an existing directory")
   }
-  code <- c("#!/usr/bin/env Rscript", "maker::main()")
+  code <- c("#!/usr/bin/env Rscript", "library(methods)", "maker::main()")
   file <- file.path(dest, "maker")
   writeLines(code, file)
   Sys.chmod(file, "0755")
@@ -107,15 +107,13 @@ install_maker <- function(dest) {
 ##' \code{NULL} to build the default target (if specified in the
 ##' makerfile).
 ##' @param maker_file Name of the makerfile (by default
-##' \code{maker.yml}).  This is passed to \code{maker$new()}.
-##' @param path Path to build in (by default the current directory).
-##' Probably safest to leave this as-is.
+##' \code{maker.yml}).  This is passed to \code{maker()}.
 ##' @export
-make <- function(target_names=NULL, maker_file="maker.yml", path=".") {
-  maker$new(maker_file, path)$make(target_names)
+make <- function(target_names=NULL, maker_file="maker.yml") {
+  maker(maker_file)$make(target_names)
 }
 
 ##' @rdname make
-make_script <- function(target_names=NULL, maker_file="maker.yml", path=".") {
-  maker$new(maker_file, path)$script(target_names)
+make_script <- function(target_names=NULL, maker_file="maker.yml") {
+  maker(maker_file)$script(target_names)
 }

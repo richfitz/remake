@@ -13,7 +13,7 @@ test_that("Defaults", {
 
 test_that("Build works", {
   cleanup()
-  m <- maker$new("knitr.yml")
+  m <- maker("knitr.yml")
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
@@ -26,14 +26,14 @@ test_that("Build works", {
 
 test_that("Script", {
   cleanup()
-  m <- maker$new("knitr.yml")
+  m <- maker("knitr.yml")
   src <- m$script("knitr.md")
   expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
 })
 
 test_that("knitr depends (file only)", {
   cleanup()
-  m <- maker$new("knitr_file_dep.yml")
+  m <- maker("knitr_file_dep.yml")
   expect_that(file.exists("data.csv"), is_false())
   m$make()
   expect_that(file.exists("data.csv"), is_true())
@@ -41,7 +41,7 @@ test_that("knitr depends (file only)", {
 
 test_that("knitr options", {
   cleanup()
-  m <- maker$new("knitr_opts.yml")
+  m <- maker("knitr_opts.yml")
   m$make("knitr.md")
 
   ## Check I have the default knitr options:
@@ -61,7 +61,7 @@ test_that("knitr options", {
 
 test_that("auto_figure_prefix", {
   cleanup()
-  m <- maker$new("knitr_prefix.yml")
+  m <- maker("knitr_prefix.yml")
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
@@ -75,7 +75,7 @@ test_that("auto_figure_prefix", {
 
 test_that("Errors during compilation propagate", {
   cleanup()
-  m <- maker$new("knitr_error.yml")
+  m <- maker("knitr_error.yml")
   expect_that(m$make("knitr_rename.md"), throws_error())
   t <- m$get_target("knitr_rename.md")
   expect_that(t$knitr$options$error, is_false())
@@ -86,6 +86,6 @@ test_that("Errors during compilation propagate", {
 
 test_that("Renaming exported objects", {
   cleanup()
-  m <- maker$new("knitr_rename.yml")
+  m <- maker("knitr_rename.yml")
   m$make("knitr_rename.md")
 })

@@ -301,7 +301,7 @@ test_that("knitr (invalid)", {
 ## hope that this sort of functionality is not actually that useful.
 test_that("cleanup", {
   cleanup()
-  m <- maker$new("maker_cleanup_hook.yml")
+  m <- maker("maker_cleanup_hook.yml")
   t <- m$get_target("clean")
   expect_that(length(t$depends_name), equals(2))
   expect_that(t$depends_name, equals(c("data.csv", "tidy")))
@@ -315,14 +315,14 @@ test_that("cleanup", {
   expect_that(file.exists("data.csv"), is_false())
 
   cleanup()
-  expect_that(maker$new("maker_cleanup_error.yml"),
+  expect_that(maker("maker_cleanup_error.yml"),
               throws_error("Cleanup target commands must have no arguments"))
 })
 
 ## Things that need activation:
 test_that("get/set/archive object targets", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   m$make("processed")
   t <- m$get_target("processed")
   expect_that(target_get(t, m$store), is_a("data.frame"))
@@ -363,7 +363,7 @@ test_that("get/set/archive object targets", {
 ## Things that need activation:
 test_that("get/set/archive file targets", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   m$make("plot.pdf")
   t <- m$get_target("plot.pdf")
   expect_that(target_get(t, m$store), equals("plot.pdf"))
@@ -396,6 +396,6 @@ test_that("get/set/archive file targets", {
 })
 
 test_that("Error messages", {
-  expect_that(maker$new("maker_invalid.yml"),
+  expect_that(maker("maker_invalid.yml"),
               throws_error("While processing target 'all'"))
 })

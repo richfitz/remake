@@ -8,7 +8,7 @@ context("Quiet")
 
 test_that("Quieten targets", {
   cleanup()
-  m <- maker$new("quiet.yml")
+  m <- maker("quiet.yml")
   m$load_sources()
   store <- m$store
 
@@ -41,7 +41,7 @@ test_that("Quieten targets", {
 
 test_that("Quiet targets", {
   cleanup()
-  m <- maker$new("quiet.yml")
+  m <- maker("quiet.yml")
   m$load_sources()
   store <- m$store
 
@@ -75,7 +75,7 @@ test_that("Quiet targets", {
 test_that("From maker", {
   msg <- "make some noise"
   cleanup()
-  m <- maker$new("quiet.yml", verbose=FALSE)
+  m <- maker("quiet.yml", verbose=FALSE)
 
   expect_that(m$make("noisy_message"), shows_message(msg))
   m$remove_target("noisy_message")
@@ -98,10 +98,10 @@ test_that("From maker", {
 test_that("Quiet maker", {
   msg <- "make some noise"
   cleanup()
-  m <- maker$new("quiet.yml", verbose=FALSE)
+  m <- maker("quiet.yml", verbose=FALSE)
 
   ## Next create a maker instance that suppresses output:
-  m <- maker$new("quiet.yml", verbose=FALSE, quiet_target=TRUE)
+  m <- maker("quiet.yml", verbose=FALSE, quiet_target=TRUE)
   m$remove_target("noisy_message")
   expect_that(m$make("noisy_message"), not(shows_message()))
   m$remove_target("noisy_message")
@@ -118,7 +118,7 @@ test_that("Quiet maker", {
 if (FALSE) {
 test_that("Quiet chain", {
   cleanup()
-  m <- maker$new("quiet.yml", verbose=FALSE)
+  m <- maker("quiet.yml", verbose=FALSE)
   m$load_sources()
 
   msg <- "make some noise"

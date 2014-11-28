@@ -8,7 +8,7 @@ context("Modular makerfiles")
 
 test_that("Modular makerfile", {
   cleanup()
-  m <- maker$new("modular.yml")
+  m <- maker("modular.yml")
 
   ## Not duplicated:
   expect_that(m$store$env$sources, equals("code.R"))
@@ -19,7 +19,7 @@ test_that("Modular makerfile", {
               equals(c("all", "processed", "plot.pdf", "data.csv")))
   expect_that(m$target_default(), equals("all"))
 
-  mod <- maker$new("modular_module.yml")
+  mod <- maker("modular_module.yml")
   mod$load_sources()
   expect_that(mod$target_default(), equals("data.csv"))
 

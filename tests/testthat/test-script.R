@@ -8,7 +8,7 @@ context("Script")
 
 test_that("Build works", {
   cleanup()
-  m <- maker$new("maker.yml")
+  m <- maker("maker.yml")
   src <- m$script()
   expect_that(src, is_a("maker_script"))
   expect_that(unclass(src), is_a("character"))
@@ -24,7 +24,7 @@ test_that("Build works", {
 
 test_that("Build works with plotting target", {
   cleanup()
-  m <- maker$new("plot_simple.yml")
+  m <- maker("plot_simple.yml")
   src <- m$script()
   expect_that(src, is_a("maker_script"))
   expect_that(unclass(src), is_a("character"))
@@ -38,14 +38,14 @@ test_that("Build works with plotting target", {
 test_that("Simple interface", {
   cleanup()
   src <- make_script()
-  cmp <- maker$new()$script()
+  cmp <- maker()$script()
   expect_that(src, is_identical_to(cmp))
 })
 
 if (FALSE) {
 test_that("Chained targets", {
   cleanup()
-  m <- maker$new("chain.yml")
+  m <- maker("chain.yml")
 
   src <- m$script("chained")
   e <- source_from_text(src)

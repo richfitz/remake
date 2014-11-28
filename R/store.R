@@ -235,7 +235,6 @@ file_store <- R6Class(
     ))
 
 ## This one holds the database information.
-##' @importFrom digest digest
 maker_db <- R6Class(
   "maker_db",
   public=list(
@@ -308,15 +307,10 @@ maker_db <- R6Class(
     },
 
     rdsname=function(key) {
-      paste0(digest(key), ".rds")
+      paste0(digest::digest(key), ".rds")
     }
     ))
 
-##' The data store used by maker.  This is an R6 class, and generally
-##' does not need creating manually.  It's basically a pair of
-##' key-value stores; one for R objects and one for files.
-##' @title Data store used by maker
-##' @export
 ##' @importFrom R6 R6Class
 store <- R6Class(
   "store",
