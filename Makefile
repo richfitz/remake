@@ -10,7 +10,7 @@ roxygen:
 	Rscript -e "library(methods); devtools::document()"
 
 install:
-	R CMD INSTALL --no-test-load .
+	R CMD INSTALL .
 
 build:
 	R CMD build .

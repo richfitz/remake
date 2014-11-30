@@ -78,3 +78,24 @@ targets:
   expect_that(maker(filename),
               throws_error("Should not be quoted: processed"))
 })
+
+test_that("Verbosity", {
+  default <- maker_verbose()
+  expect_true(default$print_progress)
+  expect_true(default$print_noop)
+  expect_true(default$print_command)
+  expect_true(default$print_command_abbreviate)
+  expect_null(default$quiet_target)
+
+  quiet <- maker_verbose(FALSE)
+  expect_false(quiet$print_progress)
+  expect_true(quiet$print_noop)
+  expect_true(quiet$print_command)
+  expect_true(quiet$print_command_abbreviate)
+  expect_null(quiet$quiet_target)
+
+  x <- maker_verbose(default)
+  expect_identical(x, default)
+
+  expect_error(maker_verbose(1), "verbose must be logical")
+})

@@ -75,6 +75,7 @@ test_that("Quiet targets", {
 test_that("From maker", {
   msg <- "make some noise"
   cleanup()
+
   m <- maker("quiet.yml", verbose=FALSE)
 
   expect_that(m$make("noisy_message"), shows_message(msg))
@@ -98,18 +99,23 @@ test_that("From maker", {
 test_that("Quiet maker", {
   msg <- "make some noise"
   cleanup()
-  m <- maker("quiet.yml", verbose=FALSE)
 
   ## Next create a maker instance that suppresses output:
-  m <- maker("quiet.yml", verbose=FALSE, quiet_target=TRUE)
+  m <- maker("quiet.yml", verbose=maker_verbose(FALSE, target=FALSE))
+
+  expect_that(m$make("noisy_message"), not(shows_message(msg)))
   m$remove_target("noisy_message")
-  expect_that(m$make("noisy_message"), not(shows_message()))
+  expect_that(m$make("noisy_message", quiet_target=TRUE),
+              not(shows_message()))
   m$remove_target("noisy_message")
   expect_that(m$make("noisy_message", quiet_target=FALSE),
               shows_message(msg))
 
   m$remove_target("noisy_cat")
   expect_that(m$make("noisy_cat"), not(prints_text(msg)))
+  m$remove_target("noisy_cat")
+  expect_that(m$make("noisy_cat", quiet_target=TRUE),
+              not(prints_text(msg)))
   m$remove_target("noisy_cat")
   expect_that(m$make("noisy_cat", quiet_target=FALSE),
               prints_text(msg))

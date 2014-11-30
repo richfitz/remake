@@ -3,19 +3,30 @@
 \alias{maker}
 \title{Create a maker object}
 \usage{
-maker(maker_file = "maker.yml", verbose = TRUE, quiet_target = NULL)
+maker(maker_file = "maker.yml", verbose = TRUE)
 }
 \arguments{
 \item{maker_file}{Name of the makerfile (by default
 \code{maker.yml})}
 
 \item{verbose}{Controls whether maker is verbose or not.  By
-default it is (\code{TRUE}), which prints out what is going on.}
-
-\item{quiet_target}{Controls whether maker quietens all targets by
-default (default is \code{FALSE}).}
+default it is (\code{TRUE}), which prints out the name of each
+target as it is built/checked.  This argument is passed to
+\code{\link{maker_verbose}}; valid options are \code{TRUE},
+\code{FALSE} and also the result of calling \code{maker_verbose}.}
 }
 \description{
 Creates a maker instance to interact with.
+}
+\examples{
+\dontrun{
+# create a quiet maker instance
+m <- maker(verbose=FALSE)
+# create a fairly quiet instance that does not print information
+# for targets that do nothing (are up-to-date).
+m <- maker(verbose=maker_verbose(noop=FALSE))
+# Build the default target:
+m$make()
+}
 }
 

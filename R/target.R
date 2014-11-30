@@ -241,6 +241,7 @@ target_new_fake <- function(name, command, opts, extra=NULL) {
     stop("fake targets must have a NULL rule (how did you do this?)")
   }
   ret <- target_new_base(name, command, opts, extra, "fake")
+  ret$status_string <- "-----"
   class(ret) <- c("target_fake", class(ret))
   ret
 }

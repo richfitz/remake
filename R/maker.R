@@ -7,18 +7,13 @@
     path=NULL,
     store=NULL,
     targets=NULL,
-    ## NOTE: *verbose* applies to maker, while *quiet_target* applies
-    ## to targets.  I might move to quiet here, instead.
     verbose=NULL,
-    quiet_target=NULL,
     default=NULL,
 
-    initialize=function(maker_file="maker.yml", path=".",
-      verbose=TRUE, quiet_target=NULL) {
+    initialize=function(maker_file="maker.yml", verbose=TRUE) {
       self$file <- maker_file
-      self$path <- path
-      self$verbose <- verbose
-      self$quiet_target <- quiet_target
+      self$path <- "."
+      self$verbose <- maker_verbose(verbose)
       self$reload()
     },
 
@@ -42,9 +37,7 @@
         target_names <- self$target_default()
       }
       for (t in target_names) {
-        if (length(target_names) > 1L) {
-          self$print_message("MAKE", t, style="angle")
-        }
+        self$print_message("MAKE", t, style="angle")
         last <- self$make1(t, ...)
       }
       invisible(last)
@@ -76,7 +69,7 @@
     },
 
     make1=function(target_name, dry_run=FALSE, force=FALSE,
-      force_all=FALSE, quiet_target=self$quiet_target, check=NULL,
+      force_all=FALSE, quiet_target=self$verbose$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
       ## NOTE: Not 100% sure about this.  The "install_packages"
@@ -129,7 +122,8 @@
     },
 
     update=function(target_name, dry_run=FALSE, force=FALSE,
-      quiet_target=self$quiet_target, check=NULL, return_target=TRUE) {
+      quiet_target=self$verbose$quiet_target, check=NULL,
+      return_target=TRUE) {
       #
       target <- self$get_target(target_name)
       current <- !force && is_current(target, self$store, check)
@@ -176,12 +170,21 @@
     },
 
     print_message=function(status, target_name, cmd=NULL, style="square") {
+      verbose <- self$verbose
+      if (!verbose$print_progress ||
+          !verbose$print_noop && status %in% c("", "OK")) {
+        return()
+      } else if (!verbose$print_command) {
+        cmd <- NULL
+      }
       paint <- private$fmt$p$paint
       col <- status_colour(status)
       status <- brackets(paint(sprintf("%5s", status), col), style)
       if (!is.null(cmd)) {
-        w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
-        cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+        if (verbose$print_command_abbreviate) {
+          w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
+          cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+        }
       }
       if (is.null(cmd)) {
         str <- sprintf(private$fmt$no_cmd, status, target_name)
@@ -189,9 +192,7 @@
         str <- sprintf(private$fmt$with_cmd, status, target_name,
                        private$fmt$p$paint(cmd, "grey"))
       }
-      if (self$verbose) {
-        message(str)
-      }
+      message(str)
     },
 
     expire=function(target_name, recursive=FALSE) {
@@ -340,7 +341,7 @@
                         self$store, missing_ok, check)
     },
 
-    build=function(target_name, quiet_target=self$quiet_target) {
+    build=function(target_name, quiet_target=self$verbose$quiet_target) {
       target_build(self$get_target(target_name), self$store, quiet_target)
     },
 
@@ -456,13 +457,23 @@
 ##' @param maker_file Name of the makerfile (by default
 ##' \code{maker.yml})
 ##' @param verbose Controls whether maker is verbose or not.  By
-##' default it is (\code{TRUE}), which prints out what is going on.
-##' @param quiet_target Controls whether maker quietens all targets by
-##' default (default is \code{FALSE}).
+##' default it is (\code{TRUE}), which prints out the name of each
+##' target as it is built/checked.  This argument is passed to
+##' \code{\link{maker_verbose}}; valid options are \code{TRUE},
+##' \code{FALSE} and also the result of calling \code{maker_verbose}.
+##' @examples
+##' \dontrun{
+##' # create a quiet maker instance
+##' m <- maker(verbose=FALSE)
+##' # create a fairly quiet instance that does not print information
+##' # for targets that do nothing (are up-to-date).
+##' m <- maker(verbose=maker_verbose(noop=FALSE))
+##' # Build the default target:
+##' m$make()
+##' }
 ##' @export
-maker <- function(maker_file="maker.yml", verbose=TRUE,
-                  quiet_target=NULL) {
-  .R6_maker$new(maker_file, verbose=verbose, quiet_target=quiet_target)
+maker <- function(maker_file="maker.yml", verbose=TRUE) {
+  .R6_maker$new(maker_file, verbose=verbose)
 }
 
 ## TODO: There is far too much going on in here: split this into
@@ -578,5 +589,55 @@ status_colour <- function(str) {
          KNIT="hotpink",
          MAKE="deepskyblue",
          ENV="deepskyblue",
+         "-----"="grey",
          NULL)
+}
+
+##' Helper function to set options for verbosity.
+##'
+##' The first four options have a natural nesting: setting
+##' \code{progress=FALSE} prevents printing any progress information,
+##' so the value of \code{noop}, \code{command} and
+##' \code{command_abbreviate} does not matter.  Similarly, setting
+##' \code{command=FALSE} means that \code{command_abbreviate} does not
+##' matter.
+##' @title Control maker verbosity
+##' @param verbose Print progress at each step that maker does
+##' something.
+##' @param noop Print progress for steps that are non-operations, such
+##' as targets that need nothing done to them.  Setting this to
+##' \code{FALSE} is useful for very large projects.
+##' @param command Print the command along with the progress
+##' information?  This is only printed when maker actually runs
+##' something.
+##' @param command_abbreviate Abbreviate the command information so
+##' that it fits on one line.  If \code{FALSE} then the command will
+##' be allowed to run on for as many lines as required.
+##' @param target Print information that the target produces (via
+##' \code{message}, \code{cat} or \code{print}).  If \code{FALSE} then
+##' these messages will be suppressed.
+##' @export
+maker_verbose <- function(verbose=getOption("maker.verbose", TRUE),
+                          noop=getOption("maker.verbose.noop", TRUE),
+                          command=getOption("maker.verbose.command", TRUE),
+                          command_abbreviate=TRUE,
+                          target=NULL) {
+  if (inherits(verbose, "maker_verbose")) {
+    verbose
+  } else {
+    assert_scalar_logical(verbose)
+    assert_scalar_logical(noop)
+    assert_scalar_logical(command)
+    assert_scalar_logical(command_abbreviate)
+    if (!is.null(target)) {
+      assert_scalar_logical(target)
+      target <- !target
+    }
+    structure(list(print_progress=verbose,
+                   print_noop=noop,
+                   print_command=command,
+                   print_command_abbreviate=command_abbreviate,
+                   quiet_target=target),
+              class="maker_verbose")
+  }
 }
