@@ -402,7 +402,7 @@
         if (any(err)) {
           stop(sprintf(
             "Implicitly created targets must all be files (%s)",
-            paste(msg[err], collapse=", ")))
+            paste(deps_msg[err], collapse=", ")))
         }
         deps_msg_missing <- !file.exists(deps_msg)
         if (any(deps_msg_missing)) {
@@ -492,7 +492,7 @@ read_maker_file <- function(filename, seen=character(0)) {
   dat <- yaml_read(filename)
   warn_unknown(filename, dat,
                c("packages", "sources", "include",
-                 "plot_options",
+                 "plot_options", "knitr_options",
                  "target_default", "targets"))
 
   dat$hash <- hash_files(filename, named=TRUE)
@@ -509,6 +509,13 @@ read_maker_file <- function(filename, seen=character(0)) {
     for (i in names(dat$plot_options)) {
       assert_named_list(dat$plot_options[[i]],
                         name=paste("plot_options: ", i))
+    }
+  }
+  if (!is.null(dat$knitr_options)) {
+    assert_named_list(dat$knitr_options)
+    for (i in names(dat$knitr_options)) {
+      assert_named_list(dat$knitr_options[[i]],
+                        name=paste("knitr_options: ", i))
     }
   }
 
@@ -542,6 +549,13 @@ read_maker_file <- function(filename, seen=character(0)) {
       }
       dat$plot_options <- c(dat$plot_options, dat_sub$plot_options)
 
+      dups <- intersect(names(dat_sub$knitr_options), names(dat$knitr_options))
+      if (length(dups) > 0L) {
+        stop(sprintf("%s contains duplicate knitr_options %s",
+                     f, paste(dups, collapse=", ")))
+      }
+      dat$knitr_options <- c(dat$knitr_options, dat_sub$knitr_options)
+
       if ("all" %in% names(dat_sub$targets)) {
         warning(f, " contains target 'all', which I am removing")
         dat_sub$targets$all <- NULL
@@ -561,7 +575,8 @@ read_maker_file <- function(filename, seen=character(0)) {
   }
 
   if (length(seen) == 0L) { # main file only
-    extra <- list(plot_options=dat$plot_options)
+    extra <- list(plot_options=dat$plot_options,
+                  knitr_options=dat$knitr_options)
     dat$targets <- lnapply(dat$targets, make_target, extra=extra)
   }
 

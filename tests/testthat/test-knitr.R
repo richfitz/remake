@@ -59,6 +59,16 @@ test_that("knitr options", {
   cleanup()
 })
 
+test_that("Option sets", {
+  cleanup()
+  m <- maker("knitr_options.yml")
+  t <- m$get_target("knitr.md")
+  dat <- yaml_read("knitr_options.yml")
+  cmp <- c(dat$knitr_options$mystyle, list(input="knitr.Rmd"))
+  cmp$options$error <- FALSE
+  expect_that(t$knitr, equals(cmp))
+})
+
 test_that("auto_figure_prefix", {
   cleanup()
   m <- maker("knitr_prefix.yml")

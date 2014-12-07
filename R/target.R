@@ -150,8 +150,7 @@ target_new_plot <- function(name, command, opts, extra=NULL) {
                    plot_args, name))
     }
   }
-  assert_list(plot_args)
-  assert_named(plot_args)
+  assert_named_list(plot_args)
 
   ## This will not work well for cases where `...` is in the
   ## device name (such as jpeg, bmp, etc), but we can work around that
@@ -175,8 +174,16 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
   ## Then the knitr options:
   knitr <- opts$knitr
   if (identical(knitr, TRUE) || is.null(knitr)) {
-    knitr <- list()
+    knitr <- empty_named_list()
+  } else if (is.character(knitr) && length(knitr) == 1) {
+    if (knitr %in% names(extra$knitr_options)) {
+      knitr <- extra$knitr_options[[knitr]]
+    } else {
+      stop(sprintf("Unknown knitr_options '%s' in target '%s'",
+                   knitr, name))
+    }
   }
+  assert_named_list(knitr)
   warn_unknown("knitr", knitr,
                c("input", "options", "chdir", "auto_figure_prefix"))
 
