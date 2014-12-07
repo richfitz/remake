@@ -27,7 +27,6 @@
       private$initialize_targets_activate()
       private$check_rule_target_clash()
       private$initialize_default_target(config$target_default)
-      private$initialize_utility_targets() # last; nothing depends on these
       private$initialize_message_format()
       self$store$env <- managed_environment$new(config$packages, config$sources)
     },
@@ -350,6 +349,15 @@
       topological_sort(g)
     },
 
+    ## Utilities:
+    gitignore=function() {
+      utility_gitignore(self)
+    },
+
+    install_packages=function() {
+      utility_install_packages(self)
+    },
+
     diagram=function() {
       diagram(self)
     }
@@ -360,13 +368,6 @@
     initialize_cleanup_targets=function() {
       targets <- lapply(cleanup_target_names(), make_target_cleanup, self)
       self$add_targets(targets, force=TRUE)
-    },
-
-    initialize_utility_targets=function() {
-      add <- list(target_new_utility("install_packages",
-                                     utility_install_packages, self),
-                  target_new_utility("gitignore", utility_gitignore, self))
-      self$add_targets(add)
     },
 
     ## NOTE: The logic here seems remarkably clumsy.
