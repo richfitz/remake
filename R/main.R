@@ -114,6 +114,22 @@ make <- function(target_names=NULL, maker_file="maker.yml") {
 }
 
 ##' @rdname make
+##' @export
 make_script <- function(target_names=NULL, maker_file="maker.yml") {
   maker(maker_file)$script(target_names)
+}
+
+##' Install all missing packages that are required to use a
+##' makerfile.  This is exactly equivalent to running
+##' \code{maker::maker(maker_file)$install_packages()}, but is less
+##' typing if you are not going to reuse the maker object.
+##'
+##' No version comparison is done - see packrat for a more complete
+##' package management solution.
+##' @title Install packages required by makerfile
+##' @param maker_file Name of the makerfile (by default
+##' \code{maker.yml}).  This is passed to \code{maker()}.
+##' @export
+maker_install_packages <- function(maker_file="maker.yml") {
+  maker(maker_file)$install_packages()
 }
