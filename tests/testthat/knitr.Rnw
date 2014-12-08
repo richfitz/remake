@@ -1,0 +1,26 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb,amsmath}
+\usepackage{framed}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage[default,osfigures,scale=0.95]{opensans}
+\usepackage{geometry}
+\usepackage{authblk}
+\usepackage{gensymb}
+\usepackage{lineno}
+\geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+
+\begin{document}
+
+The object `processed` will be found from `maker`.
+
+<<>>=
+summary(processed)
+@
+
+here's a plot
+<<echo=FALSE>>=
+myplot(processed)
+@
+
+\end{document}

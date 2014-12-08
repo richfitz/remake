@@ -20,3 +20,7 @@ targets:
   knitr.md:
     depends: processed
     knitr: true
+
+  knitr.tex:
+    depends: processed
+    knitr: true
