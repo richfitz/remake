@@ -17,7 +17,8 @@ install_packages <- function(packages,
     message("Installing missing required packages:\n",
             paste0("\t", msg, collapse="\n"))
     if (file.exists(maker_sources)) {
-      extras <- read_maker_packages(maker_sources)[msg]
+      extras <- read_maker_packages(maker_sources)
+      extras <- extras[names(extras) %in% msg]
     } else {
       extras <- list()
     }
