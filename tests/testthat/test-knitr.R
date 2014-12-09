@@ -11,13 +11,26 @@ test_that("Defaults", {
               equals("figure/"))
 })
 
-test_that("Build works", {
+test_that("Build Rmd works", {
   cleanup()
   m <- maker("knitr.yml")
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
   expect_that(file.exists("figure/unnamed-chunk-2-1.png"),
+              is_true())
+  expect_that(knitr::opts_chunk$get("fig.path"),
+              equals("figure/"))
+  cleanup()
+})
+
+test_that("Build Rnw works", {
+  cleanup()
+  m <- maker("knitr.yml")
+  m$make("knitr.tex")
+  expect_that(file.exists("knitr.tex"), is_true())
+  expect_that(is_directory("figure"), is_true())
+  expect_that(file.exists("figure/unnamed-chunk-2-1.pdf"),
               is_true())
   expect_that(knitr::opts_chunk$get("fig.path"),
               equals("figure/"))

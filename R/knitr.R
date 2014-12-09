@@ -29,8 +29,9 @@ knitr_from_maker <- function(input, output, store, export,
 }
 
 knitr_infer_source <- function(name) {
-  if (!grepl("\\.md$", name)) {
-    stop("Target must end in .md (at least for now)")
-  }
-  sub("\\.md$", "\\.Rmd", name)
+  if (!grepl("\\.md$", name) & !grepl("\\.tex$", name) ) {
+     stop("Target must end in .md or .tex (at least for now)")
+   }
+  name <- sub("\\.md$", "\\.Rmd", name)
+  sub("\\.tex$", "\\.Rnw", name)
 }
