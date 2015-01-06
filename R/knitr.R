@@ -2,6 +2,28 @@ knitr_default_fig_path <- function(filename) {
   sprintf("figure/%s__", tools::file_path_sans_ext(basename(filename)))
 }
 
+knitr_from_maker_target <- function(target, store, quiet=NULL) {
+  object_names <- target$depends_name[target$depends_type == "object"]
+  ## This might be a bit flakey; needs more testing!
+  ## In particular, need to check that if there is a mix of renamed
+  ## and non-renamed material that this works correctly.
+  ##
+  ## TODO: Ideally the logic here moves into knitr.R so that we can
+  ## easily rerun things within knitr -- so the object renaming,
+  ## setting, etc works correctly.  Given that knitr_from_maker is
+  ## not used anywhere else we could just change how that works, to
+  ## take a target as an argument?
+  names(object_names) <-
+    names(target$depends_rename)[match(object_names, target$depends_rename)]
+
+  knitr_from_maker(target$knitr$input, target$name, store,
+                   object_names,
+                   quiet=with_default(quiet, target$quiet),
+                   knitr_options=target$knitr$options,
+                   chdir=target$knitr$chdir,
+                   auto_figure_prefix=target$knitr$auto_figure_prefix)
+}
+
 knitr_from_maker <- function(input, output, store, export,
                              export_source=TRUE,
                              knitr_options=NULL, chdir=FALSE,

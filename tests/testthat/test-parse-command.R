@@ -32,100 +32,109 @@ test_that("Corner cases", {
   expect_that(parse_command("{}"), not(throws_error()))
   ## This does fail though:
   expect_that(parse_command("()"), throws_error("Error in parse"))
+
+  expect_that(parse_command("foo(1)"),
+              throws_error("Not yet handled"))
+  expect_that(parse_command("foo(TRUE)"),
+              throws_error("Not yet handled"))
 })
 
 test_that("Rules with no arguments", {
   res <- parse_command("foo()")
   expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(character(0)))
+  expect_that(res$args, equals(list()))
+  expect_that(res$depends, equals(empty_named_integer()))
 })
 
 test_that("Rules with one argument", {
   res <- parse_command("foo(a)")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals("a"))
-  expect_that(res$quoted, is_false())
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(quote(a))))
+  expect_that(res$depends, equals(c(a=1L)))
 
   res <- parse_command("foo(argname=a)")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(argname="a")))
-  expect_that(res$quoted, is_false())
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(argname=quote(a))))
+  expect_that(res$depends, equals(c(a=1)))
 
   res <- parse_command("foo('a')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c("a")))
-  expect_that(res$quoted, is_true())
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list("a")))
+  expect_that(res$depends, equals(c(a=1L)))
 
   res <- parse_command("foo(argname='a')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(argname="a")))
-  expect_that(res$quoted, is_true())
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(argname="a")))
+  expect_that(res$depends, equals(c(a=1L)))
 
   expect_that(parse_command("foo(1)"),
-              throws_error("Every element must be a character or name"))
+              throws_error("Not yet handled"))
   expect_that(parse_command("foo(argname=1)"),
-              throws_error("Every element must be a character or name"))
+              throws_error("Not yet handled"))
   expect_that(parse_command("foo(TRUE)"),
-              throws_error("Every element must be a character or name"))
+              throws_error("Not yet handled"))
   expect_that(parse_command("foo(argname=FALSE)"),
-              throws_error("Every element must be a character or name"))
+              throws_error("Not yet handled"))
 })
 
 test_that("Rules with multiple arguments", {
   res <- parse_command("foo(a, b)")
   expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c("a", "b")))
-  expect_that(res$quoted, equals(c(FALSE, FALSE)))
+  expect_that(res$args, equals(list(quote(a), quote(b))))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(arg1=a, b)")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(arg1="a", "b")))
-  expect_that(res$quoted, equals(c(FALSE, FALSE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(arg1=quote(a), quote(b))))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(a, arg2=b)")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c("a", arg2="b")))
-  expect_that(res$quoted, equals(c(FALSE, FALSE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(quote(a), arg2=quote(b))))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(arg1=a, arg2=b)")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(arg1="a", arg2="b")))
-  expect_that(res$quoted, equals(c(FALSE, FALSE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(arg1=quote(a), arg2=quote(b))))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   ## Quote one of these:
   res <- parse_command("foo(a, 'b')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c("a", "b")))
-  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(quote(a), "b")))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(arg1=a, 'b')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(arg1="a", "b")))
-  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(arg1=quote(a), "b")))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(a, arg2='b')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c("a", arg2="b")))
-  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(quote(a), arg2="b")))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 
   res <- parse_command("foo(arg1=a, arg2='b')")
-  expect_that(res$rule, equals("foo"))
-  expect_that(res$depends, equals(c(arg1="a", arg2="b")))
-  expect_that(res$quoted, equals(c(FALSE, TRUE)))
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(arg1=quote(a), arg2="b")))
+  expect_that(res$depends, equals(c(a=1L, b=2L)))
 })
 
 test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo()"),
-              equals(list(rule="foo", depends=character(0),
-                          quoted=logical(0), depends_is_arg=logical(0))))
-  cmp_pos  <- list(rule="foo", depends=character(0), quoted=logical(0),
-                   target_argument=1, depends_is_arg=logical(0))
+              equals(list(rule="foo",
+                          args=list(),
+                          depends=empty_named_integer())))
+  cmp_pos <- list(rule="foo",
+                  args=list("a"),
+                  depends=empty_named_integer())
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
-  cmp_name <- list(rule="foo", depends=empty_character(), quoted=logical(0),
-                   target_argument="arg", depends_is_arg=logical(0))
+  cmp_name <- list(rule="foo",
+                  args=list(arg="a"),
+                  depends=empty_named_integer())
   expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
@@ -140,17 +149,17 @@ test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo(arg='target_name')"),
               throws_error("target_name must not be quoted"))
 
-  f <- function(a, x) parse_target_command(a, x)$target_argument
+  f <- function(a, x) parse_target_command(a, x)$depends
 
-  expect_that(f("a", "foo('a', b)"),     equals(1))
-  expect_that(f("a", "foo(b, 'a')"),     equals(2))
-  expect_that(f("a", "foo(arg='a', b)"), equals("arg"))
-  expect_that(f("a", "foo(arg='a', b)"), equals("arg"))
+  expect_that(f("a", "foo('a', b)"),     equals(c(b=2L)))
+  expect_that(f("a", "foo(b, 'a')"),     equals(c(b=1L)))
+  expect_that(f("a", "foo(arg='a', b)"), equals(c(b=2L)))
+  expect_that(f("a", "foo(b, arg='a')"), equals(c(b=1L)))
 
-  expect_that(f("a", "foo(target_name, b)"),     equals(1))
-  expect_that(f("a", "foo(b, target_name)"),     equals(2))
-  expect_that(f("a", "foo(arg=target_name, b)"), equals("arg"))
-  expect_that(f("a", "foo(arg=target_name, b)"), equals("arg"))
+  expect_that(f("a", "foo(target_name, b)"),     equals(c(b=2L)))
+  expect_that(f("a", "foo(b, target_name)"),     equals(c(b=1L)))
+  expect_that(f("a", "foo(arg=target_name, b)"), equals(c(b=2L)))
+  expect_that(f("a", "foo(b, arg=target_name)"), equals(c(b=1L)))
 
   ## Errors:
   expect_that(parse_target_command("a", "foo(a, a)"),
@@ -166,20 +175,20 @@ test_that("target_argument detection", {
 
 test_that("chain", {
   cmd <- parse_target_command("a", c("foo(x)", "bar(.)"))
-  expect_that(cmd$rule, equals("bar")) # last element of chain
-  expect_that(cmd$depends, equals(c(".")))
-  expect_that(cmd$quoted, equals(FALSE))
+  expect_that(cmd$rule,    equals("bar")) # last element of chain
+  expect_that(cmd$args,    equals(list(quote(.))))
+  expect_that(cmd$depends, equals(c("."=1L)))
   expect_that(length(cmd$chain), equals(1L))
-  expect_that(cmd$chain[[1]]$rule, equals("foo"))
-  expect_that(cmd$chain[[1]]$depends, equals("x"))
-  expect_that(cmd$chain[[1]]$quoted, equals(FALSE))
+  expect_that(cmd$chain[[1]]$rule,    equals("foo"))
+  expect_that(cmd$chain[[1]]$args,    equals(list(quote(x))))
+  expect_that(cmd$chain[[1]]$depends, equals(c(x=1L)))
 
   cmd <- parse_target_command("x", c("foo(a, b)", "bar(c, .)"))
-  expect_that(cmd$chain[[1]]$depends, equals(c('a', 'b')))
-  expect_that(cmd$depends, equals(c('c', '.')))
+  expect_that(cmd$chain[[1]]$args, equals(list(quote(a), quote(b))))
+  expect_that(cmd$args, equals(list(quote(c), quote(.))))
 
   cmd <- parse_target_command("x", c("foo(a, b)", "bar(arg1=c, arg2=.)"))
-  expect_that(cmd$depends, equals(c(arg1='c', arg2='.')))
+  expect_that(cmd$args, equals(list(arg1=quote(c), arg2=quote(.))))
 
   expect_that(parse_target_command("a", c("foo()", "bar('.')")),
               throws_error("Dot argument must not be quoted"))

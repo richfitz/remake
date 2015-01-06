@@ -103,8 +103,11 @@ abbreviate <- function(str, width, cutoff="...") {
 empty_named_list <- function() {
   structure(list(), names=character(0))
 }
-empty_character <- function() {
+empty_named_character <- function() {
   structure(character(0), names=character(0))
+}
+empty_named_integer <- function() {
+  structure(integer(), names=character(0))
 }
 
 strip_whitespace <- function(str) {

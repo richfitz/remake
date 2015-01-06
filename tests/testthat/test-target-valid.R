@@ -88,6 +88,7 @@ test_that("Object target", {
   expect_that(t$type, equals("object"))
 
   expect_that(t$name, equals("real"))
+  expect_that(t$depends, equals(empty_named_integer()))
   expect_that(t$depends_name, equals(character(0)))
   expect_that(t$rule, equals("foo"))
   expect_that(t$cleanup_level, equals("tidy"))
@@ -117,8 +118,9 @@ test_that("Object target", {
 
   t <- make_target("real", list(command="foo(a, b=c)"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends_name, equals(c("a", b="c")))
+  expect_that(t$depends_name, equals(c("a", "c")))
 
+  ## Corner case here:
   t <- make_target("code.R", list(command="foo()", type="object"))
   expect_that(t$type, equals("object"))
 })
@@ -176,20 +178,19 @@ test_that("File targets", {
   t <- make_target("foo.csv", list(command="foo(a, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends_name, equals(c("a", "b", C="c")))
-  expect_that(t$target_argument, is_null())
+  expect_that(t$depends_name, equals(c("a", "b", "c")))
 
   t <- make_target("foo.csv", list(command="foo(target_name, b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends_name, equals(c("b", C="c")))
-  expect_that(t$target_argument, equals(1))
+  expect_that(t$depends_name, equals(c("b", "c")))
+  expect_that(t$args[[1]], equals("foo.csv"))
 
   t <- make_target("foo.csv", list(command="foo(name='foo.csv', b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
-  expect_that(t$depends_name, equals(c("b", C="c")))
-  expect_that(t$target_argument, equals("name"))
+  expect_that(t$depends_name, equals(c("b", "c")))
+  expect_that(t$args[1], equals(list(name="foo.csv")))
 })
 
 test_that("Implicit file targets", {

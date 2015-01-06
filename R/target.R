@@ -38,7 +38,6 @@ target_new_base <- function(name, command, opts, extra=NULL,
 
   ret <- list(name=name, type=type)
   ret$command <- command$command
-  ret$quoted <- command$quoted
   ret$status_string <- ""
 
   if (!is.null(command$rule)) {
@@ -46,19 +45,16 @@ target_new_base <- function(name, command, opts, extra=NULL,
     ret$rule <- command$rule
   }
 
-  ret$depends_name <- with_default(command$depends, character(0))
+  ret$depends <- with_default(command$depends, empty_named_integer())
+  ret$depends_name <- names(ret$depends)
+  ret$depends_rename <- command$depends_rename
   if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
   }
-  if (any(duplicated(setdiff(names(ret$depends_name), "")))) {
+  ret$args_template <- command$args
+  if (any(duplicated(setdiff(names(ret$args_template), "")))) {
     stop("All named depends targets must be unique")
   }
-
-  assert_length(command$depends_is_arg, length(command$depends))
-  if (length(command$depends_is_arg) > 0L) {
-    assert_logical(command$depends_is_arg)
-  }
-  ret$depends_is_arg <- command$depends_is_arg
 
   ret$cleanup_level <- with_default(opts$cleanup_level, "never")
   ret$cleanup_level <-
@@ -120,6 +116,7 @@ target_new_file_implicit <- function(name, check_exists=TRUE) {
   }
   ret <- list(name=name,
               type="file",
+              depends=empty_named_integer(),
               depends_name=character(0),
               depends_type=character(0),
               implicit=TRUE,
@@ -222,10 +219,10 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
     knitr$options$error <- FALSE
   }
 
-  ## Build a dependency on the input, for obvious reasons:
-  command$depends <- c(command$depends, knitr$input)
-  ## This dependency is not an argument
-  command$depends_is_arg <- c(command$depends_is_arg, FALSE)
+  ## Build a dependency on the input, for obvious reasons, but flag
+  ## that it is not an argument to any command:
+  command$depends <- c(command$depends,
+                       structure(NA_integer_, names=knitr$input))
 
   ## Hack to let target_base know we're not implicit.  There does
   ## need to be something here as a few places test for null-ness.
@@ -397,6 +394,8 @@ do_call_fake <- function(cmd, args) {
 
 ## There aren't many of these yet; might end up with more over time
 ## though.
+##
+## TODO: Can now drop install_packages and gitignore
 target_reserved_names <- function() {
   c("install_packages", "gitignore", "target_name", ".")
 }
@@ -450,7 +449,10 @@ target_chain_match_dot <- function(x, pos, chain_names) {
     if (j > length(chain_names)) {
       stop("Attempt to select impossible chain element") # defensive only
     }
-    x$depends_name[[j]] <- chain_names[[pos - 1L]]
+    dot_name <- chain_names[[pos - 1L]]
+    x$depends_name[[j]] <- dot_name
+    ## NOTE: there is a chance this is fragile.
+    names(x$depends)[[j]] <- dot_name
   } else { # defensive - should be safe here.
     if (length(j) > 1L) {
       stop("never ok")
@@ -551,16 +553,13 @@ target_set <- function(target, store, value) {
 ## actually required by any of the parsing machinery, but it means the
 ## files will be easier to interpret.
 target_check_quoted <- function(target) {
-  quoted <- target$quoted
-  if (!is.null(quoted) && length(quoted) > 0L) {
-    i <- target$depends_is_arg
-    depends_name <- target$depends_name[i]
-    depends_type <- target$depends_type[i]
-    assert_length(quoted, length(depends_name))
-    should_be_quoted <- depends_type == "file"
+  i <- target$depends[!is.na(target$depends)]
+  if (length(i > 0L)) {
+    quoted <- vlapply(target$args_template[i], is.character)
+    should_be_quoted <- target$depends_type[names(i)] == "file"
     if (any(should_be_quoted != quoted)) {
-      err_quote <- depends_name[should_be_quoted  & !quoted]
-      err_plain <- depends_name[!should_be_quoted &  quoted]
+      err_quote <- names(i)[should_be_quoted  & !quoted]
+      err_plain <- names(i)[!should_be_quoted &  quoted]
       msg <- character(0)
       if (length(err_quote) > 0) {
         msg <- c(msg, paste("Should be quoted:",
@@ -580,26 +579,29 @@ dependencies_as_args <- function(target, store, fake=FALSE) {
   if (is.null(target$rule)) {
     list()
   } else {
-    deps_name <- target$depends_name[target$depends_is_arg]
-    deps_type <- target$depends_type[target$depends_is_arg]
-    keep <- deps_type %in% c("file", "object")
+    template <- target$args_template
 
-    ## TODO: A hack for now.
-    deps <- lapply(which(keep), function(i)
-                   list(name=deps_name[[i]],
-                        type=deps_type[[i]]))
-    names(deps) <- names(target$depends_name)[keep]
-
-    args <- lapply(deps, function(x) target_get(x, store, fake))
-    if (!is.null(target$target_argument)) {
-      val <- target_get(target, store, fake)
-      if (is.character(target$target_argument)) {
-        args[[target$target_argument]] <- val
-      } else {
-        args <- insert_at(args, val, target$target_argument)
-      }
+    if (fake) {
+      ## Quote template arguments that are character strings *and*
+      ## that nothing else will replace.  We could precompute this,
+      ## and probably should.
+      ##
+      ## Not sure where that makes the most sense to do though.
+      ## Probably we're going to do lookup on other arguments after
+      ## loading, so that would make most sense.  For now this will do.
+      i <- setdiff(which(vlapply(template, is.character)), target$depends)
+      template[i] <- lapply(template[i], sprintf, fmt='"%s"')
     }
-    args
+
+    is_arg <- !is.na(target$depends)
+    deps_name <- target$depends_name
+    deps_type <- unname(target$depends_type)
+    deps <- lapply(which(is_arg), function(i)
+                   list(name=deps_name[[i]], type=deps_type[[i]]))
+    args <- lapply(deps, function(x) target_get(x, store, fake))
+
+    template[as.integer(target$depends[is_arg])] <- args
+    template
   }
 }
 
@@ -676,15 +678,7 @@ target_run <- function(target, store, quiet=NULL) {
   } else if (target$type == "utility") {
     return(target$utility(target$maker))
   } else if (inherits(target, "target_knitr")) {
-    object_names <- target$depends_name[target$depends_type == "object"]
-    return(
-      knitr_from_maker(target$knitr$input, target$name, store,
-                       object_names,
-                       quiet=with_default(quiet, target$quiet),
-                       knitr_options=target$knitr$options,
-                       chdir=target$knitr$chdir,
-                       auto_figure_prefix=target$knitr$auto_figure_prefix))
-
+    return(knitr_from_maker_target(target, store, quiet))
   }
 
   if (inherits(target, "target_plot")) {
