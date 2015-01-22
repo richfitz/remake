@@ -1,0 +1,22 @@
+# This file is all pretty icky, but contains many of the crazy things
+# possible with this sort of approach.
+sources:
+  code_literal.R
+
+targets:
+  all:
+    depends: [data1, data2, data3, data4, data5, data6]
+  data1:
+    command: list(TRUE)
+  data2:
+    command: list(I(pi))
+  data3:
+    command: list(I(my_constant))
+  data4:
+    command: list(I("pi"))
+  data5:
+    command: list(I("my_constant"), I(my_constant))
+  data6:
+    command: list(I("my_constant"), I(my_constant), my_constant)
+  my_constant:
+    command: list(TRUE)

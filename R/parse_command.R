@@ -3,7 +3,8 @@
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("command", "rule", "args", "depends", "depends_rename", "chain")
+  core <- c("command", "rule", "args", "depends", "is_target",
+            "depends_rename", "chain")
 
   ## Quick check that may disappear later:
   invalid <- c("rule", "target_argument", "quoted")
@@ -101,6 +102,7 @@ parse_target_command <- function(target, command) {
       ## Then remove target_name from the dependencies.
       dat$args[[j]] <- target
       dat$depends <- dat$depends[-j]
+      dat$is_target[[j]] <- FALSE
     } else if (sum(i) > 1L) {
       n <- colSums(i)
       n <- n[n > 0]
@@ -156,18 +158,17 @@ parse_command <- function(str) {
   ## First, test for target-like-ness.  That will be things that are
   ## names or character only.  Numbers, etc will drop through here and
   ## we'll pick them up shortly.
-  is_target <- vlapply(args, is_target_like)
+  is_target <- unname(vlapply(args, is_target_like))
 
   if (any(!is_target)) {
-    ## TODO: This is where non-target handling will go.
-    stop("Not yet handled...")
+    args[!is_target] <- lapply(args[!is_target], check_literal_arg)
   }
 
   depends <- structure(which(is_target),
                        names=vcapply(args[is_target], as.character,
                          USE.NAMES=FALSE))
   
-  list(rule=rule, args=args, depends=depends)
+  list(rule=rule, args=args, depends=depends, is_target=is_target)
 }
 
 check_command <- function(str) {
@@ -193,6 +194,23 @@ check_command_rule <- function(x) {
     stop("Rule must be a character or name")
   }
   x
+}
+
+## The trick here is going to be working out which of these need later
+## looking up, if we allow this.
+check_literal_arg <- function(x) {
+  if (is.atomic(x)) { # logical, integer, complex types
+    x
+  } else if (is.call(x)) {
+    if (identical(x[[1]], quote(I))) {
+      x[[2]]
+    } else {
+      ## This error message is not going to be useful:
+      stop("Unknown special function ", as.character(x[[1]]))
+    }
+  } else {
+    stop("Unknown type in argument list")
+  }
 }
 
 is_target_like <- function(x) {

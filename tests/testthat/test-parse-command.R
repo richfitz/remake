@@ -32,11 +32,6 @@ test_that("Corner cases", {
   expect_that(parse_command("{}"), not(throws_error()))
   ## This does fail though:
   expect_that(parse_command("()"), throws_error("Error in parse"))
-
-  expect_that(parse_command("foo(1)"),
-              throws_error("Not yet handled"))
-  expect_that(parse_command("foo(TRUE)"),
-              throws_error("Not yet handled"))
 })
 
 test_that("Rules with no arguments", {
@@ -67,14 +62,29 @@ test_that("Rules with one argument", {
   expect_that(res$args,    equals(list(argname="a")))
   expect_that(res$depends, equals(c(a=1L)))
 
-  expect_that(parse_command("foo(1)"),
-              throws_error("Not yet handled"))
-  expect_that(parse_command("foo(argname=1)"),
-              throws_error("Not yet handled"))
-  expect_that(parse_command("foo(TRUE)"),
-              throws_error("Not yet handled"))
-  expect_that(parse_command("foo(argname=FALSE)"),
-              throws_error("Not yet handled"))
+  res <- parse_command("foo(1)")
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(1L)))
+  expect_that(res$depends, equals(empty_named_integer()))
+  expect_that(res$is_target, equals(FALSE))
+
+  res <- parse_command("foo(argname=1)")
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(argname=1L)))
+  expect_that(res$depends, equals(empty_named_integer()))
+  expect_that(res$is_target, equals(FALSE))
+
+  res <- parse_command("foo(TRUE)")
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(TRUE)))
+  expect_that(res$depends, equals(empty_named_integer()))
+  expect_that(res$is_target, equals(FALSE))
+
+  res <- parse_command("foo(argname=TRUE)")
+  expect_that(res$rule,    equals("foo"))
+  expect_that(res$args,    equals(list(argname=TRUE)))
+  expect_that(res$depends, equals(empty_named_integer()))
+  expect_that(res$is_target, equals(FALSE))
 })
 
 test_that("Rules with multiple arguments", {
@@ -124,17 +134,20 @@ test_that("target_argument detection", {
   expect_that(parse_target_command("a", "foo()"),
               equals(list(rule="foo",
                           args=list(),
-                          depends=empty_named_integer())))
+                          depends=empty_named_integer(),
+                          is_target=logical(0))))
   cmp_pos <- list(rule="foo",
                   args=list("a"),
-                  depends=empty_named_integer())
+                  depends=empty_named_integer(),
+                  is_target=FALSE)
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
   cmp_name <- list(rule="foo",
-                  args=list(arg="a"),
-                  depends=empty_named_integer())
+                   args=list(arg="a"),
+                   depends=empty_named_integer(),
+                   is_target=FALSE)
   expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
@@ -160,6 +173,11 @@ test_that("target_argument detection", {
   expect_that(f("a", "foo(b, target_name)"),     equals(c(b=1L)))
   expect_that(f("a", "foo(arg=target_name, b)"), equals(c(b=2L)))
   expect_that(f("a", "foo(b, arg=target_name)"), equals(c(b=1L)))
+
+  expect_that(parse_target_command("a", "foo('a')")$is_target,
+              equals(FALSE))
+  expect_that(parse_target_command("a", "foo('a', 'b')")$is_target,
+              equals(c(FALSE, TRUE)))
 
   ## Errors:
   expect_that(parse_target_command("a", "foo(a, a)"),
@@ -200,4 +218,18 @@ test_that("chain", {
 
   expect_that(parse_target_command("a", c("foo()", "bar(., .)")),
               throws_error("Only a single dot argument allowed"))
+})
+
+test_that("Literal arguments", {
+  obj <- parse_command("foo(target_arg, I(literal_arg))")
+  expect_that(obj$args[[2]], equals(quote(literal_arg)))
+
+  expect_that(parse_command("foo(target_arg, TRUE)")$args[[2]],
+              is_identical_to(TRUE))
+  expect_that(parse_command("foo(target_arg, 1L)")$args[[2]],
+              is_identical_to(1L))
+  expect_that(parse_command("foo(target_arg, 1.0)")$args[[2]],
+              is_identical_to(1.0))
+  expect_that(parse_command("foo(target_arg, 1i)")$args[[2]],
+              is_identical_to(1i))
 })

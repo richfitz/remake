@@ -48,6 +48,7 @@ target_new_base <- function(name, command, opts, extra=NULL,
   ret$depends <- with_default(command$depends, empty_named_integer())
   ret$depends_name <- names(ret$depends)
   ret$depends_rename <- command$depends_rename
+  ret$arg_is_target <- with_default(command$is_target, logical(0))
   if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
   }
@@ -119,6 +120,7 @@ target_new_file_implicit <- function(name, check_exists=TRUE) {
               depends=empty_named_integer(),
               depends_name=character(0),
               depends_type=character(0),
+              arg_is_target=integer(0),
               implicit=TRUE,
               cleanup_level="never",
               check="exists")
@@ -322,7 +324,7 @@ is_current <- function(target, store, check=NULL) {
 
 dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
   check <- with_default(check, target$check)
-  depends <- code <- NULL
+  depends <- fixed <- code <- NULL
 
   if (check_depends(check)) {
     depends_type <- target$depends_type
@@ -332,6 +334,14 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
                       store$get_hash(depends_name[[i]],
                                      depends_type[[i]], missing_ok))
     names(depends) <- depends_name[keep]
+
+    ## Then, get the non-target dependencies, too.  We don't do this
+    ## as a map list because order is guaranteed.
+    is_fixed <- !target$arg_is_target
+    if (any(is_fixed)) {
+      fixed <- hash_object(lapply(target$args_template[is_fixed],
+                                  eval, store$env$env))
+    }
   }
 
   if (check_code(check)) {
@@ -341,6 +351,7 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
   list(version=store$version,
        name=target$name,
        depends=depends,
+       fixed=fixed,
        code=code)
 }
 
@@ -362,6 +373,7 @@ compare_dependency_status <- function(prev, curr, check) {
 
   if (check_depends(check)) {
     ok <- ok && identical_map(prev$depends, curr$depends)
+    ok <- ok && identical(prev$fixed, curr$fixed)
   }
   if (check_code(check)) {
     ## TODO: I've dropped checking *packages* here: see #13
@@ -588,9 +600,15 @@ dependencies_as_args <- function(target, store, fake=FALSE) {
       ##
       ## Not sure where that makes the most sense to do though.
       ## Probably we're going to do lookup on other arguments after
-      ## loading, so that would make most sense.  For now this will do.
-      i <- setdiff(which(vlapply(template, is.character)), target$depends)
-      template[i] <- lapply(template[i], sprintf, fmt='"%s"')
+      ## loading, so that would make most sense.  For now this will
+      ## do.
+      fixed <- which(!target$arg_is_target)
+      fixed_character <- fixed[vlapply(template[fixed], is.character)]
+      template[fixed_character] <-
+        lapply(template[fixed_character], sprintf, fmt='"%s"')
+      ## i <- setdiff(which(vlapply(template, is.character)),
+      ##              target$depends)
+      ## template[i] <- lapply(template[i], sprintf, fmt='"%s"')
     }
 
     is_arg <- !is.na(target$depends)

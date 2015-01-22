@@ -19,6 +19,7 @@ test_that("simple run", {
   cmp <- list(version=m$store$version,
               name="data.csv",
               depends=empty_named_list(),
+              fixed=hash_object(list("data.csv")),
               code=list(
                 functions=list(download_data=hash_function(
                                  m$store$env$env$download_data)),
@@ -29,6 +30,7 @@ test_that("simple run", {
   cmp <- list(version=m$store$version,
               name="processed",
               depends=list("data.csv"=NA_character_),
+              fixed=NULL,
               code=list(
                 functions=list(process_data=hash_function(
                                  m$store$env$env$process_data)),
@@ -48,6 +50,7 @@ test_that("simple run", {
   cmp <- list(version=m$store$version,
               name="plot.pdf",
               depends=list(processed=NA_character_),
+              fixed=hash_object(list("plot.pdf")),
               code=list(
                 functions=list(
                   do_plot=hash_function(m$store$env$env$do_plot),

@@ -62,12 +62,16 @@ managed_environment <- R6Class(
                    collapse=", "))
       }
       files <- as.list(self$sources)
-      for (i in seq_along(files)) {
-        s <- files[[i]]
-        if (is_directory(s)) {
-          files[[i]] <- dir(s, pattern="^.*\\.[Rr]$", full.names=TRUE)
+      if (length(files) == 0L) {
+        character(0)
+      } else {
+        for (i in seq_along(files)) {
+          s <- files[[i]]
+          if (is_directory(s)) {
+            files[[i]] <- dir(s, pattern="^.*\\.[Rr]$", full.names=TRUE)
+          }
         }
+        unlist(files)
       }
-      unlist(files)
     }
     ))

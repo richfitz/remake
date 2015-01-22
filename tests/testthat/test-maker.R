@@ -99,3 +99,67 @@ test_that("Verbosity", {
 
   expect_error(maker_verbose(1), "verbose must be logical")
 })
+
+test_that("literals", {
+  cleanup()
+  str <- "my_constant <- pi"
+  writeLines(str, "code_literal.R")
+  
+  m <- maker("maker_literal.yml")
+  
+  expect_that(m$targets$data1$depends,
+              is_identical_to(empty_named_integer()))
+  res <- m$make("data1")
+  expect_that(res, is_identical_to(list(TRUE)))
+
+  db <- m$store$db$get("data1")
+  expect_that(db$fixed, equals(hash_object(res)))
+  expect_that(db$depends, equals(empty_named_list()))
+  expect_that(db$code$functions, equals(empty_named_list()))
+  expect_that(db$code$packages, equals(list()))
+
+  expect_that(m$is_current("data1"), is_true())
+
+  res <- m$make("data2")
+  expect_that(res, is_identical_to(list(pi)))
+
+  db <- m$store$db$get("data2")
+  expect_that(db$fixed, equals(hash_object(list(pi))))
+  expect_that(db$fixed, equals(hash_object(res)))
+  expect_that(db$depends, equals(empty_named_list()))
+  expect_that(db$code$functions, equals(empty_named_list()))
+  expect_that(db$code$packages, equals(list()))
+  
+  res <- m$make("data3")
+  expect_that(res, is_identical_to(list(pi)))
+  
+  expect_that(db$fixed, equals(hash_object(list(pi))))
+  expect_that(db$fixed, equals(hash_object(res)))
+  expect_that(db$depends, equals(empty_named_list()))
+  expect_that(db$code$functions, equals(empty_named_list()))
+  expect_that(db$code$packages, equals(list()))
+
+  ## Getting a bit more silly down here:
+  res <- m$make("data4")
+  expect_that(res, is_identical_to(list("pi")))
+
+  res <- m$make("data5")
+  expect_that(res, is_identical_to(list("my_constant", pi)))
+
+  res <- m$make("data6")
+  expect_that(res, is_identical_to(list("my_constant", pi, list(TRUE))))
+
+  ## Rewrite the code and check that it forces a rebuild as the
+  ## *value* of the constant changes.
+  writeLines(paste(str, "* 2"), "code_literal.R")
+  res <- m$make("data3")
+  
+  expect_that(res, is_identical_to(list(2 * pi)))
+
+  db <- m$store$db$get("data3")
+  expect_that(db$fixed, equals(hash_object(list(2 * pi))))
+  expect_that(db$fixed, equals(hash_object(res)))
+  expect_that(db$depends, equals(empty_named_list()))
+  expect_that(db$code$functions, equals(empty_named_list()))
+  expect_that(db$code$packages, equals(list()))
+})
