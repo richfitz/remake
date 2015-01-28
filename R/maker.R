@@ -7,6 +7,7 @@
     path=NULL,
     store=NULL,
     targets=NULL,
+    interactive=NULL,
     verbose=NULL,
     default=NULL,
 
@@ -14,12 +15,25 @@
       self$file <- maker_file
       self$path <- "."
       self$verbose <- maker_verbose(verbose)
-      self$reload()
+      if (self$is_interactive()) {
+        self$interactive <- maker_interactive()
+      } else {
+        self$reload()
+      }
+    },
+
+    is_interactive=function() {
+      is.null(self$file)
     },
 
     reload=function() {
       self$store <- store$new(self$path)
-      config <- read_maker_file(self$file)
+      if (self$is_interactive()) {
+        config <- self$interactive
+        config$hash <- hash_object(self$interactive)
+      } else {
+        config <- read_maker_file(self$file)
+      }
       self$hash <- config$hash
       self$targets <- NULL
       self$add_targets(config$targets)
@@ -71,13 +85,7 @@
       force_all=FALSE, quiet_target=self$verbose$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
-      ## NOTE: Not 100% sure about this.  The "install_packages"
-      ## target requires that the sources are not loaded before it is
-      ## run, because it exists to install required packages.  So it
-      ## needs to be picked up here specially.
-      if (target_name != "install_packages") {
-        self$load_sources()
-      }
+      self$load_sources()
       plan <- self$plan(target_name, dependencies_only)
       for (i in plan) {
         is_last <- i == target_name
@@ -109,9 +117,17 @@
     },
 
     load_sources=function() {
-      if (!identical(hash_files(names(self$hash)), self$hash)) {
-        self$print_message("READ", "", "# reloading makerfile")
-        self$reload()
+      if (self$is_interactive()) {
+        if (!identical(self$hash, hash_object(self$interactive))) {
+          ## TODO: Can't paint here because paint is not defined.
+          ## self$print_message("READ", "", "# reloading makerfile")
+          self$reload()
+        }
+      } else {
+        if (!identical(hash_files(names(self$hash)), self$hash)) {
+          self$print_message("READ", "", "# reloading makerfile")
+          self$reload()
+        }
       }
 
       if (!self$store$env$current()) {

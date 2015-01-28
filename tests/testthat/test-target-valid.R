@@ -400,3 +400,9 @@ test_that("Error messages", {
   expect_that(maker("maker_invalid.yml"),
               throws_error("While processing target 'all'"))
 })
+
+test_that("Targets from calls", {
+  t1 <- make_target("a", list(command="foo(b)"))
+  t2 <- make_target("a", list(command=quote(foo(b))))
+  expect_that(t1, is_identical_to(t2))
+})

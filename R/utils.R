@@ -260,6 +260,8 @@ rep_along <- function(x, along.with) {
 }
 
 ## This is just to avoid dealing with .onLoad
+## TODO: Replace with a closure and port to crayon, but probably also
+## do at onLoad()
 painter <- R6Class(
   public=list(
     do_paint=NULL,

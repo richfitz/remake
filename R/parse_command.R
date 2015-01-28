@@ -33,6 +33,7 @@ process_target_command <- function(name, dat) {
   if (!is.null(dat$command)) {
     cmd <- parse_target_command(name, dat$command)
 
+    ## TODO: This is *always* true now; not what we're really looking for..
     if ("depends" %in% names(dat) && length(dat$depends > 0)) {
       if (is.null(cmd$chain)) {
         cmd$depends <- c(cmd$depends, dat$depends)
@@ -57,7 +58,7 @@ process_target_command <- function(name, dat) {
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
 parse_target_command <- function(target, command) {
-  if (length(command) > 1L) {
+  if (is.character(command) && length(command) > 1L) {
     ## This is an early exit, which is slightly evil but avoids this
     ## whole function being a big if/else statement.
     return(parse_target_chain(target, command))
@@ -168,16 +169,21 @@ parse_command <- function(str) {
                        names=vcapply(args[is_target], as.character,
                          USE.NAMES=FALSE))
   
-  list(rule=rule, args=args, depends=depends, is_target=is_target)
+  list(rule=rule, args=args, depends=depends, is_target=is_target,
+       command=res)
 }
 
 check_command <- function(str) {
-  assert_scalar_character(str)
-  res <- parse(text=as.character(str), keep.source=FALSE)
-  if (length(res) != 1L) {
-    stop("Expected single expression")
+  if (is.language(str)) {
+    res <- str
+  } else {
+    assert_scalar_character(str)
+    res <- parse(text=as.character(str), keep.source=FALSE)
+    if (length(res) != 1L) {
+      stop("Expected single expression")
+    }
+    res <- res[[1]]
   }
-  res <- res[[1]]
   if (length(res) == 0) {
     stop("I don't think this is possible")
   }
