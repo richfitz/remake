@@ -418,10 +418,10 @@ filter_targets_by_type <- function(targets, types) {
 }
 
 dependency_names <- function(x) {
-  vapply(x, "[[", "name", FUN.VALUE=character(1))
+  vcapply(x, "[[", "name")
 }
 dependency_types <- function(x) {
-  vapply(x, "[[", "type", FUN.VALUE=character(1))
+  vcapply(x, "[[", "type")
 }
 
 ## TODO: There is an issue here for getting options for rules that
