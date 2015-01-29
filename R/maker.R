@@ -10,6 +10,7 @@
     interactive=NULL,
     verbose=NULL,
     default=NULL,
+    active_bindings=list(target=character(0), source=character(0)),
 
     initialize=function(maker_file="maker.yml", verbose=TRUE) {
       self$file <- maker_file
@@ -130,9 +131,9 @@
         }
       }
 
-      if (!self$store$env$current()) {
+      if (!self$store$env$is_current()) {
         self$print_message("READ", "", "# loading sources")
-        self$store$env$reload()
+        self$store$env$reload(TRUE)
       }
     },
 
