@@ -34,3 +34,8 @@ maker_interactive <- function() {
        sources=character(0),
        packages=character(0))
 }
+
+target <- function(name, expr, ...) {
+  expr <- substitute(expr)
+  make_target(name, c(list(command=expr), list(...)))
+}

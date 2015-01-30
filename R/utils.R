@@ -315,3 +315,8 @@ viapply <- function(X, FUN, ...) {
 vcapply <- function(X, FUN, ...) {
   vapply(X, FUN, character(1), ...)
 }
+
+uninvisible <- function(x) {
+  force(x)
+  x
+}

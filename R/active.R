@@ -12,7 +12,7 @@ make_active_binding_function <- function(m, name, type) {
         oo <- m$verbose$print_noop
         on.exit(m$verbose$print_noop <- oo)
         m$verbose$print_noop <- FALSE
-        m$make1(name)
+        uninvisible(m$make1(name))
       } else if (type == "source") {
         m$store$env$env[[name]]
       } else {
@@ -32,7 +32,7 @@ maker_set_active_bindings <- function(m, type, envir=.GlobalEnv,
     names <- unname(dependency_names(objects))
   } else if (type == "source") {
     m$store$env$reload()
-    names <- ls(m$store$env$env, all=TRUE)
+    names <- ls(m$store$env$env, all.names=TRUE)
   } else {
     stop("Unknown type ", type)
   }
@@ -50,23 +50,23 @@ maker_set_active_bindings <- function(m, type, envir=.GlobalEnv,
 ## name is assumed valid, given its type.  This will be most useful
 ## for when we add targets one at a time in interactive mode and
 ## global mode.
-maker_set_active_binding <- function(m, name, type, envir=.GlobalEnv,
+maker_set_active_binding <- function(m, name, type, envir=m$envir,
                                      force=FALSE) {
-  check_binding(name, envir, force)
+  check_active_bindings(name, envir, force)
   makeActiveBinding(name, make_active_binding_function(m, name, type),
                     envir)
   m$active_bindings[[type]] <- union(m$active_bindings, name)
 }
 
-maker_delete_active_bindings <- function(m, type, envir=.GlobalEnv) {
+maker_delete_active_bindings <- function(m, type, envir=m$envir) {
   names <- filter_active_bindings(m$active_bindings[[type]], envir)
   rm(list=names, envir=envir)
   m$active_bindings[[type]] <- character(0)
   invisible(names)
 }
 
-maker_purge_active_bindings <- function(envir=.GlobalEnv) {
-  names <- filter_active_bindings(ls(envir, all=TRUE), envir)
+maker_purge_active_bindings <- function(envir=m$envir) {
+  names <- filter_active_bindings(ls(envir, all.names=TRUE), envir)
   rm(list=names, envir=envir)
   for (t in names(m$active_bindings)) {
     m$active_bindings[[t]] <- character(0)
@@ -74,7 +74,7 @@ maker_purge_active_bindings <- function(envir=.GlobalEnv) {
   invisible(names)
 }
 
-maker_resolve_active_bindings <- function(m, type, envir=.GlobalEnv,
+maker_resolve_active_bindings <- function(m, type, envir=m$envir,
                                           force=FALSE) {
   names <- filter_active_bindings(m$active_bindings[[type]], envir)
   for (i in names) {
@@ -92,7 +92,7 @@ maker_resolve_active_bindings <- function(m, type, envir=.GlobalEnv,
 }
 
 filter_active_bindings <- function(names, envir, normal=FALSE) {
-  names <- intersect(names, ls(envir, all=TRUE))
+  names <- intersect(names, ls(envir, all.names=TRUE))
   is_binding <- vlapply(names, bindingIsActive, envir)
   names[if (normal) !is_binding else is_binding]
 }
@@ -107,4 +107,20 @@ check_active_bindings <- function(names, envir, force=FALSE) {
            paste(normal, collapse=", "))
     }
   }
+}
+
+## This helper is useful because it first deletes all the active
+## bindings that it knows that it has created, and then builds a new
+## set.  Of course, this is probably overkill and what we'd really
+## want to do here is:
+##
+##   * delete all previously established bindings that would not be
+##     recreated
+##   * create new bindings that do not already exist
+##
+## But that optimisation can be made later and somewhat transparently
+## to the way that it is used.
+maker_reload_active_bindings <- function(m, type, envir=m$envir) {
+  maker_delete_active_bindings(m, type, envir)
+  maker_set_active_bindings(m, type, envir)
 }

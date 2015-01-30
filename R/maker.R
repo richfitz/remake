@@ -11,11 +11,17 @@
     verbose=NULL,
     default=NULL,
     active_bindings=list(target=character(0), source=character(0)),
+    envir=NULL,
 
-    initialize=function(maker_file="maker.yml", verbose=TRUE) {
+    initialize=function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
+      #
       self$file <- maker_file
       self$path <- "."
       self$verbose <- maker_verbose(verbose)
+      if (!is.null(envir)) {
+        assert_environment(envir)
+        self$envir <- envir
+      }
       if (self$is_interactive()) {
         self$interactive <- maker_interactive()
       } else {
@@ -44,9 +50,31 @@
       private$initialize_default_target(config$target_default)
       private$initialize_message_format()
       self$store$env <- managed_environment$new(config$packages, config$sources)
+      if (!is.null(self$envir)) {
+        ## TODO: By default we don't run load_sources here: that's
+        ## potentially a bit confusing because functions aren't made
+        ## available.  I suspect that we should run load_sources here
+        ## and load the functions: what's less clear is if that should
+        ## only be done when given an environment or done always.
+        ##
+        ##     self$load_sources()
+        ##     maker_reload_active_bindings(self, "source")
+        ##
+        ## Another option would be to put out just the rule names as
+        ## special bindings.  That option I like the least though.
+        ##
+        ## A third option is to only dump out active bindings during
+        ## load_sources itself.  That might be the most consistent.
+        maker_reload_active_bindings(self, "target")
+      }
     },
 
     make=function(target_names=NULL, ...) {
+      ## TODO: This is here because of an issue with interactive
+      ## getting access to the print function.  It's duplicated with
+      ## make1.  That's probably going to represent a time-sink at
+      ## some point; perhaps farm out to users ot make1?
+      self$load_sources()
       if (is.null(target_names)) {
         target_names <- self$target_default()
       }
@@ -104,6 +132,8 @@
       }
       pkgs <- lapply(self$store$env$packages,
                      function(x) sprintf('library("%s")', x))
+      ## TODO: This does not work for *directories*.  Emit the body of
+      ## source_dir with appropriate things set.
       srcs <- lapply(self$store$env$sources,
                      function(x) sprintf('source("%s")', x))
       ## Probably best to filter by "real" here?
@@ -134,6 +164,10 @@
       if (!self$store$env$is_current()) {
         self$print_message("READ", "", "# loading sources")
         self$store$env$reload(TRUE)
+      }
+
+      if (!is.null(self$envir)) {
+        maker_reload_active_bindings(self, "source")
       }
     },
 
@@ -378,7 +412,39 @@
     diagram=function() {
       diagram(self)
     }
-    ),
+  ),
+
+  active=list(
+    add=function(value) {
+      if (missing(value)) {
+        message("Pass in libary/source/target calls here")
+      } else {
+        if (!self$is_interactive()) {
+          stop("Cannot add packages when not running in interactive mode")
+        }
+        if (inherits(value, "target_base")) {
+          self$interactive$targets[[value$name]] <- value
+        } else if (is.character(value)) {
+          ## NOTE: The other way of doing this is by assuming that
+          ## things that exist or end in .[Rrs] or a slash are sources
+          ## and try to load everything else as packages?  The other
+          ## option would be do allow package:testthat.
+          is_source <- (grepl("\\.[rR]$", value) |
+                          grepl("/", value) |
+                            file.exists(value))
+          value[!is_source] <- sub("^package:", "", value[!is_source])
+          self$interactive$packages <- union(self$interactive$packages,
+                                             value[!is_source])
+          self$interactive$sources <- union(self$interactive$sources,
+                                            value[is_source])
+        } else {
+          stop("Can't add objects of class: ",
+               paste(class(value), collapse=" / "))
+        }
+      }
+    }
+  ),
+
   private=list(
     fmt=NULL,
 
@@ -479,6 +545,9 @@
 ##' target as it is built/checked.  This argument is passed to
 ##' \code{\link{maker_verbose}}; valid options are \code{TRUE},
 ##' \code{FALSE} and also the result of calling \code{maker_verbose}.
+##' @param envir An environment into which to create \emph{links} to
+##' maker-controlled objects (targets and sources).  \code{.GlobalEnv}
+##' is a reasonable choice.  This will change in a future version.
 ##' @examples
 ##' \dontrun{
 ##' # create a quiet maker instance
@@ -490,8 +559,8 @@
 ##' m$make()
 ##' }
 ##' @export
-maker <- function(maker_file="maker.yml", verbose=TRUE) {
-  .R6_maker$new(maker_file, verbose=verbose)
+maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
+  .R6_maker$new(maker_file, verbose=verbose, envir=envir)
 }
 
 ## TODO: There is far too much going on in here: split this into

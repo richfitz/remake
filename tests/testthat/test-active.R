@@ -102,3 +102,21 @@ test_that("Active sources", {
   expect_that(e$process_data <- identity,
               throws_error("read-only"))
 })
+
+test_that("Global mode", {
+  cleanup()
+  e <- new.env()
+  m <- maker::maker(envir=e)
+  expect_that(exists("processed", e), is_true())
+  expect_that(exists("download_data", e), is_false())
+  m$load_sources()
+  expect_that(exists("processed", e), is_true())
+  expect_that(exists("download_data", e), is_true())
+  expect_that(bindingIsActive("processed", e), is_true())
+  expect_that(bindingIsActive("download_data", e), is_true())
+
+  maker_delete_active_bindings(m, "target", e)
+  maker_delete_active_bindings(m, "source", e)
+  expect_that(exists("processed", e), is_false())
+  expect_that(exists("download_data", e), is_false())
+})

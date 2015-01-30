@@ -22,6 +22,12 @@ assert_null <- function(x, name=deparse(substitute(x))) {
   }
 }
 
+assert_environment <- function(x, name=deparse(substitute(x))) {
+  if (!is.environment(x)) {
+    stop(sprintf("%s must be an environment", name), call.=FALSE)
+  }
+}
+
 assert_list <- function(x, name=deparse(substitute(x))) {
   if (!is.list(x)) {
     stop(sprintf("%s must be a list", name), call.=FALSE)

@@ -85,7 +85,25 @@ test_that("all together", {
   add_target(m, "processed", process_data("data.csv"))
   add_target(m, "plot.pdf", myplot(processed),
              plot=list(width=8, height=4))
-  m$load_sources()
+
+  m$make("plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_true())
+})
+
+test_that("all together (Active)", {
+  cleanup()
+  m <- maker(NULL)
+  expect_that(m$is_interactive(), is_true())
+
+  m <- maker(NULL)
+  m$add <- "package:testthat"
+  m$add <- "code.R"
+  m$add <- target("data.csv", download_data(target_name),
+                  cleanup_level="purge")
+  m$add <- target("processed", process_data("data.csv"))
+  m$add <- target("plot.pdf", myplot(processed),
+                  plot=list(width=8, height=4))
+
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
 })
