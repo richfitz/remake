@@ -9,13 +9,21 @@ make_active_binding_function <- function(m, name, type) {
   function(value) {
     if (missing(value)) {
       if (type == "target") {
-        oo <- m$verbose$print_noop
-        on.exit(m$verbose$print_noop <- oo)
-        m$verbose$print_noop <- FALSE
-        uninvisible(m$make1(name))
+        if (m$is_interactive() && !m$interactive$active) {
+          ret <- m$interactive$targets[[name]]
+          class(ret) <- c("target_placeholder", class(ret))
+          ret
+        } else {
+          oo <- m$verbose$print_noop
+          on.exit(m$verbose$print_noop <- oo)
+          m$verbose$print_noop <- FALSE
+          uninvisible(m$make1(name))
+        }
       } else if (type == "source") {
         m$store$env$env[[name]]
       } else {
+        ## TODO: This error show throw when *making* the binding, not
+        ## accessing it.
         stop("Unknown type ", type)
       }
     } else {
@@ -55,7 +63,7 @@ maker_set_active_binding <- function(m, name, type, envir=m$envir,
   check_active_bindings(name, envir, force)
   makeActiveBinding(name, make_active_binding_function(m, name, type),
                     envir)
-  m$active_bindings[[type]] <- union(m$active_bindings, name)
+  m$active_bindings[[type]] <- union(m$active_bindings[[type]], name)
 }
 
 maker_delete_active_bindings <- function(m, type, envir=m$envir) {

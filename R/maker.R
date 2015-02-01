@@ -43,11 +43,13 @@
       }
       self$hash <- config$hash
       self$targets <- NULL
-      self$add_targets(config$targets)
-      private$initialize_cleanup_targets()
-      private$initialize_targets_activate()
-      private$check_rule_target_clash()
-      private$initialize_default_target(config$target_default)
+      if (!(self$is_interactive() && !self$interactive$active)) {
+        self$add_targets(config$targets)
+        private$initialize_cleanup_targets()
+        private$initialize_targets_activate()
+        private$check_rule_target_clash()
+        private$initialize_default_target(config$target_default)
+      }
       private$initialize_message_format()
       self$store$env <- managed_environment$new(config$packages, config$sources)
       if (!is.null(self$envir)) {
@@ -74,6 +76,15 @@
       ## getting access to the print function.  It's duplicated with
       ## make1.  That's probably going to represent a time-sink at
       ## some point; perhaps farm out to users ot make1?
+      ##
+      ## TODO: Need to check if interactive that we are activated.  Or
+      ## perhaps we should activate at this point.  This is a bit of a
+      ## trick with the active bindings because accessing one of those
+      ## should probably not trigger a build.
+      if (self$is_interactive()) {
+        ## TODO: Check that this does about the right thing:
+        self$interactive$active <- TRUE
+      }
       self$load_sources()
       if (is.null(target_names)) {
         target_names <- self$target_default()
@@ -418,29 +429,15 @@
     add=function(value) {
       if (missing(value)) {
         message("Pass in libary/source/target calls here")
+      } else if (!self$is_interactive()) {
+        stop("Cannot add packages when not running in interactive mode")
+      } else  if (inherits(value, "target_base")) {
+        maker_add_target(self, value)
+      } else if (is.character(value)) {
+        maker_add_sources(self, value)
       } else {
-        if (!self$is_interactive()) {
-          stop("Cannot add packages when not running in interactive mode")
-        }
-        if (inherits(value, "target_base")) {
-          self$interactive$targets[[value$name]] <- value
-        } else if (is.character(value)) {
-          ## NOTE: The other way of doing this is by assuming that
-          ## things that exist or end in .[Rrs] or a slash are sources
-          ## and try to load everything else as packages?  The other
-          ## option would be do allow package:testthat.
-          is_source <- (grepl("\\.[rR]$", value) |
-                          grepl("/", value) |
-                            file.exists(value))
-          value[!is_source] <- sub("^package:", "", value[!is_source])
-          self$interactive$packages <- union(self$interactive$packages,
-                                             value[!is_source])
-          self$interactive$sources <- union(self$interactive$sources,
-                                            value[is_source])
-        } else {
-          stop("Can't add objects of class: ",
-               paste(class(value), collapse=" / "))
-        }
+        stop("Can't add objects of class: ",
+             paste(class(value), collapse=" / "))
       }
     }
   ),
@@ -514,8 +511,7 @@
       width <- getOption("width")
       w0 <- 10 # nchar("[ BUILD ] ")
       keep <- !vlapply(self$targets, function(x) isTRUE(x$implicit))
-      target_names <- names(self$targets)[keep]
-      target_width <- max(nchar(target_names))
+      target_width <- max(0, nchar(names(self$targets)[keep]))
       private$fmt <- list(
         no_cmd="%s %s",
         with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),

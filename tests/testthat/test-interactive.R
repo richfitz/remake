@@ -86,8 +86,10 @@ test_that("all together", {
   add_target(m, "plot.pdf", myplot(processed),
              plot=list(width=8, height=4))
 
+  expect_that(m$interactive$active, is_false())
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(m$interactive$active, is_true())
 })
 
 test_that("all together (Active)", {
@@ -104,6 +106,51 @@ test_that("all together (Active)", {
   m$add <- target("plot.pdf", myplot(processed),
                   plot=list(width=8, height=4))
 
+  expect_that(m$interactive$active, is_false())
   m$make("plot.pdf")
+  expect_that(m$interactive$active, is_true())
+
   expect_that(file.exists("plot.pdf"), is_true())
+})
+
+test_that("Active and global", {
+  cleanup()
+
+  e <- new.env()
+  m <- maker(NULL, envir=e)
+  expect_that(m$is_interactive(), is_true())
+  expect_that(m$envir, not(is_null()))
+
+  m$add <- "package:testthat"
+  m$add <- "code.R"
+
+  expect_that("download_data" %in% ls(e), is_true())
+  expect_that(bindingIsActive("download_data", e), is_true())
+  expect_that(is.function(e$download_data), is_true())
+
+  ## Next, add targets:
+  m$add <- target("data.csv", download_data(target_name),
+                  cleanup_level="purge")
+  expect_that(exists("data.csv", e), is_false())
+
+  m$add <- target("processed", process_data("data.csv"))
+  expect_that(exists("processed", e), is_true())
+  expect_that(bindingIsActive("processed", e), is_true())
+  expect_that(e$processed, is_a("target_placeholder"))
+  expect_that(print(e$processed),
+              prints_text("<target processed>"))
+
+  m$add <- target("plot.pdf", myplot(processed),
+                  plot=list(width=8, height=4))
+
+  expect_that(m$active_bindings$target,
+              equals("processed"))
+
+  expect_that(m$interactive$active, is_false())
+  m$make("plot.pdf")
+  expect_that(m$interactive$active, is_true())
+
+  expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(bindingIsActive("processed", e), is_true())
+  expect_that(e$processed, is_a("data.frame"))
 })
