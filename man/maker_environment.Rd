@@ -25,7 +25,7 @@ there are no maker environments to detach.}
 \description{
 These functions may be useful in debugging workflows.  A
 \code{maker_environment} object is created by running
-\code{m$make_dependencies(target_name)}, where \code{target_name}
+\code{make_dependencies(m, target_name)}, where \code{target_name}
 is the name of some target.  This returns an environment with all
 the dependencies of that target so you can troubleshoot/develop
 the rule that will process it.  The \emph{parent} environment of

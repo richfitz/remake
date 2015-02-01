@@ -25,7 +25,8 @@ test_that("simple run", {
                                  m$store$env$env$download_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
-  expect_that(m$dependency_status("data.csv", TRUE), equals(cmp))
+  expect_that(dependency_status(m$targets[["data.csv"]], m$store, TRUE),
+              equals(cmp))
 
   cmp <- list(version=m$store$version,
               name="processed",
@@ -36,14 +37,15 @@ test_that("simple run", {
                                  m$store$env$env$process_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
-  expect_that(m$dependency_status("processed", TRUE), equals(cmp))
+  expect_that(dependency_status(m$targets[["processed"]], m$store, TRUE),
+              equals(cmp))
 
   ## NOTE: I don't really understand why we're sensitive to order
   ## here, differently from the command line and within R.  It seems
   ## to be how grDevices/graphics sort on lower/uppercase -- setting
   ## different locales perhaps?  This is dealt with by the
   ## identical_map() function within the package
-  res <- m$dependency_status("plot.pdf", TRUE)
+  res <- dependency_status(m$targets[["plot.pdf"]], m$store, TRUE)
   pkgs <- c("grDevices", "graphics")
   expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
   res$code$packages <- res$code$packages[pkgs]
@@ -62,9 +64,10 @@ test_that("simple run", {
   expect_that(res, equals(cmp))
 
   ## Run the build system manually:
-  m$build("data.csv")
-  m$build("processed")
-  m$build("plot.pdf")
+  mp <- maker_private(m)
+  mp$update("data.csv", force=TRUE)
+  mp$update("processed", force=TRUE)
+  mp$update("plot.pdf", force=TRUE)
 
   expect_that(m$is_current("data.csv"),  is_true())
   expect_that(m$is_current("processed"), is_true())
@@ -87,10 +90,11 @@ test_that("Depending on a file we don't make", {
   m <- maker("maker2.yml")
   m$load_sources()
 
-  expect_that(m$build("data.csv"),
+  mp <- maker_private(m)
+  expect_that(mp$update("data.csv", force=TRUE),
               throws_error("Can't build implicit targets"))
-  m$build("processed")
-  m$build("plot.pdf")
+  mp$update("processed", force=TRUE)
+  mp$update("plot.pdf", force=TRUE)
   expect_that(file.exists("plot.pdf"), is_true())
   m$make("clean")
   expect_that(file.exists("plot.pdf"), is_false())

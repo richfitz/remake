@@ -29,7 +29,7 @@ main <- function(args=commandArgs(TRUE)) {
     if (length(targets) > 1L) {
       stop("Expected exactly one target with --script")
     }
-    writeLines(m$script(targets))
+    writeLines(maker_script(m, targets))
   } else {
     m$make(targets, dry_run=opts$dry_run)
   }
@@ -116,7 +116,7 @@ make <- function(target_names=NULL, maker_file="maker.yml") {
 ##' @rdname make
 ##' @export
 make_script <- function(target_names=NULL, maker_file="maker.yml") {
-  maker(maker_file)$script(target_names)
+  maker_script(maker(maker_file), target_names)
 }
 
 ##' Install all missing packages that are required to use a

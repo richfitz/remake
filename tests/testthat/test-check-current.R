@@ -35,7 +35,7 @@ test_that("Manual", {
   m$load_sources()
   store <- m$store
 
-  t <- m$get_target("data.csv")
+  t <- m$targets[["data.csv"]]
   expect_that(is_current(t, store),          is_false())
   expect_that(is_current(t, store, "all"),     is_false())
   expect_that(is_current(t, store, "code"),    is_false())
@@ -92,7 +92,7 @@ test_that("In target", {
   m$load_sources()
   store <- m$store
 
-  t <- m$get_target("data.csv")
+  t <- m$targets[["data.csv"]]
   expect_that(t$check, equals("exists"))
   expect_that(is_current(t, store), is_false())
 
@@ -126,15 +126,15 @@ test_that("dependency_status", {
   m$load_sources()
   store <- m$store
 
-  t <- m$get_target("data.csv")
+  t <- m$targets[["data.csv"]]
   expect_that(t$check, equals("exists"))
   expect_that(is_current(t, store), is_false())
 
-  status <- m$dependency_status("processed")
+  status <- dependency_status(m$targets[["processed"]], m$store)
   expect_that(status$depends, equals(NULL))
   expect_that(status$code, not(equals(NULL)))
 
-  status <- m$dependency_status("data.csv")
+  status <- dependency_status(m$targets[["data.csv"]], m$store)
   expect_that(status$depends, equals(NULL))
   expect_that(status$code, equals(NULL))
 })
@@ -152,40 +152,6 @@ test_that("In maker", {
   expect_that(m$is_current("data.csv"), is_true())
   expect_that(m$is_current("data.csv", "exists"), is_true())
 
-  m$expire("plot.pdf")
-
-  expect_that(m$is_current("data.csv"), is_true())
-  expect_that(m$is_current("data.csv", "exists"), is_true())
-  expect_that(m$store$db$contains("data.csv"), is_true())
-  expect_that(m$is_current("processed"), is_true())
-  expect_that(m$is_current("processed", "exists"), is_true())
-  expect_that(m$is_current("plot.pdf"), is_false())
-  expect_that(m$is_current("plot.pdf", "exists"), is_true())
-
-  m$expire("plot.pdf", recursive=TRUE)
-
-  expect_that(m$is_current("data.csv"), is_true())
-  expect_that(m$is_current("data.csv", "exists"), is_true())
-  expect_that(m$store$db$contains("data.csv"), is_false())
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$is_current("processed", "exists"), is_true())
-  expect_that(m$is_current("plot.pdf"), is_false())
-  expect_that(m$is_current("plot.pdf", "exists"), is_true())
-
-  m$make("plot.pdf", check="exists")
-
-  ## Did not make anything:
-  expect_that(m$is_current("data.csv"), is_true())
-  expect_that(m$is_current("data.csv", "exists"), is_true())
-  expect_that(m$store$db$contains("data.csv"), is_false())
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$is_current("processed", "exists"), is_true())
-  expect_that(m$is_current("plot.pdf"), is_false())
-  expect_that(m$is_current("plot.pdf", "exists"), is_true())
-
-  m$make("plot.pdf", check="all")
-
-  ## Remade everything:
   expect_that(m$is_current("data.csv"), is_true())
   expect_that(m$is_current("data.csv", "exists"), is_true())
   expect_that(m$store$db$contains("data.csv"), is_true())

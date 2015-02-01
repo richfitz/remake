@@ -17,11 +17,11 @@ test_that("Modular makerfile", {
   ## afterwards.
   expect_that(m$target_names()[1:4],
               equals(c("all", "processed", "plot.pdf", "data.csv")))
-  expect_that(m$target_default(), equals("all"))
+  expect_that(maker_private(m)$target_default(), equals("all"))
 
   mod <- maker("modular_module.yml")
   mod$load_sources()
-  expect_that(mod$target_default(), equals("data.csv"))
+  expect_that(maker_private(mod)$target_default(), equals("data.csv"))
 
   m$make("data.csv")
 

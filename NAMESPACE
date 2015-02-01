@@ -2,6 +2,7 @@
 
 S3method(print,maker_environment)
 S3method(print,maker_script)
+S3method(print,target_placeholder)
 export(diagram)
 export(extensions)
 export(install_maker)

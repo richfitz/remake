@@ -89,7 +89,7 @@ status <- function(target_name, graph, m) {
   ## descent (dbd):
   dirty <- dbd <- structure(logical(length(candidates)), names=candidates)
   for (t in candidates) {
-    x <- m$get_target(t)
+    x <- m$targets[[t]]
     dirty[[t]] <- !is_current(x, m$store)
     if (check_depends(x$check)) {
       d <- x$depends_name[x$depends_type %in% c("file", "object")]

@@ -2,49 +2,36 @@
 .R6_maker <- R6Class(
   "maker",
   public=list(
-    file=NULL,
-    hash=NULL,
-    path=NULL,
     store=NULL,
     targets=NULL,
-    interactive=NULL,
-    verbose=NULL,
-    default=NULL,
-    active_bindings=list(target=character(0), source=character(0)),
-    envir=NULL,
 
     initialize=function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
       #
-      self$file <- maker_file
-      self$path <- "."
-      self$verbose <- maker_verbose(verbose)
+      private$file <- maker_file
+      private$path <- "."
+      private$verbose <- maker_verbose(verbose)
       if (!is.null(envir)) {
-        assert_environment(envir)
-        self$envir <- envir
+        private$active_bindings <- maker_active_bindings_manager(envir)
       }
-      if (self$is_interactive()) {
-        self$interactive <- maker_interactive()
+      if (private$is_interactive()) {
+        private$interactive <- maker_interactive()
       } else {
         self$reload()
       }
     },
 
-    is_interactive=function() {
-      is.null(self$file)
-    },
-
     reload=function() {
-      self$store <- store$new(self$path)
-      if (self$is_interactive()) {
-        config <- self$interactive
-        config$hash <- hash_object(self$interactive)
+      self$store <- store$new(private$path)
+      if (private$is_interactive()) {
+        config <- private$interactive
+        config$hash <- hash_object(private$interactive)
       } else {
-        config <- read_maker_file(self$file)
+        config <- read_maker_file(private$file)
       }
-      self$hash <- config$hash
+      private$hash <- config$hash
       self$targets <- NULL
-      if (!(self$is_interactive() && !self$interactive$active)) {
-        self$add_targets(config$targets)
+      if (!(private$is_interactive() && !private$interactive$active)) {
+        private$add_targets(config$targets)
         private$initialize_cleanup_targets()
         private$initialize_targets_activate()
         private$check_rule_target_clash()
@@ -52,7 +39,7 @@
       }
       private$initialize_message_format()
       self$store$env <- managed_environment$new(config$packages, config$sources)
-      if (!is.null(self$envir)) {
+      if (!is.null(private$active_bindings)) {
         ## TODO: By default we don't run load_sources here: that's
         ## potentially a bit confusing because functions aren't made
         ## available.  I suspect that we should run load_sources here
@@ -67,7 +54,7 @@
         ##
         ## A third option is to only dump out active bindings during
         ## load_sources itself.  That might be the most consistent.
-        maker_reload_active_bindings(self, "target")
+        maker_reload_active_bindings(self, "target", private$active_bindings)
       }
     },
 
@@ -81,200 +68,43 @@
       ## perhaps we should activate at this point.  This is a bit of a
       ## trick with the active bindings because accessing one of those
       ## should probably not trigger a build.
-      if (self$is_interactive()) {
+      if (private$is_interactive()) {
         ## TODO: Check that this does about the right thing:
-        self$interactive$active <- TRUE
+        private$interactive$active <- TRUE
       }
       self$load_sources()
       if (is.null(target_names)) {
-        target_names <- self$target_default()
+        target_names <- private$target_default()
       }
       for (t in target_names) {
-        self$print_message("MAKE", t, style="angle")
-        last <- self$make1(t, ...)
+        private$print_message("MAKE", t, style="angle")
+        last <- private$make1(t, ...)
       }
       invisible(last)
-    },
-
-    ## NOTE: This one is doing rather a lot more than the case below.
-    ## The logic around here is subject to complete change, too.
-    make_dependencies=function(target_name, ...) {
-      t <- self$get_target(target_name)
-      ## TODO: I don't see the big problem here:
-      if (!(t$type) %in% c("object", "file")) {
-        warning(sprintf("%s is not a real target"))
-      }
-      self$print_message("ENV", t$name, style="angle")
-      self$make1(target_name, ..., dependencies_only=TRUE)
-      deps_name <- t$depends_name[t$depends_type == "object"]
-
-      invisible(maker_environment(self, deps_name, t))
-    },
-
-    ## TODO: Some support for getting *everything* out here.
-    ##   - that's hard because we'd only want to get the up-to-date
-    ##     things, and some of those might be large.
-    ## TODO: Some support for doing a delayedAssign
-    environment=function(target_names) {
-      self$print_message("ENV", "", style="angle")
-      self$load_sources()
-      maker_environment(self, target_names, NULL)
-    },
-
-    make1=function(target_name, dry_run=FALSE, force=FALSE,
-      force_all=FALSE, quiet_target=self$verbose$quiet_target, check=NULL,
-      dependencies_only=FALSE) {
-      #
-      self$load_sources()
-      plan <- self$plan(target_name, dependencies_only)
-      for (i in plan) {
-        is_last <- i == target_name
-        last <- self$update(i, dry_run,
-                            force_all || (force && is_last),
-                            quiet_target=quiet_target, check=check,
-                            return_target=is_last)
-      }
-      invisible(last)
-    },
-
-    script=function(target_name=NULL) {
-      if (is.null(target_name)) {
-        target_name <- self$target_default()
-      }
-      pkgs <- lapply(self$store$env$packages,
-                     function(x) sprintf('library("%s")', x))
-      ## TODO: This does not work for *directories*.  Emit the body of
-      ## source_dir with appropriate things set.
-      srcs <- lapply(self$store$env$sources,
-                     function(x) sprintf('source("%s")', x))
-      ## Probably best to filter by "real" here?
-      cmds <- lapply(self$plan(target_name), function(i)
-                     target_run_fake(self$get_target(i), for_script=TRUE))
-
-      src <- c(unlist(pkgs),
-               unlist(srcs),
-               unlist(cmds))
-      class(src) <- "maker_script"
-      src
     },
 
     load_sources=function() {
-      if (self$is_interactive()) {
-        if (!identical(self$hash, hash_object(self$interactive))) {
+      if (private$is_interactive()) {
+        if (!identical(private$hash, hash_object(private$interactive))) {
           ## TODO: Can't paint here because paint is not defined.
-          ## self$print_message("READ", "", "# reloading makerfile")
+          ## private$print_message("READ", "", "# reloading makerfile")
           self$reload()
         }
       } else {
-        if (!identical(hash_files(names(self$hash)), self$hash)) {
-          self$print_message("READ", "", "# reloading makerfile")
+        if (!identical(hash_files(names(private$hash)), private$hash)) {
+          private$print_message("READ", "", "# reloading makerfile")
           self$reload()
         }
       }
 
       if (!self$store$env$is_current()) {
-        self$print_message("READ", "", "# loading sources")
+        private$print_message("READ", "", "# loading sources")
         self$store$env$reload(TRUE)
       }
 
-      if (!is.null(self$envir)) {
-        maker_reload_active_bindings(self, "source")
+      if (!is.null(private$active_bindings)) {
+        maker_reload_active_bindings(self, "source", private$active_bindings)
       }
-    },
-
-    update=function(target_name, dry_run=FALSE, force=FALSE,
-      quiet_target=self$verbose$quiet_target, check=NULL,
-      return_target=TRUE) {
-      #
-      target <- self$get_target(target_name)
-      current <- !force && is_current(target, self$store, check)
-
-      skip <- isTRUE(target$implicit)
-      ## skip <- status == "" && target$type == "file" && is.null(target$rule)
-      if (!skip) {
-        status <- if (current) "OK" else target$status_string
-        cmd <- if (current) NULL else target_run_fake(target)
-        style <- if (is.null(target$chain_parent)) "square" else "curly"
-        self$print_message(status, target_name, cmd, style)
-      }
-
-      if (!dry_run) {
-        if (!current) {
-          ## See #12 - targets can specify conditional packages, and
-          ## we load them, but also unload them afterwards (including
-          ## dependencies).  This does not leave packages loaded for
-          ## dependent taragets though.
-          extra <- load_extra_packages(target$packages)
-          ret <- target_build(target, self$store, quiet=quiet_target)
-          unload_extra_packages(extra)
-          invisible(ret)
-        } else if (return_target) {
-          invisible(target_get(target, self$store))
-        }
-      }
-    },
-
-    plan=function(target_name=NULL, dependencies_only=FALSE) {
-      if (is.null(target_name)) {
-        target_name <- self$target_default()
-      }
-      graph <- self$dependency_graph()
-      dependencies(target_name, graph, dependencies_only)
-    },
-
-    status=function(target_name=NULL) {
-      if (is.null(target_name)) {
-        target_name <- self$target_default()
-      }
-      graph <- self$dependency_graph()
-      status(target_name, graph, self)
-    },
-
-    print_message=function(status, target_name, cmd=NULL, style="square") {
-      verbose <- self$verbose
-      if (!verbose$print_progress ||
-          !verbose$print_noop && status %in% c("", "OK")) {
-        return()
-      } else if (!verbose$print_command) {
-        cmd <- NULL
-      }
-      paint <- private$fmt$p$paint
-      col <- status_colour(status)
-      status <- brackets(paint(sprintf("%5s", status), col), style)
-      if (!is.null(cmd)) {
-        if (verbose$print_command_abbreviate) {
-          w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
-          cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
-        }
-      }
-      if (is.null(cmd)) {
-        str <- sprintf(private$fmt$no_cmd, status, target_name)
-      } else {
-        str <- sprintf(private$fmt$with_cmd, status, target_name,
-                       private$fmt$p$paint(cmd, "grey"))
-      }
-      message(str)
-    },
-
-    expire=function(target_name, recursive=FALSE) {
-      if (recursive) {
-        graph <- self$dependency_graph()
-        for (t in dependencies(target_name, graph)) {
-          self$expire(t)
-        }
-      } else {
-        self$store$db$del(target_name, missing_ok=TRUE)
-      }
-    },
-
-    archive_export=function(target_name, recursive=TRUE, filename="maker.zip") {
-      archive_export_maker(self, target_name, recursive, filename)
-    },
-
-    ## TODO: Provide candidate set of targets to import?
-    ## TODO: Import files/objects?
-    archive_import=function(filename) {
-      archive_import_maker(self, filename)
     },
 
     remove_targets=function(target_names, chain=TRUE) {
@@ -284,7 +114,7 @@
     },
 
     remove_target=function(target_name, chain=TRUE) {
-      target <- self$get_target(target_name)
+      target <- private$get_target(target_name)
       if (chain && !is.null(target$chain_kids)) {
         chain_names <- dependency_names(target$chain_kids)
         self$remove_targets(chain_names, chain=FALSE)
@@ -312,56 +142,7 @@
         status <- ""
         cmd <- NULL
       }
-      self$print_message(status, target_name, cmd, "round")
-    },
-
-    has_target=function(target_name) {
-      target_name %in% names(self$targets)
-    },
-
-    get_target=function(target_name) {
-      if (!self$has_target(target_name)) {
-        stop("No such target ", target_name)
-      }
-      self$targets[[target_name]]
-    },
-
-    get_targets=function(target_names) {
-      if (!all(self$has_target(target_names))) {
-        stop("No such target ",
-             paste(setdiff(target_names, names(self$targets)),
-                   collapse=", "))
-      }
-      self$targets[target_names]
-    },
-
-    ## TODO: Filter chained targets from this set?
-    get_targets_by_type=function(types) {
-      filter_targets_by_type(self$targets, types)
-    },
-
-    add_targets=function(x, force=FALSE) {
-      if (!all(vlapply(x, inherits, "target_base"))) {
-        stop("All elements must be targets")
-      }
-      target_names <- vcapply(x, "[[", "name")
-      if (any(duplicated(target_names))) {
-        stop("All target names must be unique")
-      }
-      if (any(target_names %in% self$target_names(all=TRUE))) {
-        if (force) {
-          to_drop <- self$target_names() %in% target_names
-          if (any(to_drop)) {
-            self$targets <- self$targets[!to_drop]
-          }
-        } else {
-          stop("Targets already present: ",
-               paste(intersect(target_names, self$target_names()),
-                     collapse=", "))
-        }
-      }
-      names(x) <- target_names
-      self$targets <- c(self$targets, x)
+      private$print_message(status, target_name, cmd, "round")
     },
 
     target_names=function(all=FALSE) {
@@ -373,55 +154,14 @@
       }
     },
 
-    target_default=function() {
-      if (is.null(self$default)) {
-        stop(self$file,
-             " does not define 'target_default' or have target 'all'")
-      }
-      self$default
-    },
-
-    ## Wrappers around the *object* store.  Not sure about the other
-    ## stores, really.
-    ls=function() {
-      self$store$objects$ls()
-    },
-    get=function(name) {
-      self$store$objects$get(name)
-    },
-    export=function(names, envir=.GlobalEnv) {
-      self$store$objects$export(names, envir)
-    },
-
     ## These two are really only used in the tests.
     is_current=function(target_name, check=NULL) {
-      is_current(self$get_target(target_name), self$store, check)
-    },
-    dependency_status=function(target_name, missing_ok=FALSE, check=NULL) {
-      dependency_status(self$get_target(target_name),
-                        self$store, missing_ok, check)
-    },
-
-    build=function(target_name, quiet_target=self$verbose$quiet_target) {
-      target_build(self$get_target(target_name), self$store, quiet_target)
-    },
-
-    dependency_graph=function() {
-      g <- lapply(self$targets, function(t) t$depends_name)
-      topological_sort(g)
+      is_current(private$get_target(target_name), self$store, check)
     },
 
     ## Utilities:
-    gitignore=function() {
-      utility_gitignore(self)
-    },
-
     install_packages=function() {
       utility_install_packages(self)
-    },
-
-    diagram=function() {
-      diagram(self)
     }
   ),
 
@@ -429,7 +169,7 @@
     add=function(value) {
       if (missing(value)) {
         message("Pass in libary/source/target calls here")
-      } else if (!self$is_interactive()) {
+      } else if (!private$is_interactive()) {
         stop("Cannot add packages when not running in interactive mode")
       } else  if (inherits(value, "target_base")) {
         maker_add_target(self, value)
@@ -443,18 +183,27 @@
   ),
 
   private=list(
+    file=NULL,
+    path=NULL,
+    verbose=NULL,
+    default_target=NULL,
+
+    hash=NULL,
+    interactive=NULL,
+    active_bindings=NULL,
+
     fmt=NULL,
 
     initialize_cleanup_targets=function() {
       targets <- lapply(cleanup_target_names(), make_target_cleanup, self)
-      self$add_targets(targets, force=TRUE)
+      private$add_targets(targets, force=TRUE)
     },
 
     ## NOTE: The logic here seems remarkably clumsy.
     initialize_default_target=function(default) {
       if (is.null(default)) {
         if ("all" %in% self$target_names()) {
-          self$default <- "all"
+          private$default_target <- "all"
         }
       } else {
         assert_scalar_character(default, "target_default")
@@ -462,7 +211,7 @@
           stop(sprintf("Default target %s not found in makerfile",
                        default))
         }
-        self$default <- default
+        private$default_target <- default
       }
     },
 
@@ -471,7 +220,7 @@
       chain_kids <- unlist(lapply(self$targets, "[[", "chain_kids"),
                            FALSE)
       if (length(chain_kids) > 0L) {
-        self$add_targets(chain_kids)
+        private$add_targets(chain_kids)
       }
 
       ## Identify and verify all "implicit" file targets
@@ -520,6 +269,10 @@
         p=painter$new(interactive()))
     },
 
+    is_interactive=function() {
+      is.null(private$file)
+    },
+
     check_rule_target_clash=function() {
       ## TODO: Special effort needed for chained rules.
       ## TODO: Filter by realness?
@@ -528,6 +281,130 @@
       if (length(dups) > 0L) {
         warning("Rule name clashes with target name: ",
                 paste(dups, collapse=", "))
+      }
+    },
+
+    target_default=function() {
+      if (is.null(private$default_target)) {
+        stop(private$file,
+             " does not define 'target_default' or have target 'all'")
+      }
+      private$default_target
+    },
+
+    add_targets=function(x, force=FALSE) {
+      if (!all(vlapply(x, inherits, "target_base"))) {
+        stop("All elements must be targets")
+      }
+      target_names <- vcapply(x, "[[", "name")
+      if (any(duplicated(target_names))) {
+        stop("All target names must be unique")
+      }
+      if (any(target_names %in% self$target_names(all=TRUE))) {
+        if (force) {
+          to_drop <- self$target_names() %in% target_names
+          if (any(to_drop)) {
+            self$targets <- self$targets[!to_drop]
+          }
+        } else {
+          stop("Targets already present: ",
+               paste(intersect(target_names, self$target_names()),
+                     collapse=", "))
+        }
+      }
+      names(x) <- target_names
+      self$targets <- c(self$targets, x)
+    },
+
+    print_message=function(status, target_name, cmd=NULL, style="square") {
+      verbose <- private$verbose
+      if (!verbose$print_progress ||
+          !verbose$print_noop && status %in% c("", "OK")) {
+        return()
+      } else if (!verbose$print_command) {
+        cmd <- NULL
+      }
+      paint <- private$fmt$p$paint
+      col <- status_colour(status)
+      status <- brackets(paint(sprintf("%5s", status), col), style)
+      if (!is.null(cmd)) {
+        if (verbose$print_command_abbreviate) {
+          w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
+          cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+        }
+      }
+      if (is.null(cmd)) {
+        str <- sprintf(private$fmt$no_cmd, status, target_name)
+      } else {
+        str <- sprintf(private$fmt$with_cmd, status, target_name,
+                       private$fmt$p$paint(cmd, "grey"))
+      }
+      message(str)
+    },
+
+    get_target=function(target_name) {
+      if (!(target_name %in% names(self$targets))) {
+        stop("No such target ", target_name)
+      }
+      self$targets[[target_name]]
+    },
+
+    plan=function(target_name=NULL, dependencies_only=FALSE) {
+      if (is.null(target_name)) {
+        target_name <- private$target_default()
+      }
+      graph <- private$dependency_graph()
+      dependencies(target_name, graph, dependencies_only)
+    },
+
+    dependency_graph=function() {
+      g <- lapply(self$targets, function(t) t$depends_name)
+      topological_sort(g)
+    },
+
+    make1=function(target_name, dry_run=FALSE, force=FALSE,
+      force_all=FALSE, quiet_target=private$verbose$quiet_target, check=NULL,
+      dependencies_only=FALSE) {
+      #
+      self$load_sources()
+      plan <- private$plan(target_name, dependencies_only)
+      for (i in plan) {
+        is_last <- i == target_name
+        last <- private$update(i, dry_run,
+                               force_all || (force && is_last),
+                               quiet_target=quiet_target, check=check,
+                               return_target=is_last)
+      }
+      invisible(last)
+    },
+
+    update=function(target_name, dry_run=FALSE, force=FALSE,
+      quiet_target=private$verbose$quiet_target, check=NULL,
+      return_target=TRUE) {
+      #
+      target <- private$get_target(target_name) # self$targets[[target_name]]
+      current <- !force && is_current(target, self$store, check)
+
+      if (!isTRUE(target$implicit)) {
+        status <- if (current) "OK" else target$status_string
+        cmd <- if (current) NULL else target_run_fake(target)
+        style <- if (is.null(target$chain_parent)) "square" else "curly"
+        private$print_message(status, target_name, cmd, style)
+      }
+
+      if (!dry_run) {
+        if (!current) {
+          ## See #12 - targets can specify conditional packages, and
+          ## we load them, but also unload them afterwards (including
+          ## dependencies).  This does not leave packages loaded for
+          ## dependent taragets though.
+          extra <- load_extra_packages(target$packages)
+          ret <- target_build(target, self$store, quiet=quiet_target)
+          unload_extra_packages(extra)
+          invisible(ret)
+        } else if (return_target) {
+          invisible(target_get(target, self$store))
+        }
       }
     }
     ))
@@ -738,4 +615,15 @@ maker_verbose <- function(verbose=getOption("maker.verbose", TRUE),
                    quiet_target=target),
               class="maker_verbose")
   }
+}
+
+## Helper function to access the private fields of a maker object.
+## This is going to let us present a simple external interface to
+## maker by allowing free functions (not just members) to access the
+## maker internals.  The public/private gap here represents interface
+## vs implementation detail.
+##
+## This helper will also get used extensively in tests.
+maker_private <- function(m) {
+  environment(m$initialize)$private
 }

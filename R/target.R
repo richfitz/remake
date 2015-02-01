@@ -406,10 +406,8 @@ do_call_fake <- function(cmd, args) {
 
 ## There aren't many of these yet; might end up with more over time
 ## though.
-##
-## TODO: Can now drop install_packages and gitignore
 target_reserved_names <- function() {
-  c("install_packages", "gitignore", "target_name", ".")
+  c("target_name", ".")
 }
 
 filter_targets_by_type <- function(targets, types) {
@@ -480,7 +478,7 @@ make_target_cleanup <- function(name, maker) {
   name <- match_value(name, levels)
   i <- match(name, levels)
   if (name %in% maker$target_names()) {
-    t <- maker$get_target(name)
+    t <- maker$targets[[name]]
 
     ## These aren't tested:
     if (!is.null(t$chain_kids)) {

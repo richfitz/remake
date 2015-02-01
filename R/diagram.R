@@ -13,7 +13,7 @@
 ##' included.  Useful for filtering the graph.
 ##' @export
 diagram <- function(m, targets=NULL) {
-  g <- m$dependency_graph()
+  g <- maker_private(m)$dependency_graph()
   if (!is.null(targets)) {
     g <- g[dependencies(targets, g)]
   }

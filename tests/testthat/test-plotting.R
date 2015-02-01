@@ -19,10 +19,10 @@ test_that("Plot options", {
   cleanup()
   m <- maker("plot_options.yml")
 
-  t1 <- m$get_target("plot1.pdf")
-  t2 <- m$get_target("plot2.pdf")
-  t3 <- m$get_target("plot3.pdf")
-  t4 <- m$get_target("plot4.pdf")
+  t1 <- m$targets[["plot1.pdf"]]
+  t2 <- m$targets[["plot2.pdf"]]
+  t3 <- m$targets[["plot3.pdf"]]
+  t4 <- m$targets[["plot4.pdf"]]
 
   style <- list(width=8, height=4)
 

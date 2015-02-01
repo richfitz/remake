@@ -66,45 +66,6 @@ test_that("Depending on a file we don't make", {
   cleanup()
 })
 
-test_that("Expiring targets", {
-  cleanup()
-  m <- maker()
-  m$make("plot.pdf")
-
-  ## Sanity check:
-  expect_that(file.exists("data.csv"), is_true())
-  expect_that(m$is_current("data.csv"), is_true())
-  expect_that(file.exists("plot.pdf"), is_true())
-  expect_that(m$is_current("plot.pdf"), is_true())
-
-  m$expire("plot.pdf")
-  ## Still there:
-  expect_that(file.exists("plot.pdf"), is_true())
-  ## But not current:
-  expect_that(m$is_current("plot.pdf"), is_false())
-
-  ## Recursively expire:
-  m$expire("plot.pdf", recursive=TRUE)
-  expect_that(file.exists("data.csv"), is_true())
-  expect_that(m$is_current("data.csv"), is_false())
-
-  ## There's no easy way of catching this, but this has now rebuild
-  ## everything, despite the files still being there.
-  m$make()
-
-  ## Works for objects as well as files:
-  m$expire("processed")
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$get("processed"), is_a("data.frame"))
-  ## Because the *actual* R object is still there, the plot.pdf is
-  ## considered current, but it would be rebuild because processed
-  ## would be rebuilt.
-  expect_that(m$is_current("plot.pdf"), is_true())
-  m$make()
-
-  cleanup()
-})
-
 test_that("Error in source file", {
   cleanup()
   writeLines(c(readLines("code.R"), "}"), "code2.R")
@@ -143,7 +104,7 @@ test_that("simple interface", {
 test_that("make_dependencies", {
   cleanup()
   m <- maker("maker.yml")
-  e <- m$make_dependencies("plot.pdf")
+  e <- make_dependencies(m, "plot.pdf")
   expect_that(e, is_a("maker_environment"))
 
   expect_that(ls(e), equals("processed"))
@@ -175,10 +136,10 @@ test_that("make_dependencies", {
 test_that("maker environment", {
   cleanup()
   m <- maker("maker.yml")
-  expect_that(m$environment("processed"),
+  expect_that(maker_environment(m, "processed"),
               throws_error("not found in object store"))
   m$make("processed")
-  e <- m$environment("processed")
+  e <- maker_environment(m, "processed")
   expect_that(attr(e, "target"), is_null())
   expect_that(ls(e), equals("processed"))
   expect_that(exists("download_data", e), is_true())

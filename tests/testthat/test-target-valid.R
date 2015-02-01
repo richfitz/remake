@@ -10,7 +10,7 @@ if (interactive()) {
 context("Targets (low level)")
 
 test_that("reserved names", {
-  reserved <- c("install_packages", "gitignore", "target_name", ".")
+  reserved <- c("target_name", ".")
   expect_that(sort(reserved), equals(sort(target_reserved_names())))
   for (i in reserved) {
     expect_that(make_target(i), throws_error("Target name .+ is reserved"))
@@ -303,7 +303,7 @@ test_that("knitr (invalid)", {
 test_that("cleanup", {
   cleanup()
   m <- maker("maker_cleanup_hook.yml")
-  t <- m$get_target("clean")
+  t <- m$targets[["clean"]]
   expect_that(length(t$depends_name), equals(2))
   expect_that(t$depends_name, equals(c("data.csv", "tidy")))
 
@@ -325,7 +325,7 @@ test_that("get/set/archive object targets", {
   cleanup()
   m <- maker("maker.yml")
   m$make("processed")
-  t <- m$get_target("processed")
+  t <- m$targets[["processed"]]
   expect_that(target_get(t, m$store), is_a("data.frame"))
   dep <- dependency_status(t, m$store)
 
@@ -366,7 +366,7 @@ test_that("get/set/archive file targets", {
   cleanup()
   m <- maker("maker.yml")
   m$make("plot.pdf")
-  t <- m$get_target("plot.pdf")
+  t <- m$targets[["plot.pdf"]]
   expect_that(target_get(t, m$store), equals("plot.pdf"))
   dep <- dependency_status(t, m$store)
 

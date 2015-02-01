@@ -14,20 +14,19 @@ context("Archive")
 ##   3. Could flag objects in/out?
 ##
 ## Alternatively getting the "current" state of the db might be
-## worthwhile?  There will certainly be things to exclude.  Let's do
-## this the exact same way as expire.
+## worthwhile?  There will certainly be things to exclude.
 test_that("Build archive", {
   cleanup()
   m <- maker("maker.yml")
 
-  expect_that(m$archive_export("plot.pdf"),
+  expect_that(maker_archive_export(m, "plot.pdf"),
               throws_error("file data.csv not found in file store"))
   m$make("processed")
-  expect_that(m$archive_export("plot.pdf"),
+  expect_that(maker_archive_export(m, "plot.pdf"),
               throws_error("file plot.pdf not found in file store"))
   m$make("plot.pdf")
 
-  dest <- m$archive_export("plot.pdf")
+  dest <- maker_archive_export(m, "plot.pdf")
   expect_that(dest, equals("maker.zip"))
   expect_that(file.exists("maker.zip"), is_true())
 
@@ -46,7 +45,7 @@ test_that("Inspect archive", {
 
   m <- maker("maker.yml")
   m$make()
-  dest <- m$archive_export("plot.pdf")
+  dest <- maker_archive_export(m, "plot.pdf")
 
   expect_that(is_maker_archive("maker.zip"),
               is_true())
@@ -82,14 +81,14 @@ test_that("Import archive", {
   cleanup()
   m <- maker("maker.yml")
   m$make()
-  dest <- m$archive_export("plot.pdf")
+  dest <- maker_archive_export(m, "plot.pdf")
   m$make("purge")
 
   expect_that(m$is_current("data.csv"),  is_false())
   expect_that(m$is_current("processed"), is_false())
   expect_that(m$is_current("plot.pdf"),  is_false())
 
-  m$archive_import(dest)
+  maker_archive_import(m, dest)
 
   expect_that(m$is_current("data.csv"),  is_true())
   expect_that(m$is_current("processed"), is_true())

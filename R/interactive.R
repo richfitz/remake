@@ -10,9 +10,10 @@ interactive_drop_braces <- function(expr) {
   expr
 }
 
+## NOTE: This function's days are numbered.
 add_target <- function(m, name, expr, ...) {
   expr <- substitute(expr)
-  m$interactive$targets[[name]] <-
+  maker_interactive_list(m)$targets[[name]] <-
     make_target(name, c(list(command=expr), list(...)))
   invisible(NULL)
 }
@@ -20,13 +21,15 @@ add_target <- function(m, name, expr, ...) {
 add_sources <- function(m, ...) {
   sources <- c(...)
   assert_character(sources)
-  m$interactive$sources <- union(m$interactive$sources, sources)
+  maker_interactive_list(m)$sources <-
+    union(maker_interactive_list(m)$sources, sources)
 }
 
 add_packages <- function(m, ...) {
   packages <- c(...)
   assert_character(packages)
-  m$interactive$packages <- union(m$interactive$packages, packages)
+  maker_interactive_list(m)$packages <-
+    union(maker_interactive_list(m)$packages, packages)
 }
 
 maker_interactive <- function() {
@@ -51,11 +54,12 @@ print.target_placeholder <- function(x, ...) {
 ## in one place.  Keep the print bit, but dispatch on that based on
 ## the active/inactive state.
 maker_add_target <- function(m, target) {
-  m$interactive$targets[[target$name]] <- target
-  if (!is.null(m$envir) && inherits(target, "target_object")) {
+  maker_interactive_list(m)$targets[[target$name]] <- target
+  obj <- maker_active_bindings(m)
+  if (!is.null(obj) && inherits(target, "target_object")) {
     ## TODO: Deal with situation where binding exists (will be
     ## common).  Offer a 'force' option, delete bindings, etc.
-    maker_set_active_binding(m, target$name, "target")
+    maker_set_active_binding(m, target$name, "target", obj)
   }
 }
 
@@ -67,21 +71,40 @@ maker_add_sources <- function(m, value) {
   is_source <- (grepl("\\.[rR]$", value) |
                   grepl("/", value) |
                     file.exists(value))
-  m$interactive$packages <- union(m$interactive$packages,
-                                  sub("^package:", "", value[!is_source]))
-  m$interactive$sources <- union(m$interactive$sources,
-                                 value[is_source])
-  if (!is.null(m$envir)) {
+  maker_interactive_list(m)$packages <-
+    union(maker_interactive_list(m)$packages,
+          sub("^package:", "", value[!is_source]))
+  maker_interactive_list(m)$sources <-
+    union(maker_interactive_list(m)$sources,
+          value[is_source])
+
+  obj <- maker_active_bindings(m)
+  if (!is.null(obj)) {
+    dat <- maker_interactive_list(m)
     ## Here we actually want to build and reload the managed
     ## environment object.  There's some repetition here about
     ## how this should be done, but I think this will do the
     ## right thing.
-    m$store$env <- managed_environment$new(m$interactive$packages,
-                                           m$interactive$sources)
+    ##
+    ## This is a bit wasteful in that we reload *every* source file.
+    ## What would be better is if we load only the changed things, but
+    ## this is more likely to be correct.
+    m$store$env <- managed_environment$new(dat$packages, dat$sources)
     ## TODO: Again, can't get at the printer without having things
     ## loaded already:
-    ## m$print_message("READ", "", "# loading sources")
+    ## maker_private(m)$print_message("READ", "", "# loading sources")
     m$store$env$reload(TRUE)
-    maker_reload_active_bindings(m, "source")
+    maker_reload_active_bindings(m, "source", obj)
   }
+}
+
+## Internal use only:
+maker_interactive_list <- function(m) {
+  maker_private(m)$interactive
+}
+## TODO: This is *ugly*.
+`maker_interactive_list<-` <- function(m, value) {
+  private <- maker_private(m)
+  private$interactive <- value
+  m
 }

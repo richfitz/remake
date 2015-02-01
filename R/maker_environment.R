@@ -14,7 +14,7 @@ maker_environment_info <- function(e) {
 
 ##' These functions may be useful in debugging workflows.  A
 ##' \code{maker_environment} object is created by running
-##' \code{m$make_dependencies(target_name)}, where \code{target_name}
+##' \code{make_dependencies(m, target_name)}, where \code{target_name}
 ##' is the name of some target.  This returns an environment with all
 ##' the dependencies of that target so you can troubleshoot/develop
 ##' the rule that will process it.  The \emph{parent} environment of
@@ -92,8 +92,9 @@ print.maker_environment <- function(x, ...) {
 }
 
 maker_environment <- function(m, names=character(0), target=NULL) {
+  m$load_sources()
   e <- new.env(parent=m$store$env$env)
-  m$export(names, e)
+  m$store$objects$export(names, e)
   attr(e, "target") <- target
   class(e) <- "maker_environment"
   e

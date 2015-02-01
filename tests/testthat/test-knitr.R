@@ -40,7 +40,7 @@ test_that("Build Rnw works", {
 test_that("Script", {
   cleanup()
   m <- maker("knitr.yml")
-  src <- m$script("knitr.md")
+  src <- maker_script(m, "knitr.md")
   expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
 })
 
@@ -75,7 +75,7 @@ test_that("knitr options", {
 test_that("Option sets", {
   cleanup()
   m <- maker("knitr_options.yml")
-  t <- m$get_target("knitr.md")
+  t <- m$targets[["knitr.md"]]
   dat <- yaml_read("knitr_options.yml")
   cmp <- c(dat$knitr_options$mystyle, list(input="knitr.Rmd"))
   cmp$options$error <- FALSE
@@ -100,7 +100,7 @@ test_that("Errors during compilation propagate", {
   cleanup()
   m <- maker("knitr_error.yml")
   expect_that(m$make("knitr_rename.md"), throws_error())
-  t <- m$get_target("knitr_rename.md")
+  t <- m$targets[["knitr_rename.md"]]
   expect_that(t$knitr$options$error, is_false())
   t$knitr$options$error <- TRUE
   m$targets[["knitr_rename.md"]] <- t

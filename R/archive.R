@@ -60,13 +60,19 @@ maker_archive_contents <- function(filename) {
   vcapply(res, function(x) readRDS(x)$name, USE.NAMES=FALSE)
 }
 
-archive_export_maker <- function(maker, target_name, recursive=TRUE,
+maker_archive_export <- function(maker, target_name, recursive=TRUE,
                                  filename="maker.zip") {
   if (recursive) {
-    graph <- maker$dependency_graph()
+    graph <- maker_private(maker)$dependency_graph()
     target_name <- dependencies(target_name, graph)
   }
-  targets <- maker$get_targets(target_name)
+
+  if (!all(target_name %in% names(maker$targets))) {
+    stop("No such target ",
+         paste(setdiff(target_names, names(maker$targets)),
+               collapse=", "))
+  }
+  targets <- maker$targets[target_name]
   path <- file.path(tempfile(),
                     tools::file_path_sans_ext(basename(filename)))
   store <- maker$store
@@ -77,11 +83,12 @@ archive_export_maker <- function(maker, target_name, recursive=TRUE,
   zip_dir(path)
 }
 
-archive_import_maker <- function(maker, filename) {
+maker_archive_import <- function(maker, filename) {
   contents <- maker_archive_contents(filename)
-  if (!all(maker$has_target(contents))) {
+  known_targets <- names(maker$targets)
+  if (!all(contents %in% known_targets)) {
     stop("Objects in archive not known to maker: ",
-         paste(setdiff(contents, maker$target_names()), collapse=", "))
+         paste(setdiff(contents, known_targets), collapse=", "))
   }
 
   tld <- maker_archive_tld(filename)
@@ -93,7 +100,7 @@ archive_import_maker <- function(maker, filename) {
   store <- maker$store
 
   for (t in contents) {
-    archive_import_target(maker$get_target(t), store, path)
+    archive_import_target(maker$targets[[t]], store, path)
   }
 }
 

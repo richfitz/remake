@@ -4,7 +4,7 @@ utility_install_packages <- function(m) {
 }
 
 utility_gitignore <- function(m) {
-  files <- names(m$get_targets_by_type("file"))
+  files <- filter_targets_by_type(m$targets, "file")
   add_to_gitignore(c(".maker", files))
 }
 

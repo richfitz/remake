@@ -14,42 +14,40 @@ test_that("Targets return their output on build", {
   ## targets are.  Really need to catch that somewhere.
   m$load_sources()
   store <- m$store
+  m_update <- maker_private(m)$update
 
   ## File targets will invisibly return their filename:
-  t <- m$get_target("data.csv")
+  t <- m$targets[["data.csv"]]
   expect_that(target_build(t, store), equals("data.csv"))
-  expect_that(m$build("data.csv"), equals("data.csv"))
 
   m$remove_target("data.csv")
-  expect_that(m$update("data.csv"), equals("data.csv"))
-  expect_that(m$update("data.csv"), equals("data.csv"))
+  expect_that(m_update("data.csv"), equals("data.csv"))
+  expect_that(m_update("data.csv"), equals("data.csv"))
 
   m$remove_target("data.csv")
   expect_that(m$make("data.csv"), equals("data.csv"))
   expect_that(m$make("data.csv"), equals("data.csv"))
 
   ## While object targets invisibly return their contents
-  t <- m$get_target("processed")
+  t <- m$targets[["processed"]]
   expect_that(target_build(t, store), is_a("data.frame"))
-  expect_that(m$build("processed"), is_a("data.frame"))
 
   m$remove_target("processed")
-  expect_that(m$update("processed"), is_a("data.frame"))
-  expect_that(m$update("processed"), is_a("data.frame"))
+  expect_that(m_update("processed"), is_a("data.frame"))
+  expect_that(m_update("processed"), is_a("data.frame"))
 
   m$remove_target("processed")
   expect_that(m$make("processed"), is_a("data.frame"))
   expect_that(m$make("processed"), is_a("data.frame"))
 
   ## Fake targets return nothing:
-  t <- m$get_target("all")
+  t <- m$targets[["all"]]
   expect_that(target_build(t, store), is_null())
-  expect_that(m$build("all"), is_null())
 
   expect_that(m$remove_target("all"),
               throws_error("Not something that can be deleted"))
-  expect_that(m$update("all"), is_null())
-  expect_that(m$update("all"), is_null())
+  expect_that(m_update("all"), is_null())
+  expect_that(m_update("all"), is_null())
 
   expect_that(m$remove_target("all"),
               throws_error("Not something that can be deleted"))
