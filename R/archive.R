@@ -69,7 +69,7 @@ maker_archive_export <- function(maker, target_name, recursive=TRUE,
 
   if (!all(target_name %in% names(maker$targets))) {
     stop("No such target ",
-         paste(setdiff(target_names, names(maker$targets)),
+         paste(setdiff(target_name, names(maker$targets)),
                collapse=", "))
   }
   targets <- maker$targets[target_name]

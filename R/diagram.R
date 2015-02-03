@@ -27,10 +27,10 @@ diagram <- function(m, targets=NULL) {
   ## TODO: Colour nodes based on type
   library("igraph")
   mat <- dependencies_to_adjacency(g)
-  gg <- graph.adjacency(t(mat))
+  gg <- igraph::graph.adjacency(t(mat))
   plot(gg,
        vertex.label.color="black", vertex.label.family="sans",
        vertex.shape="none", # easier
        edge.color="steelblue4",
-       layout=layout.sugiyama(gg)$layout)
+       layout=igraph::layout.sugiyama(gg)$layout)
 }
