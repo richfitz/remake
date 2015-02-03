@@ -149,7 +149,7 @@ maker depends on several R packages, all of which can be installed from CRAN.  T
 * [`crayon`](https://github.com/gaborcsardi/crayon) for coloured output on the terminal (not in Rstudio or Rgui)
 
 ```r
-install.packages(c("R6", "yaml", "digest"))
+install.packages(c("R6", "yaml", "digest", "crayon"))
 ```
 
 In addition, there are several optional packages:
