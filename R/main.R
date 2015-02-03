@@ -37,7 +37,6 @@ main <- function(args=commandArgs(TRUE)) {
 
 maker_options <- function() {
   make_option <- optparse::make_option
-  ## TODO: make help the default option.
   option_list <- list(
     make_option(c("-f", "--file"), type="character", default="maker.yml",
                 help="maker file to load"),
@@ -86,8 +85,6 @@ print_targets <- function(m) {
 ##' path, though the current directory may be useful to.
 ##' @export
 install_maker <- function(dest) {
-  ## TODO: Could be stdout(), could be a file?  Too much logic?  Be
-  ## careful with the chmod if doing that.
   if (!file.exists(dest) || !is_directory(dest)) {
     stop("Destination must be an existing directory")
   }

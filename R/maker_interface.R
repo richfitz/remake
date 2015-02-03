@@ -5,10 +5,6 @@
 make_dependencies <- function(m, target_name, ...) {
   private <- maker_private(m)
   t <- private$get_target(target_name)
-  ## TODO: I don't see the big problem here:
-  if (!(t$type) %in% c("object", "file")) {
-    warning(sprintf("%s is not a real target"))
-  }
 
   m$refresh()
   maker_private(m)$print_message("ENV", t$name, style="angle")

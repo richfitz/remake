@@ -10,28 +10,6 @@ interactive_drop_braces <- function(expr) {
   expr
 }
 
-## NOTE: This function's days are numbered.
-add_target <- function(m, name, expr, ...) {
-  expr <- substitute(expr)
-  maker_interactive_list(m)$targets[[name]] <-
-    make_target(name, c(list(command=expr), list(...)))
-  invisible(NULL)
-}
-
-add_sources <- function(m, ...) {
-  sources <- c(...)
-  assert_character(sources)
-  maker_interactive_list(m)$sources <-
-    union(maker_interactive_list(m)$sources, sources)
-}
-
-add_packages <- function(m, ...) {
-  packages <- c(...)
-  assert_character(packages)
-  maker_interactive_list(m)$packages <-
-    union(maker_interactive_list(m)$packages, packages)
-}
-
 maker_interactive <- function() {
   list(targets=empty_named_list(),
        sources=character(0),
@@ -55,11 +33,13 @@ print.target_placeholder <- function(x, ...) {
 ## the active/inactive state.
 maker_add_target <- function(m, target) {
   maker_interactive_list(m)$targets[[target$name]] <- target
-  obj <- maker_active_bindings(m)
-  if (!is.null(obj) && inherits(target, "target_object")) {
-    ## TODO: Deal with situation where binding exists (will be
-    ## common).  Offer a 'force' option, delete bindings, etc.
-    maker_set_active_binding(m, target$name, "target", obj)
+  if (inherits(target, "target_object")) {
+    obj <- maker_active_bindings(m)
+    if (!is.null(obj)) {
+      ## TODO: Deal with situation where binding exists (will be
+      ## common).  Offer a 'force' option, delete bindings, etc.
+      maker_set_active_binding(m, target$name, "target", obj)
+    }
   }
 }
 
@@ -80,7 +60,6 @@ maker_add_sources <- function(m, value) {
 
   obj <- maker_active_bindings(m)
   if (!is.null(obj)) {
-    ## TODO: This should probably be a function within maker?
     dat <- maker_interactive_list(m)
     ## Here we actually want to build and reload the managed
     ## environment object.  There's some repetition here about

@@ -15,8 +15,6 @@ make_active_binding_function <- function(m, name, type) {
           class(ret) <- c("target_placeholder", class(ret))
           ret
         } else {
-          ## TODO: This will change with an option to make1 or a new
-          ## way of driving it (make1_active?)
           oo <- private$verbose$print_noop
           on.exit(private$verbose$print_noop <- oo)
           private$verbose$print_noop <- FALSE
@@ -38,9 +36,10 @@ make_active_binding_function <- function(m, name, type) {
 
 maker_set_active_bindings <- function(m, type, manager, force=FALSE) {
   if (type == "target") {
-    ## TODO: Don't include chain objects here:
     objects <- filter_targets_by_type(m$targets, "object")
-    names <- unname(dependency_names(objects))
+    ## Exclude chain targets:
+    ok <- vlapply(objects, function(x) is.null(x$chain_parent))
+    names <- unname(dependency_names(objects[ok]))
   } else if (type == "source") {
     m$store$env$reload()
     names <- ls(m$store$env$env, all.names=TRUE)
@@ -150,8 +149,6 @@ maker_active_bindings <- function(m) {
 ## *functions* for each type.  These will look like this:
 ##   source=function(name) {m$store$env$env[[name]]}
 ## with m bound via local scope.
-##
-## TODO: Avoid passing the manager and use it directly.
 active_bindings_manager <- R6Class(
   "active_bindings_manager",
   public=list(
