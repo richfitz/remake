@@ -141,17 +141,12 @@ devtools::install_github("richfitz/maker")
 
 If you don't have devtools installed you will see an error "there is no package called 'devtools'"; if that happens install devtools with `install.packages("devtools")`.
 
-If you work at the terminal (not Rstudio or Rgui) and would like coloured output, you might like to install [rainbowrite](https://github.com/richfitz/rainbowrite) with
-
-```r
-devtools::install_github("richfitz/rainbowrite")
-```
-
 maker depends on several R packages, all of which can be installed from CRAN.  The required packages are:
 
 * [`R6`](http://cran.r-project.org/web/packages/R6) for holding things together
 * [`yaml`](http://cran.r-project.org/web/packages/yaml) for reading the configuration
 * [`digest`](http://cran.r-project.org/web/packages/digest) for efficiently hashing objects
+* [`crayon`](https://github.com/gaborcsardi/crayon) for coloured output on the terminal (not in Rstudio or Rgui)
 
 ```r
 install.packages(c("R6", "yaml", "digest"))

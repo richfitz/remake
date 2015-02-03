@@ -13,12 +13,12 @@ Imports:
     R6 (>= 2.0.0),
     digest,
     yaml,
-    codetools
+    codetools,
+    crayon
 Suggests:
     testthat,
     igraph,
     optparse,
-    rainbowrite,
     knitr,
     devtools,
     pryr

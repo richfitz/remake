@@ -253,8 +253,7 @@
         no_cmd="%s %s",
         with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),
         target_width=target_width,
-        max_cmd_width=width - (w0 + 1 + target_width + 4),
-        p=painter$new(interactive()))
+        max_cmd_width=width - (w0 + 1 + target_width + 4))
     },
 
     is_interactive=function() {
@@ -312,9 +311,9 @@
       } else if (!verbose$print_command) {
         cmd <- NULL
       }
-      paint <- private$fmt$p$paint
-      col <- status_colour(status)
-      status <- brackets(paint(sprintf("%5s", status), col), style)
+
+      status <- brackets(paint(status, status_colour(status)), style)
+
       if (!is.null(cmd)) {
         if (verbose$print_command_abbreviate) {
           w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
@@ -325,7 +324,7 @@
         str <- sprintf(private$fmt$no_cmd, status, target_name)
       } else {
         str <- sprintf(private$fmt$with_cmd, status, target_name,
-                       private$fmt$p$paint(cmd, "grey"))
+                       paint(cmd, "grey60"))
       }
       message(str)
     },
@@ -545,15 +544,24 @@ status_colour <- function(str) {
          BUILD="steelblue4",
          OK="green3",
          CLEAN="orange",
-         DEL="red",
+         DEL="red1",
          UTIL="darkorchid3",
-         READ="yellow",
+         READ="yellow1",
          PLOT="dodgerblue2",
          KNIT="hotpink",
          MAKE="deepskyblue",
          ENV="deepskyblue",
-         "-----"="grey",
+         "-----"="grey60",
          NULL)
+}
+
+##' @importFrom crayon make_style
+paint <- function(str, col) {
+  if (is.null(col)) {
+    str
+  } else {
+    make_style(col)(str)
+  }
 }
 
 ##' Helper function to set options for verbosity.

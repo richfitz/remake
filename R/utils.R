@@ -259,27 +259,6 @@ rep_along <- function(x, along.with) {
   rep_len(x, length(along.with))
 }
 
-## This is just to avoid dealing with .onLoad
-## TODO: Replace with a closure and port to crayon, but probably also
-## do at onLoad()
-painter <- R6Class(
-  public=list(
-    do_paint=NULL,
-    normal_is_bright=NULL,
-    initialize=function(normal_is_bright=FALSE) {
-      has_rainbowrite <- requireNamespace("rainbowrite", quietly=TRUE)
-      self$normal_is_bright <- normal_is_bright
-      if (has_rainbowrite) {
-        self$do_paint <- rainbowrite::paint
-      } else {
-        self$do_paint <- function(x, ...) x
-      }
-    },
-    paint=function(..., normal_is_bright=self$normal_is_bright) {
-      self$do_paint(..., normal_is_bright=normal_is_bright)
-    }
-    ))
-
 backup <- function(file) {
   if (file.exists(file)) {
     path <- file.path(tempfile(), file)
