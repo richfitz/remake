@@ -12,7 +12,6 @@ context("Build error")
 test_that("Check mocking works", {
   cleanup()
   m <- maker("maker_build_error.yml")
-  m$load_sources()
 
   ## Things are as they should be:
   m$store$env$env$download_data_works("data.csv")
@@ -35,7 +34,6 @@ test_that("Check mocking works", {
 test_that("Errored builds restore files", {
   cleanup()
   m <- maker("maker_build_error.yml")
-  m$load_sources()
   m$store$env$env$download_data_works("data.csv")
   hash <- tools::md5sum("data.csv")
 

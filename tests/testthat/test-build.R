@@ -72,11 +72,7 @@ test_that("Error in source file", {
   m <- maker()
   ## Ugly, and might not work in future:
   m$store$env$sources <- "code2.R"
-  expect_that(m$load_sources(),
-              throws_error("while sourcing 'code2.R'"))
-  ## Will continually throw this error even though the files have not
-  ## changed:
-  expect_that(m$load_sources(),
+  expect_that(m$store$env$reload(TRUE),
               throws_error("while sourcing 'code2.R'"))
   cleanup()
 })

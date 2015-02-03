@@ -12,7 +12,6 @@ test_that("Targets return their output on build", {
   m <- maker("maker.yml")
   ## TODO: there's a really obscure error if this is not run but
   ## targets are.  Really need to catch that somewhere.
-  m$load_sources()
   store <- m$store
   m_update <- maker_private(m)$update
 

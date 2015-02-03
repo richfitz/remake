@@ -20,7 +20,6 @@ test_that("Modular makerfile", {
   expect_that(maker_private(m)$target_default(), equals("all"))
 
   mod <- maker("modular_module.yml")
-  mod$load_sources()
   expect_that(maker_private(mod)$target_default(), equals("data.csv"))
 
   m$make("data.csv")

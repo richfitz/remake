@@ -80,6 +80,7 @@ maker_add_sources <- function(m, value) {
 
   obj <- maker_active_bindings(m)
   if (!is.null(obj)) {
+    ## TODO: This should probably be a function within maker?
     dat <- maker_interactive_list(m)
     ## Here we actually want to build and reload the managed
     ## environment object.  There's some repetition here about
@@ -90,9 +91,7 @@ maker_add_sources <- function(m, value) {
     ## What would be better is if we load only the changed things, but
     ## this is more likely to be correct.
     m$store$env <- managed_environment$new(dat$packages, dat$sources)
-    ## TODO: Again, can't get at the printer without having things
-    ## loaded already:
-    ## maker_private(m)$print_message("READ", "", "# loading sources")
+    maker_private(m)$print_message("READ", "", "# loading sources")
     m$store$env$reload(TRUE)
     maker_reload_active_bindings(m, "source", obj)
   }

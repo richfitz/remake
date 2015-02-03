@@ -683,7 +683,9 @@ target_build <- function(target, store, quiet=NULL) {
   } else if (target$type == "cleanup") {
     target_level <- vcapply(target$maker$targets, function(x) x$cleanup_level)
     will_remove <- names(target$maker$targets)[target_level == target$name]
-    target$maker$remove_targets(will_remove)
+    for (t in will_remove) {
+      target$maker$remove_target(t, chain=TRUE)
+    }
     target_run(target, store, quiet)
   }
 }

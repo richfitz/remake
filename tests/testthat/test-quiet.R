@@ -9,7 +9,6 @@ context("Quiet")
 test_that("Quieten targets", {
   cleanup()
   m <- maker("quiet.yml")
-  m$load_sources()
   store <- m$store
 
   msg <- "make some noise"
@@ -42,7 +41,6 @@ test_that("Quieten targets", {
 test_that("Quiet targets", {
   cleanup()
   m <- maker("quiet.yml")
-  m$load_sources()
   store <- m$store
 
   msg <- "make some noise"
@@ -125,7 +123,6 @@ if (FALSE) {
 test_that("Quiet chain", {
   cleanup()
   m <- maker("quiet.yml", verbose=FALSE)
-  m$load_sources()
 
   msg <- "make some noise"
   msg2 <- "make some more noise"

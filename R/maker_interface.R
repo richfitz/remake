@@ -10,10 +10,7 @@ make_dependencies <- function(m, target_name, ...) {
     warning(sprintf("%s is not a real target"))
   }
 
-  ## TODO: Once the logic around loading sources changes, this will
-  ## probably shift to m$activate() or something a bit more
-  ## descriptive.
-  m$load_sources()
+  m$refresh()
   maker_private(m)$print_message("ENV", t$name, style="angle")
   private$make1(target_name, ..., dependencies_only=TRUE)
   deps_name <- t$depends_name[t$depends_type == "object"]

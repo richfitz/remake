@@ -15,64 +15,29 @@
       }
       if (private$is_interactive()) {
         private$interactive <- maker_interactive()
-      } else {
-        self$reload()
       }
+      private$reload_config()
     },
 
-    reload=function() {
-      self$store <- store$new(private$path)
+    refresh=function() {
       if (private$is_interactive()) {
-        config <- private$interactive
-        config$hash <- hash_object(private$interactive)
+        reload <- !identical(hash_object(private$interactive), private$hash)
       } else {
-        config <- read_maker_file(private$file)
+        reload <- !identical(hash_files(names(private$hash)), private$hash)
       }
-      private$hash <- config$hash
-      self$targets <- NULL
-      if (!(private$is_interactive() && !private$interactive$active)) {
-        private$add_targets(config$targets)
-        private$initialize_cleanup_targets()
-        private$initialize_targets_activate()
-        private$check_rule_target_clash()
-        private$initialize_default_target(config$target_default)
-      }
-      private$initialize_message_format()
-      self$store$env <- managed_environment$new(config$packages, config$sources)
-      if (!is.null(private$active_bindings)) {
-        ## TODO: By default we don't run load_sources here: that's
-        ## potentially a bit confusing because functions aren't made
-        ## available.  I suspect that we should run load_sources here
-        ## and load the functions: what's less clear is if that should
-        ## only be done when given an environment or done always.
-        ##
-        ##     self$load_sources()
-        ##     maker_reload_active_bindings(self, "source")
-        ##
-        ## Another option would be to put out just the rule names as
-        ## special bindings.  That option I like the least though.
-        ##
-        ## A third option is to only dump out active bindings during
-        ## load_sources itself.  That might be the most consistent.
-        maker_reload_active_bindings(self, "target", private$active_bindings)
+      if (reload) {
+        private$print_message("READ", "", "# reloading makerfile")
+        private$reload_config()
+      } else {
+        private$initialize_sources()
       }
     },
 
     make=function(target_names=NULL, ...) {
-      ## TODO: This is here because of an issue with interactive
-      ## getting access to the print function.  It's duplicated with
-      ## make1.  That's probably going to represent a time-sink at
-      ## some point; perhaps farm out to users ot make1?
-      ##
-      ## TODO: Need to check if interactive that we are activated.  Or
-      ## perhaps we should activate at this point.  This is a bit of a
-      ## trick with the active bindings because accessing one of those
-      ## should probably not trigger a build.
       if (private$is_interactive()) {
-        ## TODO: Check that this does about the right thing:
         private$interactive$active <- TRUE
       }
-      self$load_sources()
+      self$refresh()
       if (is.null(target_names)) {
         target_names <- private$target_default()
       }
@@ -83,41 +48,17 @@
       invisible(last)
     },
 
-    load_sources=function() {
-      if (private$is_interactive()) {
-        if (!identical(private$hash, hash_object(private$interactive))) {
-          ## TODO: Can't paint here because paint is not defined.
-          ## private$print_message("READ", "", "# reloading makerfile")
-          self$reload()
-        }
-      } else {
-        if (!identical(hash_files(names(private$hash)), private$hash)) {
-          private$print_message("READ", "", "# reloading makerfile")
-          self$reload()
-        }
-      }
-
-      if (!self$store$env$is_current()) {
-        private$print_message("READ", "", "# loading sources")
-        self$store$env$reload(TRUE)
-      }
-
-      if (!is.null(private$active_bindings)) {
-        maker_reload_active_bindings(self, "source", private$active_bindings)
-      }
-    },
-
-    remove_targets=function(target_names, chain=TRUE) {
-      for (t in target_names) {
-        self$remove_target(t, chain)
-      }
-    },
-
+    ## TODO: This is currently used by the clean targets.  The name
+    ## probably wants changing though, because it's confusing with
+    ## $add that *creates* a target.  What this does is remove the
+    ## target *product*.
     remove_target=function(target_name, chain=TRUE) {
       target <- private$get_target(target_name)
       if (chain && !is.null(target$chain_kids)) {
         chain_names <- dependency_names(target$chain_kids)
-        self$remove_targets(chain_names, chain=FALSE)
+        for (t in chain_names) {
+          self$remove_target(t, chain=FALSE)
+        }
       }
 
       store <- self$store
@@ -193,6 +134,53 @@
     active_bindings=NULL,
 
     fmt=NULL,
+
+    reload_config=function() {
+      if (private$is_interactive()) {
+        config <- private$interactive
+        config$hash <- hash_object(private$interactive)
+      } else {
+        config <- read_maker_file(private$file)
+      }
+      private$hash <- config$hash
+
+      private$initialize_targets(config)
+      private$initialize_store(config)
+      private$initialize_message_format()
+      private$initialize_sources()
+    },
+
+    initialize_targets=function(config) {
+      ## This runs always, *unless* we're in interactive mode and
+      ## we're not yet active.
+      skip <- private$is_interactive() && !private$interactive$active
+      if (!skip) {
+        self$targets <- NULL
+        private$add_targets(config$targets)
+        private$initialize_cleanup_targets()
+        private$initialize_targets_activate()
+        private$check_rule_target_clash()
+        private$initialize_default_target(config$target_default)
+        if (!is.null(private$active_bindings)) {
+          maker_reload_active_bindings(self, "target", private$active_bindings)
+        }
+      }
+    },
+
+    initialize_store=function(config) {
+      self$store <- store$new(private$path)
+      self$store$env <- managed_environment$new(config$packages, config$sources)
+    },
+
+    initialize_sources=function() {
+      if (!self$store$env$is_current()) {
+        private$print_message("READ", "", "# loading sources")
+        self$store$env$reload(TRUE)
+        if (!is.null(private$active_bindings)) {
+          maker_reload_active_bindings(self, "source", private$active_bindings)
+        }
+      }
+    },
 
     initialize_cleanup_targets=function() {
       targets <- lapply(cleanup_target_names(), make_target_cleanup, self)
@@ -366,7 +354,7 @@
       force_all=FALSE, quiet_target=private$verbose$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
-      self$load_sources()
+      self$refresh()
       plan <- private$plan(target_name, dependencies_only)
       for (i in plan) {
         is_last <- i == target_name

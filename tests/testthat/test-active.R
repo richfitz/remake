@@ -9,7 +9,7 @@ context("Active binding functions")
 test_that("Create active bindings", {
   cleanup()
   m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings(m)
+  obj <- maker_active_bindings_manager()
   expect_that(obj, is_a("active_bindings_manager"))
 
   ## This is not actually doing anything:
@@ -21,6 +21,7 @@ test_that("Create active bindings", {
               not(throws_error()))
 
   expect_that(ls(obj$envir), equals("processed"))
+
   expect_that(d <- obj$envir$processed,
               shows_message("BUILD"))
   expect_that(d, is_a("data.frame"))
@@ -37,24 +38,25 @@ test_that("Create active bindings", {
               is_false())
 
   expect_that(obj$bindings$target, equals("processed"))
-  expect_that("processed" %in% filter_active_bindings(ls(obj$envir), obj$envir),
+  expect_that("processed" %in%
+              filter_active_bindings(ls(obj$envir), obj$envir),
               is_true())
 
-  obj2 <- active_bindings_manager$new(new.env(), names(obj$bindings))
-  obj2$envir$processed <- 1
-  expect_that(maker_set_active_bindings(m, "target", obj2),
+  obj <- maker_active_bindings_manager()
+  obj$envir$processed <- 1
+  expect_that(maker_set_active_bindings(m, "target", obj),
               throws_error("Bindngs would overwrite normal variables"))
-  expect_that(bindingIsActive("processed", obj2$envir),
+  expect_that(bindingIsActive("processed", obj$envir),
               is_false())
-  expect_that(maker_set_active_bindings(m, "target", obj2, force=TRUE),
+  expect_that(maker_set_active_bindings(m, "target", obj, force=TRUE),
               not(throws_error()))
-  expect_that(bindingIsActive("processed", obj2$envir), is_true())
+  expect_that(bindingIsActive("processed", obj$envir), is_true())
 })
 
 test_that("Delete active bindings", {
   cleanup()
-  m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings(m)
+  m <- maker::maker()
+  obj <- maker_active_bindings_manager()
   maker_set_active_bindings(m, "target", obj)
 
   del <- maker_delete_active_bindings(m, "target", obj)
@@ -63,10 +65,9 @@ test_that("Delete active bindings", {
 })
 
 test_that("Resolve active bindings", {
-  ## THIS IS WHERE I AM UP TO.
   cleanup()
-  m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings(m)
+  m <- maker::maker()
+  obj <- maker_active_bindings_manager()
 
   maker_set_active_bindings(m, "target", obj)
 
@@ -91,24 +92,21 @@ test_that("Resolve active bindings", {
 
 test_that("Active sources", {
   cleanup()
-  m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings(m)
-  obj2 <- maker_active_bindings_manager()
-  m$load_sources()
+  m <- maker::maker()
+  obj <- maker_active_bindings_manager()
 
-  maker_set_active_bindings(m, "source", obj2)
-  expect_that(ls(obj2$envir), equals(ls(m$store$env$env)))
+  maker_set_active_bindings(m, "source", obj)
+  expect_that(ls(obj$envir), equals(ls(m$store$env$env)))
 
   expect_that(all(ls(m$store$env$env) %in% ls(obj$envir)), is_true())
 
   expect_that(obj$envir$process_data,
               is_identical_to(m$store$env$env$process_data))
-  expect_that(obj$bindings$source, equals(ls(obj2$envir)))
+  expect_that(obj$bindings$source, equals(ls(obj$envir)))
 
   ## Then, change a function:
   m$store$env$env$process_data <- identity
   expect_that(obj$envir$process_data, is_identical_to(identity))
-  expect_that(obj2$envir$process_data, is_identical_to(identity))
 
   expect_that(obj$envir$process_data <- identity,
               throws_error("read-only"))
@@ -121,10 +119,8 @@ test_that("Global mode", {
   obj <- maker_active_bindings(m)
 
   expect_that(exists("processed", e), is_true())
-  expect_that(exists("download_data", e), is_false())
-  m$load_sources()
-  expect_that(exists("processed", e), is_true())
   expect_that(exists("download_data", e), is_true())
+
   expect_that(bindingIsActive("processed", e), is_true())
   expect_that(bindingIsActive("download_data", e), is_true())
 

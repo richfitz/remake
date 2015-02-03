@@ -9,7 +9,6 @@ context("Manual run")
 test_that("simple run", {
   cleanup()
   m <- maker("maker.yml")
-  m$load_sources()
 
   expect_that(m$is_current("data.csv"), is_false())
   expect_that(m$is_current("processed"), is_false())
@@ -88,7 +87,6 @@ test_that("Depending on a file we don't make", {
   ## This configuration is the same as maker.yml, but it does not
   ## contain a rule for building data.csv
   m <- maker("maker2.yml")
-  m$load_sources()
 
   mp <- maker_private(m)
   expect_that(mp$update("data.csv", force=TRUE),

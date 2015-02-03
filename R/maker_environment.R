@@ -92,7 +92,7 @@ print.maker_environment <- function(x, ...) {
 }
 
 maker_environment <- function(m, names=character(0), target=NULL) {
-  m$load_sources()
+  m$refresh()
   e <- new.env(parent=m$store$env$env)
   m$store$objects$export(names, e)
   attr(e, "target") <- target
