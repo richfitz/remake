@@ -22,8 +22,8 @@ managed_environment <- R6Class(
     is_current=function(force=FALSE) {
       !(force
         || is.null(self$env)
-        || !identical_map(hash_files(self$find_files()),
-                          self$source_files_hash))
+        || !identical_map(hash_files(self$find_files()), self$source_files_hash)
+        || !all(self$packages %in% .packages()))
     },
 
     reload=function(force=FALSE) {
@@ -41,6 +41,11 @@ managed_environment <- R6Class(
     },
 
     load_packages=function() {
+      ## First, check that all packages are available:
+      msg <- missing_packages(self$packages)
+      if (length(msg) > 0L) {
+        stop(missing_packages_condition(msg))
+      }
       for (p in self$packages) {
         suppressMessages(library(p, character.only=TRUE, quietly=TRUE))
       }

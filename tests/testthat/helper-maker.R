@@ -14,3 +14,10 @@ cleanup <- function() {
   unlink("test", recursive=TRUE)
   invisible(NULL)
 }
+
+skip_unless_travis <- function() {
+  if (identical(Sys.getenv("TRAVIS"), "true")) {
+    return()
+  }
+  skip("Not on Travis")
+}

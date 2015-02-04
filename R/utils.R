@@ -299,3 +299,8 @@ uninvisible <- function(x) {
   force(x)
   x
 }
+
+## Like dQuote but not "smart"
+dquote <- function(x) {
+  sprintf('"%s"', x)
+}

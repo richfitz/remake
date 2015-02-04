@@ -98,11 +98,6 @@
     ## These two are really only used in the tests.
     is_current=function(target_name, check=NULL) {
       is_current(private$get_target(target_name), self$store, check)
-    },
-
-    ## Utilities:
-    install_packages=function() {
-      utility_install_packages(self)
     }
   ),
 
@@ -175,7 +170,8 @@
     initialize_sources=function() {
       if (!self$store$env$is_current()) {
         private$print_message("READ", "", "# loading sources")
-        self$store$env$reload(TRUE)
+        tryCatch(self$store$env$reload(TRUE),
+                 missing_packages=function(e) missing_packages_recover(e, self))
         if (!is.null(private$active_bindings)) {
           maker_reload_active_bindings(self, "source", private$active_bindings)
         }

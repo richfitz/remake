@@ -51,28 +51,17 @@ maker_add_sources <- function(m, value) {
   is_source <- (grepl("\\.[rR]$", value) |
                   grepl("/", value) |
                     file.exists(value))
-  maker_interactive_list(m)$packages <-
-    union(maker_interactive_list(m)$packages,
-          sub("^package:", "", value[!is_source]))
-  maker_interactive_list(m)$sources <-
-    union(maker_interactive_list(m)$sources,
-          value[is_source])
+  dat <- maker_interactive_list(m)
+  dat$packages <- union(dat$packages, sub("^package:", "", value[!is_source]))
+  dat$sources <- union(dat$sources, value[is_source])
+  maker_interactive_list(m) <- dat
 
+  ## NOTE: we only rebuild the sources if running in global mode.
   obj <- maker_active_bindings(m)
   if (!is.null(obj)) {
-    dat <- maker_interactive_list(m)
-    ## Here we actually want to build and reload the managed
-    ## environment object.  There's some repetition here about
-    ## how this should be done, but I think this will do the
-    ## right thing.
-    ##
-    ## This is a bit wasteful in that we reload *every* source file.
-    ## What would be better is if we load only the changed things, but
-    ## this is more likely to be correct.
-    m$store$env <- managed_environment$new(dat$packages, dat$sources)
-    maker_private(m)$print_message("READ", "", "# loading sources")
-    m$store$env$reload(TRUE)
-    maker_reload_active_bindings(m, "source", obj)
+    m$store$env$packages <- dat$packages
+    m$store$env$sources  <- dat$sources
+    maker_private(m)$initialize_sources()
   }
 }
 
