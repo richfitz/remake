@@ -39,6 +39,7 @@ test_that("install_packages", {
 ## probably best to
 test_that("install_packages (for reals)", {
   skip_unless_travis()
+  set_cran_mirror()
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -66,6 +67,8 @@ test_that("loading a makerfile with a missing package", {
               throws_error('install.packages("nosuchpackage")', fixed=TRUE))
 
   ## skip_unless_travis()
+  ## set_cran_mirror()
+  ## oo <- options(maker.install.missing.packages=TRUE)
   ## on.exit(options(oo))
   ##
   ## TODO: This actually only errors after dropping *back* into maker;
@@ -79,6 +82,7 @@ test_that("loading a makerfile with a missing package", {
 
 test_that("loading a makerfile with a missing package", {
   skip_unless_travis()
+  set_cran_mirror()
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
