@@ -21,3 +21,7 @@ skip_unless_travis <- function() {
   }
   skip("Not on Travis")
 }
+
+if (is.null(getOption("repos"))) {
+  options(repos="http://cran.rstudio.com")
+}
