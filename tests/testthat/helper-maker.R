@@ -12,6 +12,7 @@ cleanup <- function() {
                                  "tmp_quoting.yml")))
   unlink("figure", recursive=TRUE)
   unlink("test", recursive=TRUE)
+  cache$clear()
   invisible(NULL)
 }
 

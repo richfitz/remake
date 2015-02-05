@@ -163,3 +163,11 @@ test_that("literals", {
   expect_that(db$code$functions, equals(empty_named_list()))
   expect_that(db$code$packages, equals(list()))
 })
+
+test_that("Caching", {
+  cleanup()
+  m <- maker("maker.yml")
+  expect_that(cache$fetch("maker.yml"), is_a("maker"))
+  cleanup()
+  expect_that(cache$fetch("maker.yml"), is_null())
+})

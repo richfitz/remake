@@ -447,16 +447,28 @@ maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
   if (is.null(maker_file)) {
     .R6_maker_interactive$new(verbose=verbose, envir=envir)
   } else {
-    cached <- cache$fetch(maker_file)
-    if (is.null(cached)) {
-      message("[creating maker]")
-      ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
-      cache$add(ret) # could pass the filename here...
-      ret
+    allow_caching <- isTRUE(verbose) && is.null(envir)
+    ## TODO: We don't check that the `envir` option is compatible
+    ## because that never gets stored.  For now, just skip the cache.
+    ##
+    ## TODO: Have a use_cached=FALSE option
+    ##
+    ## TODO: Move all this logic into the cache object.
+    if (allow_caching) {
+      cached <- cache$fetch(maker_file)
+      if (is.null(cached) || !is.null(envir)) {
+        message("[creating maker]")
+        ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+        cache$add(ret)
+      } else {
+        message("[loading cached maker]")
+        ret <- cached
+      }
     } else {
-      message("[loading cached maker]")
-      cached
+      message("[skipping cache]")
+      ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
     }
+    ret
   }
 }
 
