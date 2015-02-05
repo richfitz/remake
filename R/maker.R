@@ -19,25 +19,11 @@
       private$reload_config()
     },
 
-    refresh=function() {
-      if (private$is_interactive()) {
-        reload <- !identical(hash_object(private$interactive), private$hash)
-      } else {
-        reload <- !identical(hash_files(names(private$hash)), private$hash)
-      }
-      if (reload) {
-        private$print_message("READ", "", "# reloading makerfile")
-        private$reload_config()
-      } else {
-        private$initialize_sources()
-      }
-    },
-
     make=function(target_names=NULL, ...) {
       if (private$is_interactive()) {
         private$interactive$active <- TRUE
       }
-      self$refresh()
+      private$refresh()
       if (is.null(target_names)) {
         target_names <- private$target_default()
       }
@@ -86,6 +72,20 @@
     active_bindings=NULL,
 
     fmt=NULL,
+
+    refresh=function() {
+      if (private$is_interactive()) {
+        reload <- !identical(hash_object(private$interactive), private$hash)
+      } else {
+        reload <- !identical(hash_files(names(private$hash)), private$hash)
+      }
+      if (reload) {
+        private$print_message("READ", "", "# reloading makerfile")
+        private$reload_config()
+      } else {
+        private$initialize_sources()
+      }
+    },
 
     reload_config=function() {
       if (private$is_interactive()) {
@@ -306,7 +306,7 @@
       force_all=FALSE, quiet_target=private$verbose$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
-      self$refresh()
+      private$refresh()
       plan <- private$plan(target_name, dependencies_only)
       for (i in plan) {
         is_last <- i == target_name

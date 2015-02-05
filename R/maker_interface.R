@@ -6,8 +6,8 @@ make_dependencies <- function(m, target_name, ...) {
   private <- maker_private(m)
   t <- private$get_target(target_name)
 
-  m$refresh()
-  maker_private(m)$print_message("ENV", t$name, style="angle")
+  private$refresh()
+  private$print_message("ENV", t$name, style="angle")
   private$make1(target_name, ..., dependencies_only=TRUE)
   deps_name <- t$depends_name[t$depends_type == "object"]
 
