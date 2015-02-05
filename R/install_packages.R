@@ -1,4 +1,7 @@
 ##' Install missing packages
+##'
+##' No version comparison is done - see packrat for a more complete
+##' package management solution.
 ##' @title Install missing packages
 ##' @param maker_file Name of the makerfile to look for the list of
 ##' required packages
@@ -12,7 +15,7 @@
 ##' @author Rich FitzJohn
 install_missing_packages <- function(maker_file="maker.yml",
                                      instructions=FALSE,
-                                     missing_only=FALSE,
+                                     missing_only=TRUE,
                                      skip_target_packages=FALSE) {
   dat <- read_maker_file(maker_file)
   packages <- with_default(dat$packages, character(0))

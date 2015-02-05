@@ -5,7 +5,7 @@
 \title{Install missing packages}
 \usage{
 install_missing_packages(maker_file = "maker.yml", instructions = FALSE,
-  missing_only = FALSE, skip_target_packages = FALSE)
+  missing_only = TRUE, skip_target_packages = FALSE)
 }
 \arguments{
 \item{maker_file}{Name of the makerfile to look for the list of
@@ -22,6 +22,10 @@ in targets?}
 }
 \description{
 Install missing packages
+}
+\details{
+No version comparison is done - see packrat for a more complete
+package management solution.
 }
 \author{
 Rich FitzJohn

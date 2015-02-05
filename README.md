@@ -132,6 +132,7 @@ make_script()
 * A large analysis of [adequacy of models used in comparative phylogenetics](https://github.com/richfitz/modeladequacy/blob/master/analysis/maker.yml).
 * [How much of the world is woody?](https://github.com/richfitz/wood_maker) (this is a port of the make-based [original](https://github.com/richfitz/wood))
 * A large [data synthesis project](https://github.com/dfalster/baad) (unfortunately complicated by being a templated makerfile).
+* The accounts for a [coffee coop](https://github.com/aammd/CoffeeCoop)
 
 # Installation
 
