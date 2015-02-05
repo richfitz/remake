@@ -19,11 +19,11 @@ test_that("Targets return their output on build", {
   t <- m$targets[["data.csv"]]
   expect_that(target_build(t, store), equals("data.csv"))
 
-  m$remove_target("data.csv")
+  maker_remove_target(m, "data.csv")
   expect_that(m_update("data.csv"), equals("data.csv"))
   expect_that(m_update("data.csv"), equals("data.csv"))
 
-  m$remove_target("data.csv")
+  maker_remove_target(m, "data.csv")
   expect_that(m$make("data.csv"), equals("data.csv"))
   expect_that(m$make("data.csv"), equals("data.csv"))
 
@@ -31,11 +31,11 @@ test_that("Targets return their output on build", {
   t <- m$targets[["processed"]]
   expect_that(target_build(t, store), is_a("data.frame"))
 
-  m$remove_target("processed")
+  maker_remove_target(m, "processed")
   expect_that(m_update("processed"), is_a("data.frame"))
   expect_that(m_update("processed"), is_a("data.frame"))
 
-  m$remove_target("processed")
+  maker_remove_target(m, "processed")
   expect_that(m$make("processed"), is_a("data.frame"))
   expect_that(m$make("processed"), is_a("data.frame"))
 
@@ -43,12 +43,12 @@ test_that("Targets return their output on build", {
   t <- m$targets[["all"]]
   expect_that(target_build(t, store), is_null())
 
-  expect_that(m$remove_target("all"),
+  expect_that(maker_remove_target(m, "all"),
               throws_error("Not something that can be deleted"))
   expect_that(m_update("all"), is_null())
   expect_that(m_update("all"), is_null())
 
-  expect_that(m$remove_target("all"),
+  expect_that(maker_remove_target(m, "all"),
               throws_error("Not something that can be deleted"))
   expect_that(m$make("all"), is_null())
   expect_that(m$make("all"), is_null())

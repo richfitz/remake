@@ -507,7 +507,12 @@ make_target_cleanup <- function(name, maker) {
     depends <- c(depends, levels[[i - 1L]])
   }
   t <- make_target(name, list(command=command, depends=depends, type="cleanup"))
-  t$maker <- maker
+
+  ## Add the actual bits to clean, making sure to exclude things
+  ## destined to become cleanup targets.
+  target_level <- vcapply(maker$targets, function(x) x$cleanup_level)
+  t$targets_to_remove <- setdiff(names(maker$targets)[target_level == name],
+                                 levels)
   t
 }
 
@@ -680,13 +685,6 @@ target_build <- function(target, store, quiet=NULL) {
     res <- target_run(target, store, quiet)
     target_set(target, store, res)
     invisible(res)
-  } else if (target$type == "cleanup") {
-    target_level <- vcapply(target$maker$targets, function(x) x$cleanup_level)
-    will_remove <- names(target$maker$targets)[target_level == target$name]
-    for (t in will_remove) {
-      target$maker$remove_target(t, chain=TRUE)
-    }
-    target_run(target, store, quiet)
   }
 }
 

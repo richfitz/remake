@@ -48,44 +48,6 @@
       invisible(last)
     },
 
-    ## TODO: This is currently used by the clean targets.  The name
-    ## probably wants changing though, because it's confusing with
-    ## $add that *creates* a target.  What this does is remove the
-    ## target *product*.
-    remove_target=function(target_name, chain=TRUE) {
-      target <- private$get_target(target_name)
-      if (chain && !is.null(target$chain_kids)) {
-        chain_names <- dependency_names(target$chain_kids)
-        for (t in chain_names) {
-          self$remove_target(t, chain=FALSE)
-        }
-      }
-
-      store <- self$store
-
-      if (target$type == "file") {
-        did_remove_obj <- store$files$del(target$name, TRUE)
-        did_remove_db  <- store$db$del(target$name, TRUE)
-        did_remove <- did_remove_obj || did_remove_db
-      } else if (target$type == "object") {
-        did_remove_obj <- store$objects$del(target$name, TRUE)
-        did_remove_db  <- store$db$del(target$name, TRUE)
-        did_remove <- did_remove_obj || did_remove_db
-      } else {
-        stop("Not something that can be deleted")
-      }
-
-      if (did_remove) {
-        status <- "DEL"
-        fn <- if (target$type == "object") "rm" else "file.remove"
-        cmd <- sprintf('%s("%s")', fn, target_name)
-      } else {
-        status <- ""
-        cmd <- NULL
-      }
-      private$print_message(status, target_name, cmd, "round")
-    },
-
     target_names=function(all=FALSE) {
       if (!all) {
         ok <- vlapply(self$targets, function(x) is.null(x$chain_parent))
@@ -377,13 +339,61 @@
           ## dependencies).  This does not leave packages loaded for
           ## dependent taragets though.
           extra <- load_extra_packages(target$packages)
-          ret <- target_build(target, self$store, quiet=quiet_target)
+          if (target$type == "cleanup") {
+            ## Do this here because it uses maker (via
+            ## private$remove_target).
+            for (t in target$targets_to_remove) {
+              private$remove_target(t, chain=TRUE)
+            }
+            target_run(target, self$store, quiet_target)
+            ret <- NULL
+          } else {
+            ret <- target_build(target, self$store, quiet_target)
+          }
           unload_extra_packages(extra)
           invisible(ret)
         } else if (return_target) {
           invisible(target_get(target, self$store))
         }
       }
+    },
+
+    ## TODO: This is currently used by the clean targets.  The name
+    ## probably wants changing though, because it's confusing with
+    ## $add that *creates* a target.  What this does is remove the
+    ## target *product*.
+    remove_target=function(target_name, chain=TRUE) {
+      target <- private$get_target(target_name)
+      if (chain && !is.null(target$chain_kids)) {
+        chain_names <- dependency_names(target$chain_kids)
+        for (t in chain_names) {
+          private$remove_target(t, chain=FALSE)
+        }
+      }
+
+      store <- self$store
+
+      if (target$type == "file") {
+        did_remove_obj <- store$files$del(target$name, TRUE)
+        did_remove_db  <- store$db$del(target$name, TRUE)
+        did_remove <- did_remove_obj || did_remove_db
+      } else if (target$type == "object") {
+        did_remove_obj <- store$objects$del(target$name, TRUE)
+        did_remove_db  <- store$db$del(target$name, TRUE)
+        did_remove <- did_remove_obj || did_remove_db
+      } else {
+        stop("Not something that can be deleted")
+      }
+
+      if (did_remove) {
+        status <- "DEL"
+        fn <- if (target$type == "object") "rm" else "file.remove"
+        cmd <- sprintf('%s("%s")', fn, target_name)
+      } else {
+        status <- ""
+        cmd <- NULL
+      }
+      private$print_message(status, target_name, cmd, "round")
     }
     ))
 

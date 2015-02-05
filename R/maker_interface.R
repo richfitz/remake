@@ -36,3 +36,11 @@ maker_script <- function(m, target_name=NULL) {
   class(src) <- "maker_script"
   src
 }
+
+## This one is used for testing, but I'm not sure how useful it will
+## generally be?  When working in global mode, it's possible that
+## assigning NULL onto an "object" could trigger this: that'd be
+## nicer perhaps?
+maker_remove_target <- function(m, target_name, chain=TRUE) {
+  maker_private(m)$remove_target(target_name, chain)
+}

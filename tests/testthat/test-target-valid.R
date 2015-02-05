@@ -349,7 +349,7 @@ test_that("get/set/archive object targets", {
   target_set(t, m$store, "foo")
   expect_that(target_get(t, m$store), equals("foo"))
 
-  m$remove_target("processed")
+  maker_remove_target(m, "processed")
 
   path <- tempfile()
   dir.create(path)
@@ -384,7 +384,7 @@ test_that("get/set/archive file targets", {
   expect_that(readRDS(file.path(path, "db", name)), equals(dep))
   unlink(path, recursive=TRUE)
 
-  m$remove_target("plot.pdf")
+  maker_remove_target(m, "plot.pdf")
 
   path <- tempfile()
   dir.create(path)

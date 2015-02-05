@@ -51,13 +51,13 @@ test_that("Chained rules", {
 
   ## By default, so does remove_target:
   res <- m$make("chained")
-  m$remove_target("chained")
+  maker_remove_target(m, "chained")
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_false())
   expect_that(m$store$objects$contains("chained{2}"), is_false())
 
   res <- m$make("chained")
-  m$remove_target("chained", FALSE)
+  maker_remove_target(m, "chained", FALSE)
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_true())
   expect_that(m$store$objects$contains("chained{2}"), is_true())
@@ -84,7 +84,7 @@ test_that("Chained rules -> file", {
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
-  m$remove_target("plot.pdf")
+  maker_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 })
@@ -110,7 +110,7 @@ test_that("Chained rules -> plot", {
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
-  m$remove_target("plot.pdf")
+  maker_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 })
