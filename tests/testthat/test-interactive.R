@@ -79,7 +79,7 @@ test_that("add sources", {
 test_that("all together (Active)", {
   cleanup()
   m <- maker(NULL)
-  expect_that(maker_private(m)$is_interactive(), is_true())
+  expect_that(inherits(m, "maker_interactive"), is_true())
 
   m <- maker(NULL)
   m$add <- "package:testthat"
@@ -90,9 +90,9 @@ test_that("all together (Active)", {
   m$add <- target("plot.pdf", myplot(processed),
                   plot=list(width=8, height=4))
 
-  expect_that(maker_interactive_list(m)$active, is_false())
+  expect_that(m$active, is_false())
   m$make("plot.pdf")
-  expect_that(maker_interactive_list(m)$active, is_true())
+  expect_that(m$active, is_true())
 
   expect_that(file.exists("plot.pdf"), is_true())
 })
@@ -102,7 +102,7 @@ test_that("Active and global", {
 
   e <- new.env()
   m <- maker(NULL, envir=e)
-  expect_that(maker_private(m)$is_interactive(), is_true())
+  expect_that(inherits(m, "maker_interactive"), is_true())
   expect_that(maker_active_bindings(m), not(is_null()))
 
   m$add <- "package:testthat"
@@ -130,9 +130,9 @@ test_that("Active and global", {
   expect_that(maker_active_bindings(m)$bindings$target,
               equals("processed"))
 
-  expect_that(maker_interactive_list(m)$active, is_false())
+  expect_that(m$active, is_false())
   m$make("plot.pdf")
-  expect_that(maker_interactive_list(m)$active, is_true())
+  expect_that(m$active, is_true())
 
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(bindingIsActive("processed", e), is_true())

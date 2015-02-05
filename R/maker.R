@@ -13,16 +13,11 @@
       if (!is.null(envir)) {
         private$active_bindings <- maker_active_bindings_manager(envir)
       }
-      if (private$is_interactive()) {
-        private$interactive <- maker_interactive()
-      }
-      private$reload_config()
+      private$initialize_message_format()
+      private$refresh()
     },
 
     make=function(target_names=NULL, ...) {
-      if (private$is_interactive()) {
-        private$interactive$active <- TRUE
-      }
       private$refresh()
       if (is.null(target_names)) {
         target_names <- private$target_default()
@@ -44,23 +39,6 @@
     }
   ),
 
-  active=list(
-    add=function(value) {
-      if (missing(value)) {
-        message("Pass in libary/source/target calls here")
-      } else if (!private$is_interactive()) {
-        stop("Cannot add packages when not running in interactive mode")
-      } else  if (inherits(value, "target_base")) {
-        maker_add_target(self, value)
-      } else if (is.character(value)) {
-        maker_add_sources(self, value)
-      } else {
-        stop("Can't add objects of class: ",
-             paste(class(value), collapse=" / "))
-      }
-    }
-  ),
-
   private=list(
     file=NULL,
     path=NULL,
@@ -68,34 +46,36 @@
     default_target=NULL,
 
     hash=NULL,
-    interactive=NULL,
     active_bindings=NULL,
 
     fmt=NULL,
 
     refresh=function() {
-      if (private$is_interactive()) {
-        reload <- !identical(hash_object(private$interactive), private$hash)
-      } else {
-        reload <- !identical(hash_files(names(private$hash)), private$hash)
-      }
-      if (reload) {
-        private$print_message("READ", "", "# reloading makerfile")
-        private$reload_config()
+      config <- private$read_config()
+      if (!is.null(config)) {
+        ## NOTE: probably best not to print this the first time?  That
+        ## would be when private$hash is empty.
+        if (!is.null(private$hash)) {
+          private$print_message("READ", "", "# reloading makerfile")
+        }
+        private$reload_config(config)
       } else {
         private$initialize_sources()
       }
     },
 
-    reload_config=function() {
-      if (private$is_interactive()) {
-        config <- private$interactive
-        config$hash <- hash_object(private$interactive)
+    read_config=function() {
+      reload <- is.null(private$hash) ||
+        !identical(hash_files(names(private$hash)), private$hash)
+      if (reload) {
+        read_maker_file(private$file)
       } else {
-        config <- read_maker_file(private$file)
+        NULL
       }
-      private$hash <- config$hash
+    },
 
+    reload_config=function(config) {
+      private$hash <- config$hash
       private$initialize_targets(config)
       private$initialize_store(config)
       private$initialize_message_format()
@@ -103,19 +83,14 @@
     },
 
     initialize_targets=function(config) {
-      ## This runs always, *unless* we're in interactive mode and
-      ## we're not yet active.
-      skip <- private$is_interactive() && !private$interactive$active
-      if (!skip) {
-        self$targets <- NULL
-        private$add_targets(config$targets)
-        private$initialize_cleanup_targets()
-        private$initialize_targets_activate()
-        private$check_rule_target_clash()
-        private$initialize_default_target(config$target_default)
-        if (!is.null(private$active_bindings)) {
-          maker_reload_active_bindings(self, "target", private$active_bindings)
-        }
+      self$targets <- NULL
+      private$add_targets(config$targets)
+      private$initialize_cleanup_targets()
+      private$initialize_targets_activate()
+      private$check_rule_target_clash()
+      private$initialize_default_target(config$target_default)
+      if (!is.null(private$active_bindings)) {
+        maker_reload_active_bindings(self, "target", private$active_bindings)
       }
     },
 
@@ -207,10 +182,6 @@
         with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),
         target_width=target_width,
         max_cmd_width=width - (w0 + 1 + target_width + 4))
-    },
-
-    is_interactive=function() {
-      is.null(private$file)
     },
 
     check_rule_target_clash=function() {
@@ -395,7 +366,59 @@
       }
       private$print_message(status, target_name, cmd, "round")
     }
-    ))
+  ))
+
+.R6_maker_interactive <- R6Class(
+  "maker_interactive",
+  inherit=.R6_maker,
+  public=list(
+    active=FALSE,
+
+    initialize=function(verbose=TRUE, envir=NULL) {
+      private$interactive <- maker_interactive_config()
+      super$initialize(NULL, verbose, envir)
+    },
+
+    make=function(target_names=NULL, ...) {
+      self$active <- TRUE
+      super$make(target_names, ...)
+    }
+  ),
+
+  active=list(
+    add=function(value) {
+      if (missing(value)) {
+        message("Pass in libary/source/target calls here")
+      } else  if (inherits(value, "target_base")) {
+        maker_add_target(self, value)
+      } else if (is.character(value)) {
+        maker_add_sources(self, value)
+      } else {
+        stop("Can't add objects of class: ",
+             paste(class(value), collapse=" / "))
+      }
+    }
+  ),
+
+  private=list(
+    interactive=NULL,
+
+    read_config=function() {
+      config <- NULL
+      reload <- !identical(hash_object(private$interactive), private$hash)
+      if (reload) {
+        config <- private$interactive
+        config$hash <- hash_object(private$interactive)
+      }
+      config
+    },
+
+    initialize_targets=function(config) {
+      if (self$active) {
+        super$initialize_targets(config)
+      }
+    }
+  ))
 
 ##' Creates a maker instance to interact with.
 ##' @title Create a maker object
@@ -421,7 +444,11 @@
 ##' }
 ##' @export
 maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
-  .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+  if (is.null(maker_file)) {
+    .R6_maker_interactive$new(verbose=verbose, envir=envir)
+  } else {
+    .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+  }
 }
 
 ## TODO: There is far too much going on in here: split this into

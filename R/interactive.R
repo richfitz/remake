@@ -10,7 +10,7 @@ interactive_drop_braces <- function(expr) {
   expr
 }
 
-maker_interactive <- function() {
+maker_interactive_config <- function() {
   list(targets=empty_named_list(),
        sources=character(0),
        packages=character(0),
