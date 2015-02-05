@@ -90,7 +90,7 @@ status <- function(target_name, graph, m) {
   dirty <- dbd <- structure(logical(length(candidates)), names=candidates)
   for (t in candidates) {
     x <- m$targets[[t]]
-    dirty[[t]] <- !is_current(x, m$store)
+    dirty[[t]] <- !target_is_current(x, m$store)
     if (check_depends(x$check)) {
       d <- x$depends_name[x$depends_type %in% c("file", "object")]
       ## TODO: This conditional goes away if we have a dependency

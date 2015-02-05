@@ -288,7 +288,7 @@ extensions <- function() {
 ## If the hashes of all inputs are unchanged from last time, it is clean
 ##
 ## Otherwise unclean
-is_current <- function(target, store, check=NULL) {
+target_is_current <- function(target, store, check=NULL) {
   check <- with_default(check, target$check)
   check <- match_value(check, check_levels())
 

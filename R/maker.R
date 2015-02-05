@@ -93,11 +93,6 @@
       } else {
         names(self$targets)
       }
-    },
-
-    ## These two are really only used in the tests.
-    is_current=function(target_name, check=NULL) {
-      is_current(private$get_target(target_name), self$store, check)
     }
   ),
 
@@ -366,7 +361,7 @@
       return_target=TRUE) {
       #
       target <- private$get_target(target_name) # self$targets[[target_name]]
-      current <- !force && is_current(target, self$store, check)
+      current <- !force && target_is_current(target, self$store, check)
 
       if (!isTRUE(target$implicit)) {
         status <- if (current) "OK" else target$status_string
@@ -618,4 +613,28 @@ maker_verbose <- function(verbose=getOption("maker.verbose", TRUE),
 ## This helper will also get used extensively in tests.
 maker_private <- function(m) {
   environment(m$initialize)$private
+}
+
+##' Check if a target is current or not.
+##' @title Check if a target is current or not
+##' @param target_name Name of the target.  An error is thrown if the
+##' target does not exist.
+##' @param m A maker object.  If omitted, then one will be built using
+##. the defaults in \code{\link{maker}}
+##' @param check What to check.  It can be "exists", "depends", "code"
+##' or "all.  By default, this comes from the target default.
+##' @export
+##' @author Rich FitzJohn
+is_current <- function(target_name, m=NULL, check=NULL) {
+  if (is.null(m)) {
+    m <- maker()
+  }
+  assert_has_target(target_name, m)
+  target_is_current(m$targets[[target_name]], m$store, check)
+}
+
+assert_has_target <- function(target_name, m) {
+  if (!(target_name %in% names(m$targets))) {
+    stop("No such target ", target_name)
+  }
 }

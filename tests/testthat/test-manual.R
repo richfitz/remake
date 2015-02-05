@@ -10,9 +10,9 @@ test_that("simple run", {
   cleanup()
   m <- maker("maker.yml")
 
-  expect_that(m$is_current("data.csv"), is_false())
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$is_current("plot.pdf"), is_false())
+  expect_that(is_current("data.csv", m), is_false())
+  expect_that(is_current("processed", m), is_false())
+  expect_that(is_current("plot.pdf", m), is_false())
 
   ## This is possibly overkill:
   cmp <- list(version=m$store$version,
@@ -68,9 +68,9 @@ test_that("simple run", {
   mp$update("processed", force=TRUE)
   mp$update("plot.pdf", force=TRUE)
 
-  expect_that(m$is_current("data.csv"),  is_true())
-  expect_that(m$is_current("processed"), is_true())
-  expect_that(m$is_current("plot.pdf"),  is_true())
+  expect_that(is_current("data.csv", m),  is_true())
+  expect_that(is_current("processed", m), is_true())
+  expect_that(is_current("plot.pdf", m),  is_true())
 
   cleanup()
 })

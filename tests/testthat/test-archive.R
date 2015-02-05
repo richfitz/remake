@@ -84,15 +84,15 @@ test_that("Import archive", {
   dest <- maker_archive_export(m, "plot.pdf")
   m$make("purge")
 
-  expect_that(m$is_current("data.csv"),  is_false())
-  expect_that(m$is_current("processed"), is_false())
-  expect_that(m$is_current("plot.pdf"),  is_false())
+  expect_that(is_current("data.csv", m),  is_false())
+  expect_that(is_current("processed", m), is_false())
+  expect_that(is_current("plot.pdf", m),  is_false())
 
   maker_archive_import(m, dest)
 
-  expect_that(m$is_current("data.csv"),  is_true())
-  expect_that(m$is_current("processed"), is_true())
-  expect_that(m$is_current("plot.pdf"),  is_true())
+  expect_that(is_current("data.csv", m),  is_true())
+  expect_that(is_current("processed", m), is_true())
+  expect_that(is_current("plot.pdf", m),  is_true())
 
   cleanup()
 })

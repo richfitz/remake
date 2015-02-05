@@ -91,7 +91,7 @@ maker_resolve_active_bindings <- function(m, type, manager, force=FALSE) {
   envir <- manager$envir
   names <- filter_active_bindings(manager$bindings[[type]], envir)
   for (i in names) {
-    if (type == "source" || force || m$is_current(i)) {
+    if (type == "source" || force || is_current(i, m)) {
       val <- get(i, envir)
     } else {
       maker_private(m)$print_message("SKIP", i)

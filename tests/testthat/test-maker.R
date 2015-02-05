@@ -118,7 +118,7 @@ test_that("literals", {
   expect_that(db$code$functions, equals(empty_named_list()))
   expect_that(db$code$packages, equals(list()))
 
-  expect_that(m$is_current("data1"), is_true())
+  expect_that(is_current("data1", m), is_true())
 
   res <- m$make("data2")
   expect_that(res, is_identical_to(list(pi)))

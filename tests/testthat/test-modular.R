@@ -24,8 +24,8 @@ test_that("Modular makerfile", {
 
   m$make("data.csv")
 
-  expect_that(m$is_current("data.csv"), is_true())
-  expect_that(mod$is_current("data.csv"), is_true())
+  expect_that(is_current("data.csv", m),   is_true())
+  expect_that(is_current("data.csv", mod), is_true())
 
   mod$make("purge")
   expect_that(file.exists("data.csv"), is_false())
