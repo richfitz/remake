@@ -477,7 +477,7 @@ make_target_cleanup <- function(name, maker) {
   levels <- cleanup_target_names()
   name <- match_value(name, levels)
   i <- match(name, levels)
-  if (name %in% maker$target_names()) {
+  if (name %in% names(maker$targets)) {
     t <- maker$targets[[name]]
 
     ## These aren't tested:

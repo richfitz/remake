@@ -27,15 +27,6 @@
         last <- private$make1(t, ...)
       }
       invisible(last)
-    },
-
-    target_names=function(all=FALSE) {
-      if (!all) {
-        ok <- vlapply(self$targets, function(x) is.null(x$chain_parent))
-        names(self$targets[ok])
-      } else {
-        names(self$targets)
-      }
     }
   ),
 
@@ -46,8 +37,8 @@
     default_target=NULL,
 
     hash=NULL,
-    active_bindings=NULL,
 
+    active_bindings=NULL,
     fmt=NULL,
 
     refresh=function() {
@@ -118,12 +109,12 @@
     ## NOTE: The logic here seems remarkably clumsy.
     initialize_default_target=function(default) {
       if (is.null(default)) {
-        if ("all" %in% self$target_names()) {
+        if ("all" %in% names(self$targets)) {
           private$default_target <- "all"
         }
       } else {
         assert_scalar_character(default, "target_default")
-        if (!(default %in% self$target_names())) {
+        if (!(default %in% names(self$targets))) {
           stop(sprintf("Default target %s not found in makerfile",
                        default))
         }
@@ -188,7 +179,7 @@
       ## TODO: Special effort needed for chained rules.
       ## TODO: Filter by realness?
       rules <- unlist(lapply(self$targets, function(x) x$rule))
-      dups <- intersect(rules, self$target_names())
+      dups <- intersect(rules, names(self$targets))
       if (length(dups) > 0L) {
         warning("Rule name clashes with target name: ",
                 paste(dups, collapse=", "))
@@ -211,15 +202,16 @@
       if (any(duplicated(target_names))) {
         stop("All target names must be unique")
       }
-      if (any(target_names %in% self$target_names(all=TRUE))) {
+      target_names_existing <- names(self$targets)
+      if (any(target_names %in% target_names_existing)) {
         if (force) {
-          to_drop <- self$target_names() %in% target_names
+          to_drop <- target_names_existing %in% target_names
           if (any(to_drop)) {
             self$targets <- self$targets[!to_drop]
           }
         } else {
           stop("Targets already present: ",
-               paste(intersect(target_names, self$target_names()),
+               paste(intersect(target_names, target_names_existing),
                      collapse=", "))
         }
       }
@@ -368,6 +360,10 @@
     }
   ))
 
+## Given how little maker does now, composition will *definitely* be
+## better.  The trick will be directly toying with the 'config' part
+## of this, I think, plus a little in getting the active bindings to
+## work.
 .R6_maker_interactive <- R6Class(
   "maker_interactive",
   inherit=.R6_maker,

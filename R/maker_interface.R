@@ -44,3 +44,12 @@ maker_script <- function(m, target_name=NULL) {
 maker_remove_target <- function(m, target_name, chain=TRUE) {
   maker_private(m)$remove_target(target_name, chain)
 }
+
+maker_target_names <- function(m, all=FALSE) {
+  if (!all) {
+    ok <- vlapply(m$targets, function(x) is.null(x$chain_parent))
+    names(m$targets[ok])
+  } else {
+    names(m$targets)
+  }
+}

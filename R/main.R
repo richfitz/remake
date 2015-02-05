@@ -69,7 +69,7 @@ print_version <- function() {
 }
 
 print_targets <- function(m) {
-  message(paste(m$target_names(), collapse="\n"))
+  message(paste(maker_target_names(m, FALSE), collapse="\n"))
 }
 
 ##' Install running script to a local directory.  This directory

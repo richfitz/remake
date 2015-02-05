@@ -12,10 +12,10 @@ test_that("Modular makerfile", {
 
   ## Not duplicated:
   expect_that(m$store$env$sources, equals("code.R"))
-  expect_that("data.csv" %in% m$target_names(), is_true())
+  expect_that("data.csv" %in% names(m$targets), is_true())
   ## data.csv is now listed *after* plot.pdf, because it was included
   ## afterwards.
-  expect_that(m$target_names()[1:4],
+  expect_that(names(m$targets)[1:4],
               equals(c("all", "processed", "plot.pdf", "data.csv")))
   expect_that(maker_private(m)$target_default(), equals("all"))
 
