@@ -38,8 +38,7 @@ test_that("install_packages", {
 ## This test is going to be too slow to do most of the time.  So
 ## probably best to
 test_that("install_packages (for reals)", {
-  skip_unless_travis()
-  set_cran_mirror()
+  skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -66,8 +65,7 @@ test_that("loading a makerfile with a missing package", {
   expect_that(maker("maker_missing_package.yml"),
               throws_error('install.packages("nosuchpackage")', fixed=TRUE))
 
-  ## skip_unless_travis()
-  ## set_cran_mirror()
+  ## skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
   ## oo <- options(maker.install.missing.packages=TRUE)
   ## on.exit(options(oo))
   ##
@@ -81,8 +79,7 @@ test_that("loading a makerfile with a missing package", {
 })
 
 test_that("loading a makerfile with a missing package", {
-  skip_unless_travis()
-  set_cran_mirror()
+  skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }

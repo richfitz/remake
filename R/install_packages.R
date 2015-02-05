@@ -131,7 +131,11 @@ read_maker_packages <- function(filename) {
                    bitbucket="repo",
                    url="url",
                    git="git_url")
-  dat <- yaml_read(filename)
+  if (file.exists(filename)) {
+    dat <- yaml_read(filename)
+  } else {
+    dat <- NULL
+  }
   for (i in names(dat)) {
     x <- dat[[i]]
     x$name <- i

@@ -15,15 +15,19 @@ cleanup <- function() {
   invisible(NULL)
 }
 
-skip_unless_travis <- function() {
-  if (identical(Sys.getenv("TRAVIS"), "true")) {
-    return()
-  }
-  skip("Not on Travis")
-}
-
 set_cran_mirror <- function() {
   if (is.null(getOption("repos"))) {
     options(repos="http://cran.rstudio.com")
   }
+}
+
+skip_unless_set <- function(name) {
+  if (identical(Sys.getenv(name), "true")) {
+    return()
+  }
+  skip("Skipping install package tests")
+}
+
+skip_unless_travis <- function() {
+  skip_unless_set("TRAVIS")
 }
