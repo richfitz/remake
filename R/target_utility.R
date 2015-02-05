@@ -1,10 +1,5 @@
-utility_install_packages <- function(m) {
-  extras <- unique(unlist(lapply(m$targets, function(x) x$packages)))
-  install_packages(union(m$store$env$packages, extras))
-}
-
 utility_gitignore <- function(m) {
-  files <- filter_targets_by_type(m$targets, "file")
+  files <- dependency_names(filter_targets_by_type(m$targets, "file"))
   add_to_gitignore(c(".maker", files))
 }
 
@@ -18,6 +13,7 @@ utility_gitignore <- function(m) {
 ## will require a path-diff function, and that's going to play badly
 ## with things like symbolic links, etc, etc.
 add_to_gitignore <- function(files) {
+  assert_character(files)
   if (file.exists(".gitignore")) {
     curr <- readLines(".gitignore")
     files <- setdiff(files, strip_whitespace(curr))
