@@ -447,7 +447,16 @@ maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
   if (is.null(maker_file)) {
     .R6_maker_interactive$new(verbose=verbose, envir=envir)
   } else {
-    .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+    cached <- cache$fetch(maker_file)
+    if (is.null(cached)) {
+      message("[creating maker]")
+      ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+      cache$add(ret) # could pass the filename here...
+      ret
+    } else {
+      message("[loading cached maker]")
+      cached
+    }
   }
 }
 
