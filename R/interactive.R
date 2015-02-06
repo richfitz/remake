@@ -1,3 +1,56 @@
+.R6_maker_interactive <- R6Class(
+  "maker_interactive",
+  public=list(
+    m=NULL,
+    interactive=NULL,
+
+    initialize=function(verbose=TRUE, envir=NULL) {
+      self$interactive <- maker_interactive_config()
+      self$m <- .R6_maker$new(NULL, verbose, envir)
+      private$set_m_private_config(FALSE)
+    },
+
+    make=function(target_names=NULL, ...) {
+      self$active <- TRUE
+      self$m$make(target_names, ...)
+    }
+  ),
+
+  active=list(
+    add=function(value) {
+      if (missing(value)) {
+        message("Pass in libary/source/target calls here")
+      } else  if (inherits(value, "target_base")) {
+        maker_interactive_add_target(self, value)
+      } else if (is.character(value)) {
+        maker_interactive_add_sources(self, value)
+      } else {
+        stop("Can't add objects of class: ",
+             paste(class(value), collapse=" / "))
+      }
+    },
+
+    active=function(value) {
+      if (missing(value)) {
+        self$interactive$active
+      } else {
+        self$interactive$active <- value
+        if (self$interactive$active) {
+          private$set_m_private_config(TRUE)
+        }
+      }
+    }),
+
+  private=list(
+    set_m_private_config=function(refresh=TRUE) {
+      mp <- maker_private(self$m)
+      mp$config <- self$interactive
+      if (refresh) {
+        mp$refresh()
+      }
+    }
+  ))
+
 ## This file holds code for "interactive mode".  This is going to be
 ## useful for building makerfiles interactively.
 interactive_drop_braces <- function(expr) {
@@ -31,19 +84,19 @@ print.target_placeholder <- function(x, ...) {
 ## need is an active/inactive state for maker, then store everything
 ## in one place.  Keep the print bit, but dispatch on that based on
 ## the active/inactive state.
-maker_add_target <- function(m, target) {
-  maker_interactive_list(m)$targets[[target$name]] <- target
+maker_interactive_add_target <- function(obj, target) {
+  obj$interactive$targets[[target$name]] <- target
   if (inherits(target, "target_object")) {
-    obj <- maker_active_bindings(m)
-    if (!is.null(obj)) {
+    b <- maker_active_bindings(obj$m)
+    if (!is.null(b)) {
       ## TODO: Deal with situation where binding exists (will be
       ## common).  Offer a 'force' option, delete bindings, etc.
-      maker_set_active_binding(m, target$name, "target", obj)
+      maker_set_active_binding(obj$m, target$name, "target", b)
     }
   }
 }
 
-maker_add_sources <- function(m, value) {
+maker_interactive_add_sources <- function(obj, value) {
   ## NOTE: The other way of doing this is by assuming that
   ## things that exist or end in .[Rrs] or a slash are sources
   ## and try to load everything else as packages?  The other
@@ -51,27 +104,15 @@ maker_add_sources <- function(m, value) {
   is_source <- (grepl("\\.[rR]$", value) |
                   grepl("/", value) |
                     file.exists(value))
-  dat <- maker_interactive_list(m)
+  dat <- obj$interactive
   dat$packages <- union(dat$packages, sub("^package:", "", value[!is_source]))
   dat$sources <- union(dat$sources, value[is_source])
-  maker_interactive_list(m) <- dat
+  obj$interactive <- dat
 
   ## NOTE: we only rebuild the sources if running in global mode.
-  obj <- maker_active_bindings(m)
-  if (!is.null(obj)) {
-    m$store$env$packages <- dat$packages
-    m$store$env$sources  <- dat$sources
-    maker_private(m)$initialize_sources()
+  if (!is.null(maker_active_bindings(obj$m))) {
+    obj$m$store$env$packages <- dat$packages
+    obj$m$store$env$sources  <- dat$sources
+    maker_private(obj$m)$initialize_sources()
   }
-}
-
-## Internal use only:
-maker_interactive_list <- function(m) {
-  maker_private(m)$interactive
-}
-## TODO: This is *ugly*.
-`maker_interactive_list<-` <- function(m, value) {
-  private <- maker_private(m)
-  private$interactive <- value
-  m
 }

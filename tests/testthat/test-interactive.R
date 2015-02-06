@@ -38,42 +38,41 @@ test_that("Drop braces", {
 
 test_that("add targets", {
   m <- maker(NULL)
-  m_interactive <- function() maker_interactive_list(m)
-  expect_that(names(m_interactive()$targets), equals(character(0)))
-  expect_that(m_interactive()$targets, is_identical_to(empty_named_list()))
+  expect_that(names(m$interactive$targets), equals(character(0)))
+  expect_that(m$active, is_false())
+  expect_that(m$interactive$targets, is_identical_to(empty_named_list()))
 
   m$add <- target("a", foo(b))
-  expect_that(names(m_interactive()$targets), equals("a"))
-  expect_that(m_interactive()$targets$a, is_a("target_object"))
+  expect_that(names(m$interactive$targets), equals("a"))
+  expect_that(m$interactive$targets$a, is_a("target_object"))
 
-  expect_that(m_interactive()$targets$a,
+  expect_that(m$interactive$targets$a,
               equals(make_target("a", list(command=quote(foo(b))))))
-  expect_that(m_interactive()$targets$a,
+  expect_that(m$interactive$targets$a,
               equals(make_target("a", list(command="foo(b)"))))
 
   m$add <- target("p.pdf", foo(b), plot=TRUE)
 
   cmp <- make_target("p.pdf", list(command=quote(foo(b)), plot=TRUE))
-  expect_that(m_interactive()$targets$p.pdf, equals(cmp))
+  expect_that(m$interactive$targets$p.pdf, equals(cmp))
 })
 
 test_that("add sources", {
   m <- maker(NULL)
-  m_interactive <- function() maker_interactive_list(m)
-  expect_that(m_interactive()$sources, equals(character(0)))
+  expect_that(m$interactive$sources, equals(character(0)))
 
   m$add <- character(0)
-  expect_that(m_interactive()$sources, equals(character(0)))
+  expect_that(m$interactive$sources, equals(character(0)))
 
   m$add <- c("file1.R", "file2.R")
-  expect_that(m_interactive()$sources, equals(c("file1.R", "file2.R")))
+  expect_that(m$interactive$sources, equals(c("file1.R", "file2.R")))
 
   ## Adding again does nothing:
   m$add <- c("file1.R", "file2.R")
-  expect_that(m_interactive()$sources, equals(c("file1.R", "file2.R")))
+  expect_that(m$interactive$sources, equals(c("file1.R", "file2.R")))
 
   m$add <- c("file3.R", "file4.R")
-  expect_that(m_interactive()$sources, equals(sprintf("file%d.R", 1:4)))
+  expect_that(m$interactive$sources, equals(sprintf("file%d.R", 1:4)))
 })
 
 test_that("all together (Active)", {
@@ -103,7 +102,10 @@ test_that("Active and global", {
   e <- new.env()
   m <- maker(NULL, envir=e)
   expect_that(inherits(m, "maker_interactive"), is_true())
-  expect_that(maker_active_bindings(m), not(is_null()))
+  expect_that(maker_active_bindings(m$m), not(is_null()))
+  expect_that(m$m$store, not(is_null()))
+  expect_that(m$m$store$env, not(is_null()))
+  expect_that(m$m$store$env, is_a("managed_environment"))
 
   m$add <- "package:testthat"
   m$add <- "code.R"
@@ -120,6 +122,8 @@ test_that("Active and global", {
   m$add <- target("processed", process_data("data.csv"))
   expect_that(exists("processed", e), is_true())
   expect_that(bindingIsActive("processed", e), is_true())
+
+  ## This is the broken bit now:
   expect_that(e$processed, is_a("target_placeholder"))
   expect_that(print(e$processed),
               prints_text("<target processed>"))
@@ -127,7 +131,7 @@ test_that("Active and global", {
   m$add <- target("plot.pdf", myplot(processed),
                   plot=list(width=8, height=4))
 
-  expect_that(maker_active_bindings(m)$bindings$target,
+  expect_that(maker_active_bindings(m$m)$bindings$target,
               equals("processed"))
 
   expect_that(m$active, is_false())

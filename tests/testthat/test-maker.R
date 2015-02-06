@@ -166,8 +166,17 @@ test_that("literals", {
 
 test_that("Caching", {
   cleanup()
+  expect_that(cache$fetch("maker.yml", TRUE, NULL),
+              is_null())
   m <- maker("maker.yml")
-  expect_that(cache$fetch("maker.yml"), is_a("maker"))
+  expect_that(cache$fetch("maker.yml", TRUE, NULL),
+              equals(m))
   cleanup()
-  expect_that(cache$fetch("maker.yml"), is_null())
+  expect_that(cache$fetch("maker.yml", TRUE, NULL),
+              is_null())
+
+  e <- new.env()
+  expect_that(cache$fetch("maker.yml", TRUE, e), is_null())
+  m2 <- maker(envir=e)
+  expect_that(cache$fetch("maker.yml", TRUE, e), equals(m2))
 })

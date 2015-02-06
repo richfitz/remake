@@ -34,64 +34,83 @@
     file=NULL,
     path=NULL,
     verbose=NULL,
+    config=NULL,
     default_target=NULL,
-
     hash=NULL,
-
     active_bindings=NULL,
     fmt=NULL,
 
     refresh=function() {
+      first_time <- is.null(private$hash)
       config <- private$read_config()
-      if (!is.null(config)) {
-        ## NOTE: probably best not to print this the first time?  That
-        ## would be when private$hash is empty.
-        if (!is.null(private$hash)) {
+      if (first_time || !is.null(config)) {
+        private$config <- config
+        if (!first_time) {
           private$print_message("READ", "", "# reloading makerfile")
         }
-        private$reload_config(config)
+        private$reload_config()
       } else {
         private$initialize_sources()
       }
     },
 
     read_config=function() {
-      reload <- is.null(private$hash) ||
-        !identical(hash_files(names(private$hash)), private$hash)
-      if (reload) {
-        read_maker_file(private$file)
+      config <- NULL
+      if (is.null(private$file)) {
+        ## Configuration will be stashed here already:
+        if (!is.null(private$config)) {
+          hash <- hash_object(private$config)
+          reload <- !identical(hash, private$hash)
+          if (reload) {
+            config <- private$config
+            config$hash <- hash_object(private$interactive)
+          }
+        }
       } else {
-        NULL
+        reload <- is.null(private$hash) ||
+          !identical(hash_files(names(private$hash)), private$hash)
+        if (reload) {
+          config <- read_maker_file(private$file)
+        }
       }
+      config
     },
 
-    reload_config=function(config) {
-      private$hash <- config$hash
-      private$initialize_targets(config)
-      private$initialize_store(config)
-      private$initialize_message_format()
+    reload_config=function() {
+      private$hash <- private$config$hash
+      if (!is.null(private$config) && !isFALSE(private$config$active)) {
+        private$initialize_targets()
+      }
+      private$initialize_store()
       private$initialize_sources()
     },
 
-    initialize_targets=function(config) {
+    initialize_targets=function() {
       self$targets <- NULL
-      private$add_targets(config$targets)
+      private$add_targets(private$config$targets)
       private$initialize_cleanup_targets()
       private$initialize_targets_activate()
       private$check_rule_target_clash()
-      private$initialize_default_target(config$target_default)
+      private$initialize_default_target(private$config$target_default)
+      private$initialize_message_format() # width may change?
       if (!is.null(private$active_bindings)) {
         maker_reload_active_bindings(self, "target", private$active_bindings)
       }
     },
 
-    initialize_store=function(config) {
+    initialize_store=function() {
       self$store <- store$new(private$path)
-      self$store$env <- managed_environment$new(config$packages, config$sources)
+      if (is.null(private$config)) {
+        packages <- sources <- character(0)
+      } else {
+        packages <- private$config$packages
+        sources  <- private$config$sources
+      }
+      self$store$env <- managed_environment$new(packages, sources)
     },
 
     initialize_sources=function() {
-      if (!self$store$env$is_current()) {
+      if (!is.null(self$store$env) && !self$store$env$is_current()) {
         private$print_message("READ", "", "# loading sources")
         tryCatch(self$store$env$reload(TRUE),
                  missing_packages=function(e) missing_packages_recover(e, self))
@@ -269,7 +288,6 @@
       force_all=FALSE, quiet_target=private$verbose$quiet_target, check=NULL,
       dependencies_only=FALSE) {
       #
-      private$refresh()
       plan <- private$plan(target_name, dependencies_only)
       for (i in plan) {
         is_last <- i == target_name
@@ -360,62 +378,6 @@
     }
   ))
 
-## Given how little maker does now, composition will *definitely* be
-## better.  The trick will be directly toying with the 'config' part
-## of this, I think, plus a little in getting the active bindings to
-## work.
-.R6_maker_interactive <- R6Class(
-  "maker_interactive",
-  inherit=.R6_maker,
-  public=list(
-    active=FALSE,
-
-    initialize=function(verbose=TRUE, envir=NULL) {
-      private$interactive <- maker_interactive_config()
-      super$initialize(NULL, verbose, envir)
-    },
-
-    make=function(target_names=NULL, ...) {
-      self$active <- TRUE
-      super$make(target_names, ...)
-    }
-  ),
-
-  active=list(
-    add=function(value) {
-      if (missing(value)) {
-        message("Pass in libary/source/target calls here")
-      } else  if (inherits(value, "target_base")) {
-        maker_add_target(self, value)
-      } else if (is.character(value)) {
-        maker_add_sources(self, value)
-      } else {
-        stop("Can't add objects of class: ",
-             paste(class(value), collapse=" / "))
-      }
-    }
-  ),
-
-  private=list(
-    interactive=NULL,
-
-    read_config=function() {
-      config <- NULL
-      reload <- !identical(hash_object(private$interactive), private$hash)
-      if (reload) {
-        config <- private$interactive
-        config$hash <- hash_object(private$interactive)
-      }
-      config
-    },
-
-    initialize_targets=function(config) {
-      if (self$active) {
-        super$initialize_targets(config)
-      }
-    }
-  ))
-
 ##' Creates a maker instance to interact with.
 ##' @title Create a maker object
 ##' @param maker_file Name of the makerfile (by default
@@ -428,6 +390,7 @@
 ##' @param envir An environment into which to create \emph{links} to
 ##' maker-controlled objects (targets and sources).  \code{.GlobalEnv}
 ##' is a reasonable choice.  This will change in a future version.
+##' @param allow_cache Allow cached maker instances to be loaded?
 ##' @examples
 ##' \dontrun{
 ##' # create a quiet maker instance
@@ -439,20 +402,14 @@
 ##' m$make()
 ##' }
 ##' @export
-maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
+maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL,
+                  allow_cache=TRUE) {
   if (is.null(maker_file)) {
     .R6_maker_interactive$new(verbose=verbose, envir=envir)
   } else {
-    allow_caching <- isTRUE(verbose) && is.null(envir)
-    ## TODO: We don't check that the `envir` option is compatible
-    ## because that never gets stored.  For now, just skip the cache.
-    ##
-    ## TODO: Have a use_cached=FALSE option
-    ##
-    ## TODO: Move all this logic into the cache object.
-    if (allow_caching) {
-      cached <- cache$fetch(maker_file)
-      if (is.null(cached) || !is.null(envir)) {
+    if (allow_cache) {
+      cached <- cache$fetch(maker_file, verbose, envir)
+      if (is.null(cached)) {
         message("[creating maker]")
         ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
         cache$add(ret)

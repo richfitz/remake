@@ -10,8 +10,8 @@ make_active_binding_function <- function(m, name, type) {
   function(value) {
     if (missing(value)) {
       if (type == "target") {
-        if (inherits(m, "maker_interactive") && !m$active) {
-          ret <- maker_interactive_list(m)$targets[[name]]
+        if (isFALSE(maker_private(m)$config$active)) {
+          ret <- list(name=name)
           class(ret) <- c("target_placeholder", class(ret))
           ret
         } else {
