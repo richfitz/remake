@@ -65,7 +65,7 @@ targets:
 You still need to write functions that carry out each step; that might look something like [this](doc/code.R), but it would define the functions `download_data`, `processs_data` and `myplot`.  Remake can then be run from within R:
 
 ```r
-make()
+remake::make()
 # [ BUILD ] data.csv            |  download_data("data.csv")
 # [ BUILD ] processed           |  processed <- process_data("data.csv")
 # [ BUILD ] plot.pdf            |  myplot(processed) # ==> plot.pdf
@@ -77,7 +77,7 @@ The "`BUILD`": next to each target indicates that it is being run (which may tak
 Rerunning remake:
 
 ```r
-make()
+remake::make()
 # [    OK ] data.csv
 # [    OK ] processed
 # [    OK ] plot.pdf
@@ -89,7 +89,7 @@ Everything is up to date, so remake just skips over things.
 There are also special [`knitr`](http://yihui.name/knitr) targets:
 
 ```r
-make("report.md")
+remake::make("report.md")
 # [    OK ] data.csv
 # [    OK ] processed
 # [       ] report.Rmd
@@ -103,7 +103,7 @@ This arranges for the target `processed`, on which this depends (see [the remake
 Rather than require that you buy in to some all-singing, all-dancing workflow tool, `remake` tries to be agnostic about how you work: there are no special functions within your code that you need to use.  You can also create a linear version of your analysis at any time:
 
 ```r
-make_script()
+remake::make_script()
 # source("code.R")
 # download_data("data.csv")
 # processed <- process_data("data.csv")
@@ -153,13 +153,5 @@ remake depends on several R packages, all of which can be installed from CRAN.  
 * [`optparse`](http://cran.r-project.org/web/packages/optparse) for a command line version (run from outside of an R session)
 
 ```r
-install.packages(c("R6", "yaml", "digest", "crayon"))
-```
-
-In addition, there are several optional packages:
-
-* [`igraph`](http://cran.r-project.org/web/packages/igraph) for creating a plots of the dependency graph
-
-```r
-install.packages(c("optparse", "igraph"))
+install.packages(c("R6", "yaml", "digest", "crayon", "optparse"))
 ```
