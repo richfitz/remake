@@ -7,7 +7,7 @@
 main(args = commandArgs(TRUE))
 }
 \arguments{
-\item{args}{Arguments to pass to}
+\item{args}{Not yet documented}
 }
 \description{
 The command line script, to be run outside of the package.  Don't

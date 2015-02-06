@@ -2,13 +2,12 @@
 ##' run this from within R (well, you can't actually).  This uses
 ##' \code{commandArgs} to pass along arguments to \code{\link{remake}}.
 ##' @title Command line interface to remake
+##' @param args Not yet documented
 ##' @export
-##' @param args Arguments to pass to
 main <- function(args=commandArgs(TRUE)) {
   if (interactive()) {
     stop("This is not meant to be used from an R session!")
   }
-  loadNamespace("optparse")  
   parser <- optparse::OptionParser(option_list=remake_options())
   args <- optparse::parse_args(parser, args, positional_arguments=TRUE)
   opts <- args$options

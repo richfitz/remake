@@ -14,11 +14,11 @@ Imports:
     digest,
     yaml,
     codetools,
-    crayon
+    crayon,
+    optparse
 Suggests:
     testthat,
     igraph,
-    optparse,
     knitr,
     devtools,
     pryr
