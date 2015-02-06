@@ -410,15 +410,12 @@ remake <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
     if (allow_cache) {
       cached <- cache$fetch(remake_file, verbose, envir)
       if (is.null(cached)) {
-        message("[creating remake]")
         ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
         cache$add(ret)
       } else {
-        message("[loading cached remake]")
         ret <- cached
       }
     } else {
-      message("[skipping cache]")
       ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
     }
     ret
