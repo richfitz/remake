@@ -1,0 +1,28 @@
+##' remake / remodel
+##'
+##' I tried but I could not find a way
+##'
+##' Looking back all I did was look away
+##'
+##' Next time is the best we all know
+##'
+##' But if there is no next time where to go?
+##'
+##' She's the sweetest queen I've ever seen
+##'
+##' (CPL593H)
+##'
+##' See here she comes, see what I mean?
+##'
+##' (CPL593H)
+##'
+##' I could talk talk talk, talk talk myself to death
+##'
+##' But I believe I would only waste my breath
+##'
+##' Ooh, show me
+##' @title remake / remodel
+##' @export
+remodel <- function() {
+  browseURL("https://m.youtube.com/watch?v=CMBeqNfYEYY")
+}
