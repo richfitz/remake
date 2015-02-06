@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Package sources")
@@ -10,12 +10,12 @@ context("Package sources")
 ## creating a horrible pile of dependencies is tricky.  I notice that
 ## devtools doesn't actually test installation.
 test_that("sources", {
-  dat <- read_maker_packages("maker_sources.yml")
+  dat <- read_remake_packages("remake_sources.yml")
   expect_that(dat$sowsear$repo, equals("richfitz/sowsear"))
 })
 
 test_that("install_packages", {
-  extras <- read_maker_packages("maker_sources.yml")
+  extras <- read_remake_packages("remake_sources.yml")
   cmp_devtools_cran <- 'install.packages("devtools")'
   expect_that(install_packages("devtools", TRUE, FALSE, extras),
               equals(cmp_devtools_cran))
@@ -38,7 +38,7 @@ test_that("install_packages", {
 ## This test is going to be too slow to do most of the time.  So
 ## probably best to
 test_that("install_packages (for reals)", {
-  skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -48,7 +48,7 @@ test_that("install_packages (for reals)", {
   .libPaths(path)
 
   ## Then try actually running this:
-  extras <- read_maker_packages("maker_sources.yml")
+  extras <- read_remake_packages("remake_sources.yml")
   install_packages("sowsear", instructions=TRUE, package_sources=extras)
   res <- install_packages("sowsear", package_sources=extras)
   expect_that(res, equals("sowsear"))
@@ -61,25 +61,25 @@ test_that("install_packages (for reals)", {
   .libPaths(path)
 })
 
-test_that("loading a makerfile with a missing package", {
-  expect_that(maker("maker_missing_package.yml"),
+test_that("loading a remakefile with a missing package", {
+  expect_that(remake("remake_missing_package.yml"),
               throws_error('install.packages("nosuchpackage")', fixed=TRUE))
 
-  ## skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
-  ## oo <- options(maker.install.missing.packages=TRUE)
+  ## skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
+  ## oo <- options(remake.install.missing.packages=TRUE)
   ## on.exit(options(oo))
   ##
-  ## TODO: This actually only errors after dropping *back* into maker;
+  ## TODO: This actually only errors after dropping *back* into remake;
   ## should turn the warning it gives into an error I think.
   ##
   ## TODO: I can't actually test this, oddly; somehow the tryCatch
   ## doesn't nest or something?
-  ## expect_that(maker("maker_missing_package.yml"),
+  ## expect_that(remake("remake_missing_package.yml"),
   ##             throws_error("is not available"))
 })
 
-test_that("loading a makerfile with a missing package", {
-  skip_unless_set("MAKER_TEST_INSTALL_PACKAGES")
+test_that("loading a remakefile with a missing package", {
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -87,13 +87,13 @@ test_that("loading a makerfile with a missing package", {
   dir.create(path)
   .libPaths(path)
 
-  expect_that(m <- maker("maker_missing_sowsear.yml"),
+  expect_that(m <- remake("remake_missing_sowsear.yml"),
               throws_error("devtools::install_github"))
-  oo <- options(maker.install.missing.packages=TRUE)
+  oo <- options(remake.install.missing.packages=TRUE)
   on.exit(options(oo))
-  expect_that(m <- maker("maker_missing_sowsear.yml"),
+  expect_that(m <- remake("remake_missing_sowsear.yml"),
               shows_message("Downloading github repo"))
-  expect_that(m, is_a("maker"))
+  expect_that(m, is_a("remake"))
   expect_that("sowsear" %in% .packages(), is_true())
 
   unlink(path, recursive=TRUE)

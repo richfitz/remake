@@ -1,20 +1,20 @@
-## Functions for dealing with maker archives.
+## Functions for dealing with remake archives.
 
 ## Test if this really is a make archive.
 ## 1. Has a single top level directory
 ## 2. Contains second level directories "db", "objects", "files"
-is_maker_archive <- function(filename, error=FALSE) {
+is_remake_archive <- function(filename, error=FALSE) {
   assert_file_exists(filename)
 
   contents <- unzip(filename, list=TRUE)
   if (nrow(contents) == 0L) {
     if (error) {
-      stop("Not a maker archive: zipfile is empty")
+      stop("Not a remake archive: zipfile is empty")
     }
     return(FALSE)
   }
   paths <- path_split(contents$Name)
-  tld <- maker_archive_tld(filename, error=error)
+  tld <- remake_archive_tld(filename, error=error)
   if (length(tld) > 1L) {
     return(FALSE)
   }
@@ -25,7 +25,7 @@ is_maker_archive <- function(filename, error=FALSE) {
   sld <- paste0(file.path(tld, c("db", "objects", "files")), "/")
   if (!all(sld %in% contents$Name)) {
     if (error) {
-      stop("Not a maker archive: expected directories db, objects, files")
+      stop("Not a remake archive: expected directories db, objects, files")
     }
     return(FALSE)
   }
@@ -33,23 +33,23 @@ is_maker_archive <- function(filename, error=FALSE) {
   TRUE
 }
 
-assert_maker_archive <- function(filename) {
-  is_maker_archive(filename, error=TRUE)
+assert_remake_archive <- function(filename) {
+  is_remake_archive(filename, error=TRUE)
 }
 
-maker_archive_tld <- function(filename, error=TRUE) {
+remake_archive_tld <- function(filename, error=TRUE) {
   contents <- unzip(filename, list=TRUE)
   paths <- path_split(contents$Name)
   tld <- unique(vcapply(paths, function(x) x[[1]]))
   if (length(tld) > 1L && error) {
-    stop("Not a maker archive: expected single top level directory")
+    stop("Not a remake archive: expected single top level directory")
   }
   tld
 }
 
-maker_archive_contents <- function(filename) {
-  assert_maker_archive(filename)
-  tld <- maker_archive_tld(filename, error=TRUE)
+remake_archive_contents <- function(filename) {
+  assert_remake_archive(filename)
+  tld <- remake_archive_tld(filename, error=TRUE)
   contents <- unzip(filename, list=TRUE)
   path <- tempfile()
   dir.create(path, recursive=TRUE)
@@ -60,22 +60,22 @@ maker_archive_contents <- function(filename) {
   vcapply(res, function(x) readRDS(x)$name, USE.NAMES=FALSE)
 }
 
-maker_archive_export <- function(maker, target_name, recursive=TRUE,
-                                 filename="maker.zip") {
+remake_archive_export <- function(remake, target_name, recursive=TRUE,
+                                 filename="remake.zip") {
   if (recursive) {
-    graph <- maker_private(maker)$dependency_graph()
+    graph <- remake_private(remake)$dependency_graph()
     target_name <- dependencies(target_name, graph)
   }
 
-  if (!all(target_name %in% names(maker$targets))) {
+  if (!all(target_name %in% names(remake$targets))) {
     stop("No such target ",
-         paste(setdiff(target_name, names(maker$targets)),
+         paste(setdiff(target_name, names(remake$targets)),
                collapse=", "))
   }
-  targets <- maker$targets[target_name]
+  targets <- remake$targets[target_name]
   path <- file.path(tempfile(),
                     tools::file_path_sans_ext(basename(filename)))
-  store <- maker$store
+  store <- remake$store
   dir.create(path, recursive=TRUE)
   for (t in filter_targets_by_type(targets, c("file", "object"))) {
     archive_export_target(t, store, path, missing_ok=FALSE)
@@ -83,24 +83,24 @@ maker_archive_export <- function(maker, target_name, recursive=TRUE,
   zip_dir(path)
 }
 
-maker_archive_import <- function(maker, filename) {
-  contents <- maker_archive_contents(filename)
-  known_targets <- names(maker$targets)
+remake_archive_import <- function(remake, filename) {
+  contents <- remake_archive_contents(filename)
+  known_targets <- names(remake$targets)
   if (!all(contents %in% known_targets)) {
-    stop("Objects in archive not known to maker: ",
+    stop("Objects in archive not known to remake: ",
          paste(setdiff(contents, known_targets), collapse=", "))
   }
 
-  tld <- maker_archive_tld(filename)
+  tld <- remake_archive_tld(filename)
 
   path <- tempfile()
   dir.create(path, recursive=TRUE)
   unzip(filename, exdir=path)
   path <- file.path(path, tld)
-  store <- maker$store
+  store <- remake$store
 
   for (t in contents) {
-    archive_import_target(maker$targets[[t]], store, path)
+    archive_import_target(remake$targets[[t]], store, path)
   }
 }
 

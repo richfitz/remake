@@ -1,4 +1,4 @@
 library(testthat)
-library(maker)
+library(remake)
 
-test_check("maker")
+test_check("remake")

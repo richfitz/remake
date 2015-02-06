@@ -1,4 +1,4 @@
-Package: maker
+Package: remake
 Title: Make-like build management
 Version: 0.1
 Authors@R: "Rich FitzJohn <rich.fitzjohn@gmail.com> [aut, cre]"

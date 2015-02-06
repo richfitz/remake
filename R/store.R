@@ -1,6 +1,6 @@
 ## This one has the potential issue that if the hash and the file get
 ## out of sync we have problems.  However, this is controlled within
-## the .maker/objects directory so we can kind of assume that is not
+## the .remake/objects directory so we can kind of assume that is not
 ## going to happen.
 ##
 ## Storing hashes as <name>__hash means that an object with that
@@ -235,8 +235,8 @@ file_store <- R6Class(
     ))
 
 ## This one holds the database information.
-maker_db <- R6Class(
-  "maker_db",
+remake_db <- R6Class(
+  "remake_db",
   public=list(
     path=NULL,
 
@@ -260,7 +260,7 @@ maker_db <- R6Class(
       if (exists) {
         file.remove(self$fullname(key))
       } else if (!missing_ok) {
-        stop(sprintf("key %s not found in maker database", key))
+        stop(sprintf("key %s not found in remake database", key))
       }
       invisible(exists)
     },
@@ -272,7 +272,7 @@ maker_db <- R6Class(
       if (exists) {
         file_copy(self$fullname(key), path, warn=!missing_ok)
       } else if (!missing_ok) {
-        stop(sprintf("key %s not found in maker database", key))
+        stop(sprintf("key %s not found in remake database", key))
       }
       invisible(exists)
     },
@@ -325,9 +325,9 @@ store <- R6Class(
 
     initialize=function(path=".") {
       dir.create(path, FALSE, TRUE)
-      self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".maker")
+      self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".remake")
       dir.create(self$path, FALSE, TRUE)
-      self$db <- maker_db$new(file.path(self$path, "db"))
+      self$db <- remake_db$new(file.path(self$path, "db"))
       self$objects <- object_store$new(file.path(self$path, "objects"))
       self$files <- file_store$new()
       self$version <- packageVersion(.packageName)

@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Parse commands")

@@ -1,14 +1,14 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Build")
 
 test_that("Build works", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
 
   m$make("plot.pdf", dry_run=TRUE)
   m$make("plot.pdf", dry_run=FALSE)
@@ -19,7 +19,7 @@ test_that("Build works", {
 
 test_that("Cleanup works", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
 
@@ -38,7 +38,7 @@ test_that("Cleanup works", {
 
 test_that("Fake targets", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   expect_that(is_current("data.csv",  m), is_false())
   expect_that(is_current("processed", m), is_false())
   expect_that(is_current("plot.pdf",  m), is_false())
@@ -51,12 +51,12 @@ test_that("Fake targets", {
 
 test_that("Depending on a file we don't make", {
   ## Manually run the download step from before -- now we have a file
-  ## that maker wants to depend on, but does not generate:
+  ## that remake wants to depend on, but does not generate:
   e <- new.env()
   source("code.R", e)
   e$download_data("data.csv")
   expect_that(file.exists("data.csv"), is_true())
-  m <- maker("maker2.yml")
+  m <- remake("remake2.yml")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$make("plot.pdf"), not(throws_error()))
   expect_that(file.exists("plot.pdf"), is_true())
@@ -69,7 +69,7 @@ test_that("Depending on a file we don't make", {
 test_that("Error in source file", {
   cleanup()
   writeLines(c(readLines("code.R"), "}"), "code2.R")
-  m <- maker()
+  m <- remake()
   ## Ugly, and might not work in future:
   m$store$env$sources <- "code2.R"
   expect_that(m$store$env$reload(TRUE),
@@ -79,14 +79,14 @@ test_that("Error in source file", {
 
 test_that("Error in yaml", {
   cleanup()
-  expect_that(m <- maker("nonexistant.yml"),
+  expect_that(m <- remake("nonexistant.yml"),
               throws_error("'nonexistant.yml' does not exist"))
   writeLines(sub("command: download_data", " command: download_data",
-                 readLines("maker.yml")),
-             "maker_error.yml")
+                 readLines("remake.yml")),
+             "remake_error.yml")
 
-  expect_that(maker("maker_error.yml"),
-              throws_error("while reading 'maker_error.yml'"))
+  expect_that(remake("remake_error.yml"),
+              throws_error("while reading 'remake_error.yml'"))
   cleanup()
 })
 
@@ -99,43 +99,43 @@ test_that("simple interface", {
 
 test_that("make_dependencies", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   e <- make_dependencies(m, "plot.pdf")
-  expect_that(e, is_a("maker_environment"))
+  expect_that(e, is_a("remake_environment"))
 
   expect_that(ls(e), equals("processed"))
 
-  expect_that(maker_attach(e),
-              shows_message("Maker environment for building"))
-  expect_that("maker:plot.pdf" %in% search(), is_true())
-  expect_that("maker:functions" %in% search(), is_true())
+  expect_that(remake_attach(e),
+              shows_message("Remake environment for building"))
+  expect_that("remake:plot.pdf" %in% search(), is_true())
+  expect_that("remake:functions" %in% search(), is_true())
 
   expect_that(exists("processed"), is_true())
   expect_that(processed, is_a("data.frame"))
 
-  expect_that(maker_detach(),
+  expect_that(remake_detach(),
               shows_message("Detaching"))
-  expect_that(maker_detach(),
-              gives_warning("No maker environments found on search path"))
-  expect_that(maker_detach(warn=FALSE),
+  expect_that(remake_detach(),
+              gives_warning("No remake environments found on search path"))
+  expect_that(remake_detach(warn=FALSE),
               not(gives_warning()))
   expect_that(exists("processed"), is_false())
 
-  expect_that(maker_attach(e, verbose=FALSE),
+  expect_that(remake_attach(e, verbose=FALSE),
               not(shows_message()))
   expect_that(exists("processed"), is_true())
-  expect_that(maker_detach(verbose=FALSE),
+  expect_that(remake_detach(verbose=FALSE),
               not(shows_message()))
   expect_that(exists("processed"), is_false())
 })
 
-test_that("maker environment", {
+test_that("remake environment", {
   cleanup()
-  m <- maker("maker.yml")
-  expect_that(maker_environment(m, "processed"),
+  m <- remake("remake.yml")
+  expect_that(remake_environment(m, "processed"),
               throws_error("not found in object store"))
   m$make("processed")
-  e <- maker_environment(m, "processed")
+  e <- remake_environment(m, "processed")
   expect_that(attr(e, "target"), is_null())
   expect_that(ls(e), equals("processed"))
   expect_that(exists("download_data", e), is_true())
@@ -143,7 +143,7 @@ test_that("maker environment", {
 
 test_that("extra dependencies", {
   cleanup()
-  m <- maker("maker_extra_deps.yml")
+  m <- remake("remake_extra_deps.yml")
   m$make("processed")
   expect_that(file.exists("data.csv"), is_true())
 })

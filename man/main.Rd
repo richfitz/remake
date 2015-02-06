@@ -2,7 +2,7 @@
 % Please edit documentation in R/main.R
 \name{main}
 \alias{main}
-\title{Command line interface to maker}
+\title{Command line interface to remake}
 \usage{
 main(args = commandArgs(TRUE))
 }
@@ -12,6 +12,6 @@ main(args = commandArgs(TRUE))
 \description{
 The command line script, to be run outside of the package.  Don't
 run this from within R (well, you can't actually).  This uses
-\code{commandArgs} to pass along arguments to \code{\link{maker}}.
+\code{commandArgs} to pass along arguments to \code{\link{remake}}.
 }
 

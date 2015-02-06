@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Archive")
@@ -17,61 +17,61 @@ context("Archive")
 ## worthwhile?  There will certainly be things to exclude.
 test_that("Build archive", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
 
-  expect_that(maker_archive_export(m, "plot.pdf"),
+  expect_that(remake_archive_export(m, "plot.pdf"),
               throws_error("file data.csv not found in file store"))
   m$make("processed")
-  expect_that(maker_archive_export(m, "plot.pdf"),
+  expect_that(remake_archive_export(m, "plot.pdf"),
               throws_error("file plot.pdf not found in file store"))
   m$make("plot.pdf")
 
-  dest <- maker_archive_export(m, "plot.pdf")
-  expect_that(dest, equals("maker.zip"))
-  expect_that(file.exists("maker.zip"), is_true())
+  dest <- remake_archive_export(m, "plot.pdf")
+  expect_that(dest, equals("remake.zip"))
+  expect_that(file.exists("remake.zip"), is_true())
 
-  contents <- unzip("maker.zip", list=TRUE)
-  expect_that(all(c("maker/files/data.csv",
-                    "maker/files/data.csv",
-                    "maker/objects/processed") %in% contents$Name),
+  contents <- unzip("remake.zip", list=TRUE)
+  expect_that(all(c("remake/files/data.csv",
+                    "remake/files/data.csv",
+                    "remake/objects/processed") %in% contents$Name),
               is_true())
   cleanup()
 })
 
 test_that("Inspect archive", {
   cleanup()
-  expect_that(is_maker_archive("maker.zip"),
-              throws_error("The file 'maker.zip' does not exist"))
+  expect_that(is_remake_archive("remake.zip"),
+              throws_error("The file 'remake.zip' does not exist"))
 
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   m$make()
-  dest <- maker_archive_export(m, "plot.pdf")
+  dest <- remake_archive_export(m, "plot.pdf")
 
-  expect_that(is_maker_archive("maker.zip"),
+  expect_that(is_remake_archive("remake.zip"),
               is_true())
 
   ## Could try here and get some fake zip archives tested, but
   ## crafting those by hand is a pain:
   tmp <- tempfile()
-  tmp_path <- file.path(tmp, "maker")
+  tmp_path <- file.path(tmp, "remake")
   dir.create(tmp, recursive=TRUE)
 
   ## Missing one of the three top level directories:
-  unzip("maker.zip", exdir=tmp)
+  unzip("remake.zip", exdir=tmp)
   unlink(file.path(tmp_path, "db"), recursive=TRUE)
   zip_dir(tmp_path)
-  expect_that(is_maker_archive("maker.zip"),
+  expect_that(is_remake_archive("remake.zip"),
               is_false())
-  expect_that(is_maker_archive("maker.zip", error=TRUE),
+  expect_that(is_remake_archive("remake.zip", error=TRUE),
               throws_error("expected directories"))
   unlink(tmp_path, recursive=TRUE)
 
   ## Basically empty
   dir.create(tmp_path)
   zip_dir(tmp_path)
-  expect_that(is_maker_archive("maker.zip"),
+  expect_that(is_remake_archive("remake.zip"),
               is_false())
-  expect_that(is_maker_archive("maker.zip", error=TRUE),
+  expect_that(is_remake_archive("remake.zip", error=TRUE),
               throws_error("expected directories"))
   unlink(tmp_path, recursive=TRUE)
   cleanup()
@@ -79,16 +79,16 @@ test_that("Inspect archive", {
 
 test_that("Import archive", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   m$make()
-  dest <- maker_archive_export(m, "plot.pdf")
+  dest <- remake_archive_export(m, "plot.pdf")
   m$make("purge")
 
   expect_that(is_current("data.csv", m),  is_false())
   expect_that(is_current("processed", m), is_false())
   expect_that(is_current("plot.pdf", m),  is_false())
 
-  maker_archive_import(m, dest)
+  remake_archive_import(m, dest)
 
   expect_that(is_current("data.csv", m),  is_true())
   expect_that(is_current("processed", m), is_true())

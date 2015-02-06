@@ -1,23 +1,23 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Active binding functions")
 
 test_that("Create active bindings", {
   cleanup()
-  m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings_manager()
+  m <- remake::remake(envir=new.env())
+  obj <- remake_active_bindings_manager()
   expect_that(obj, is_a("active_bindings_manager"))
 
   ## This is not actually doing anything:
   ## NOTE: It might be a better test to run this with a fresh
   ## manager.
-  maker_set_active_bindings(m, "target", obj)
+  remake_set_active_bindings(m, "target", obj)
   ## Replacing bindings is fine:
-  expect_that(maker_set_active_bindings(m, "target", obj),
+  expect_that(remake_set_active_bindings(m, "target", obj),
               not(throws_error()))
 
   expect_that(ls(obj$envir), equals("processed"))
@@ -42,46 +42,46 @@ test_that("Create active bindings", {
               filter_active_bindings(ls(obj$envir), obj$envir),
               is_true())
 
-  obj <- maker_active_bindings_manager()
+  obj <- remake_active_bindings_manager()
   obj$envir$processed <- 1
-  expect_that(maker_set_active_bindings(m, "target", obj),
+  expect_that(remake_set_active_bindings(m, "target", obj),
               throws_error("Bindngs would overwrite normal variables"))
   expect_that(bindingIsActive("processed", obj$envir),
               is_false())
-  expect_that(maker_set_active_bindings(m, "target", obj, force=TRUE),
+  expect_that(remake_set_active_bindings(m, "target", obj, force=TRUE),
               not(throws_error()))
   expect_that(bindingIsActive("processed", obj$envir), is_true())
 })
 
 test_that("Delete active bindings", {
   cleanup()
-  m <- maker::maker()
-  obj <- maker_active_bindings_manager()
-  maker_set_active_bindings(m, "target", obj)
+  m <- remake::remake()
+  obj <- remake_active_bindings_manager()
+  remake_set_active_bindings(m, "target", obj)
 
-  del <- maker_delete_active_bindings(m, "target", obj)
+  del <- remake_delete_active_bindings(m, "target", obj)
   expect_that(del, equals("processed"))
   expect_that(ls(obj$envir), equals(character(0)))
 })
 
 test_that("Resolve active bindings", {
   cleanup()
-  m <- maker::maker()
-  obj <- maker_active_bindings_manager()
+  m <- remake::remake()
+  obj <- remake_active_bindings_manager()
 
-  maker_set_active_bindings(m, "target", obj)
+  remake_set_active_bindings(m, "target", obj)
 
-  expect_that(res <- maker_resolve_active_bindings(m, "target", obj),
+  expect_that(res <- remake_resolve_active_bindings(m, "target", obj),
               shows_message("SKIP"))
   expect_that(res, equals("processed"))
   expect_that(ls(obj$envir), equals("processed"))
   expect_that(bindingIsActive("processed", obj$envir), is_false())
   expect_that(obj$envir$processed, is_null())
 
-  m <- maker::maker(envir=new.env())
-  obj <- maker_active_bindings(m)
-  maker_set_active_bindings(m, "target", obj)
-  expect_that(res <- maker_resolve_active_bindings(m, "target", obj,
+  m <- remake::remake(envir=new.env())
+  obj <- remake_active_bindings(m)
+  remake_set_active_bindings(m, "target", obj)
+  expect_that(res <- remake_resolve_active_bindings(m, "target", obj,
                                                    force=TRUE),
               shows_message("BUILD"))
 
@@ -92,10 +92,10 @@ test_that("Resolve active bindings", {
 
 test_that("Active sources", {
   cleanup()
-  m <- maker::maker()
-  obj <- maker_active_bindings_manager()
+  m <- remake::remake()
+  obj <- remake_active_bindings_manager()
 
-  maker_set_active_bindings(m, "source", obj)
+  remake_set_active_bindings(m, "source", obj)
   expect_that(ls(obj$envir), equals(ls(m$store$env$env)))
 
   expect_that(all(ls(m$store$env$env) %in% ls(obj$envir)), is_true())
@@ -115,8 +115,8 @@ test_that("Active sources", {
 test_that("Global mode", {
   cleanup()
   e <- new.env()
-  m <- maker::maker(envir=e)
-  obj <- maker_active_bindings(m)
+  m <- remake::remake(envir=e)
+  obj <- remake_active_bindings(m)
 
   expect_that(exists("processed", e), is_true())
   expect_that(exists("download_data", e), is_true())
@@ -124,8 +124,8 @@ test_that("Global mode", {
   expect_that(bindingIsActive("processed", e), is_true())
   expect_that(bindingIsActive("download_data", e), is_true())
 
-  maker_delete_active_bindings(m, "target", obj)
-  maker_delete_active_bindings(m, "source", obj)
+  remake_delete_active_bindings(m, "target", obj)
+  remake_delete_active_bindings(m, "source", obj)
   expect_that(exists("processed", e), is_false())
   expect_that(exists("download_data", e), is_false())
 })

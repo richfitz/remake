@@ -1,13 +1,13 @@
 cleanup <- function() {
-  unlink(".maker", recursive=TRUE)
+  unlink(".remake", recursive=TRUE)
   suppressWarnings(file.remove(c("data.csv", "plot.pdf",
-                                 "code2.R", "maker_error.yml",
+                                 "code2.R", "remake_error.yml",
                                  "plot1.pdf", "plot2.pdf",
                                  "plot3.pdf", "plot4.pdf",
                                  "knitr.md", "knitr_rename.md",
                                  "knitr.tex",
                                  "knitr_file_dep.md",
-                                 "test.zip", "maker.zip",
+                                 "test.zip", "remake.zip",
                                  "code_literal.R",
                                  "tmp_quoting.yml")))
   unlink("figure", recursive=TRUE)

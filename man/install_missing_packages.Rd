@@ -4,11 +4,11 @@
 \alias{install_missing_packages}
 \title{Install missing packages}
 \usage{
-install_missing_packages(maker_file = "maker.yml", instructions = FALSE,
+install_missing_packages(remake_file = "remake.yml", instructions = FALSE,
   missing_only = TRUE, skip_target_packages = FALSE)
 }
 \arguments{
-\item{maker_file}{Name of the makerfile to look for the list of
+\item{remake_file}{Name of the remakefile to look for the list of
 required packages}
 
 \item{instructions}{Rather than install anything, prints

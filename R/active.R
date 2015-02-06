@@ -6,11 +6,11 @@ make_active_binding_function <- function(m, name, type) {
   force(m)
   force(name)
   force(type)
-  private <- maker_private(m)
+  private <- remake_private(m)
   function(value) {
     if (missing(value)) {
       if (type == "target") {
-        if (isFALSE(maker_private(m)$config$active)) {
+        if (isFALSE(remake_private(m)$config$active)) {
           ret <- list(name=name)
           class(ret) <- c("target_placeholder", class(ret))
           ret
@@ -28,13 +28,13 @@ make_active_binding_function <- function(m, name, type) {
         stop("Unknown type ", type)
       }
     } else {
-      stop(sprintf('"%s" is managed by maker and is read-only', name),
+      stop(sprintf('"%s" is managed by remake and is read-only', name),
            call.=FALSE)
     }
   }
 }
 
-maker_set_active_bindings <- function(m, type, manager, force=FALSE) {
+remake_set_active_bindings <- function(m, type, manager, force=FALSE) {
   if (type == "target") {
     objects <- filter_targets_by_type(m$targets, "object")
     ## Exclude chain targets:
@@ -61,7 +61,7 @@ maker_set_active_bindings <- function(m, type, manager, force=FALSE) {
 ## name is assumed valid, given its type.  This will be most useful
 ## for when we add targets one at a time in interactive mode and
 ## global mode.
-maker_set_active_binding <- function(m, name, type, manager, force=FALSE) {
+remake_set_active_binding <- function(m, name, type, manager, force=FALSE) {
   envir <- manager$envir
   check_active_bindings(name, envir, force)
   makeActiveBinding(name, make_active_binding_function(m, name, type),
@@ -69,7 +69,7 @@ maker_set_active_binding <- function(m, name, type, manager, force=FALSE) {
   manager$add_bindings(type, name)
 }
 
-maker_delete_active_bindings <- function(m, type, manager) {
+remake_delete_active_bindings <- function(m, type, manager) {
   envir <- manager$envir
   names <- filter_active_bindings(manager$bindings[[type]], envir)
   rm(list=names, envir=envir)
@@ -77,7 +77,7 @@ maker_delete_active_bindings <- function(m, type, manager) {
   invisible(names)
 }
 
-maker_purge_active_bindings <- function(manager) {
+remake_purge_active_bindings <- function(manager) {
   envir <- manager$envir
   names <- filter_active_bindings(ls(envir, all.names=TRUE), envir)
   rm(list=names, envir=envir)
@@ -87,14 +87,14 @@ maker_purge_active_bindings <- function(manager) {
   invisible(names)
 }
 
-maker_resolve_active_bindings <- function(m, type, manager, force=FALSE) {
+remake_resolve_active_bindings <- function(m, type, manager, force=FALSE) {
   envir <- manager$envir
   names <- filter_active_bindings(manager$bindings[[type]], envir)
   for (i in names) {
     if (type == "source" || force || is_current(i, m)) {
       val <- get(i, envir)
     } else {
-      maker_private(m)$print_message("SKIP", i)
+      remake_private(m)$print_message("SKIP", i)
       val <- NULL
     }
     rm(list=i, envir=envir)
@@ -133,14 +133,14 @@ check_active_bindings <- function(names, envir, force=FALSE) {
 ##
 ## But that optimisation can be made later and somewhat transparently
 ## to the way that it is used.
-maker_reload_active_bindings <- function(m, type, manager) {
-  maker_delete_active_bindings(m, type, manager)
-  maker_set_active_bindings(m, type, manager)
+remake_reload_active_bindings <- function(m, type, manager) {
+  remake_delete_active_bindings(m, type, manager)
+  remake_set_active_bindings(m, type, manager)
 }
 
 ## TODO: Hack for now:
-maker_active_bindings <- function(m) {
-  maker_private(m)$active_bindings
+remake_active_bindings <- function(m) {
+  remake_private(m)$active_bindings
 }
 
 ## Helper with reference semantics.  Subject to complete change.
@@ -171,6 +171,6 @@ active_bindings_manager <- R6Class(
 
   ))
 
-maker_active_bindings_manager <- function(envir=new.env(parent=emptyenv())) {
+remake_active_bindings_manager <- function(envir=new.env(parent=emptyenv())) {
   active_bindings_manager$new(envir, c("target", "source"))
 }

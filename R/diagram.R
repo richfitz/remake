@@ -1,4 +1,4 @@
-##' Plot the graph that maker generates.
+##' Plot the graph that remake generates.
 ##'
 ##' This is really just a placeholder, but I want this here early as
 ##' an indication of where the package is headed.  Plus this is
@@ -7,13 +7,13 @@
 ##'
 ##' This function \emph{will} change.
 ##' @title Make a figure with the dependency graph
-##' @param m A maker object
+##' @param m A remake object
 ##' @param targets Optional character vector of targets.  If
 ##' specified, then only targets that these target depends on are
 ##' included.  Useful for filtering the graph.
 ##' @export
 diagram <- function(m, targets=NULL) {
-  g <- maker_private(m)$dependency_graph()
+  g <- remake_private(m)$dependency_graph()
   if (!is.null(targets)) {
     g <- g[dependencies(targets, g)]
   }

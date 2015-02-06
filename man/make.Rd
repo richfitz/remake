@@ -5,23 +5,23 @@
 \alias{make_script}
 \title{Make a single target}
 \usage{
-make(target_names = NULL, maker_file = "maker.yml")
+make(target_names = NULL, remake_file = "remake.yml")
 
-make_script(target_names = NULL, maker_file = "maker.yml")
+make_script(target_names = NULL, remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Vector of names of targets to build, or
 \code{NULL} to build the default target (if specified in the
-makerfile).}
+remakefile).}
 
-\item{maker_file}{Name of the makerfile (by default
-\code{maker.yml}).  This is passed to \code{maker()}.}
+\item{remake_file}{Name of the remakefile (by default
+\code{remake.yml}).  This is passed to \code{remake()}.}
 }
 \description{
-These are convenience functions that creates a maker object and
+These are convenience functions that creates a remake object and
 runs \code{make} or \code{script} on it.  For \code{make}, if the
 final target is an object, that will be invisibly returned.  These
-exist only to avoid creating a maker object before doing something
+exist only to avoid creating a remake object before doing something
 with it; this is all these functions do internally!
 }
 

@@ -2,7 +2,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Check currentness")
@@ -31,7 +31,7 @@ test_that("Types of levels", {
 
 test_that("Manual", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   store <- m$store
 
   t <- m$targets[["data.csv"]]
@@ -46,7 +46,7 @@ test_that("Manual", {
   target_run(t, store)
   expect_that(file.exists("data.csv"), is_true())
 
-  ## The target at this point has not been entered into the maker
+  ## The target at this point has not been entered into the remake
   ## database (only running with make() will do this).
   expect_that(target_is_current(t, store),          is_false())
   expect_that(target_is_current(t, store, "all"),     is_false())
@@ -87,7 +87,7 @@ test_that("Manual", {
 
 test_that("In target", {
   cleanup()
-  m <- maker("maker_check.yml")
+  m <- remake("remake_check.yml")
   store <- m$store
 
   t <- m$targets[["data.csv"]]
@@ -120,7 +120,7 @@ test_that("In target", {
 
 test_that("dependency_status", {
   cleanup()
-  m <- maker("maker_check.yml")
+  m <- remake("remake_check.yml")
   store <- m$store
 
   t <- m$targets[["data.csv"]]
@@ -136,9 +136,9 @@ test_that("dependency_status", {
   expect_that(status$code, equals(NULL))
 })
 
-test_that("In maker", {
+test_that("In remake", {
   cleanup()
-  m <- maker("maker_check.yml")
+  m <- remake("remake_check.yml")
 
   expect_that(is_current("data.csv", m),           is_false())
   expect_that(is_current("data.csv", m, "exists"), is_false())
@@ -161,7 +161,7 @@ test_that("In maker", {
 
 test_that("is_current with defaults", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
   expect_that(is_current("plot.pdf"), is_false())
   m$make("plot.pdf")
   expect_that(is_current("plot.pdf"), is_true())

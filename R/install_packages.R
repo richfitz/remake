@@ -3,7 +3,7 @@
 ##' No version comparison is done - see packrat for a more complete
 ##' package management solution.
 ##' @title Install missing packages
-##' @param maker_file Name of the makerfile to look for the list of
+##' @param remake_file Name of the remakefile to look for the list of
 ##' required packages
 ##' @param instructions Rather than install anything, prints
 ##' instructions on how to install missing things
@@ -13,17 +13,17 @@
 ##' in targets?
 ##' @export
 ##' @author Rich FitzJohn
-install_missing_packages <- function(maker_file="maker.yml",
+install_missing_packages <- function(remake_file="remake.yml",
                                      instructions=FALSE,
                                      missing_only=TRUE,
                                      skip_target_packages=FALSE) {
-  dat <- read_maker_file(maker_file)
+  dat <- read_remake_file(remake_file)
   packages <- with_default(dat$packages, character(0))
   if (!skip_target_packages) {
     packages <- c(packages,
                   unlist(lapply(dat$targets, function(x) x$packages)))
   }
-  package_sources <- read_maker_packages("maker_sources.yml")
+  package_sources <- read_remake_packages("remake_sources.yml")
   ret <- install_packages(packages,
                           instructions=instructions,
                           missing_only=missing_only,
@@ -129,7 +129,7 @@ missing_packages <- function(packages) {
 
 ## Not trying to support much of what packrat does: just trying to
 ## keep it reasonably simple.
-read_maker_packages <- function(filename) {
+read_remake_packages <- function(filename) {
   required <- list(github="repo",
                    bitbucket="repo",
                    url="url",
@@ -171,10 +171,10 @@ missing_packages_condition <- function(packages) {
 }
 
 missing_packages_recover <- function(e, m) {
-  extra <- read_maker_packages("maker_sources.yml")
-  file <- maker_private(m)$file
+  extra <- read_remake_packages("remake_sources.yml")
+  file <- remake_private(m)$file
   packages <- e$packages
-  if (getOption("maker.install.missing.packages", FALSE)) {
+  if (getOption("remake.install.missing.packages", FALSE)) {
     install_packages(packages,
                      instructions=FALSE,
                      package_sources=extra)
@@ -185,14 +185,14 @@ missing_packages_recover <- function(e, m) {
                                           instructions=TRUE,
                                           package_sources=extra))
     if (is.null(file)) {
-      str_maker <- character(0)
+      str_remake <- character(0)
     } else {
-      str_maker <- sprintf('maker::install_missing_packages("%s")',
+      str_remake <- sprintf('remake::install_missing_packages("%s")',
                            file)
-      str_maker <- c(indent(str_maker), "or:")
+      str_remake <- c(indent(str_remake), "or:")
     }
 
-    str <- paste(c(e$message, "Install with:", str_maker, str_manual),
+    str <- paste(c(e$message, "Install with:", str_remake, str_manual),
                  collapse="\n")
     stop(str, call.=FALSE)
   }

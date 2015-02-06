@@ -1,6 +1,6 @@
 utility_gitignore <- function(m) {
   files <- dependency_names(filter_targets_by_type(m$targets, "file"))
-  add_to_gitignore(c(".maker", files))
+  add_to_gitignore(c(".remake", files))
 }
 
 ## This could be made way more clever, but that's just asking for

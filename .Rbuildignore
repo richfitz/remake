@@ -2,4 +2,4 @@
 ^appveyor\.yml$
 doc
 Makefile
-tests/testthat/.maker
+tests/testthat/.remake

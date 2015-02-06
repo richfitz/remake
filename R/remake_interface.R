@@ -1,9 +1,9 @@
-## Functions for interfacing with maker objects.  Not all of these
+## Functions for interfacing with remake objects.  Not all of these
 ## will be supported going forward.
 
 ## TODO: I'm not sure this one is actually useful.
 make_dependencies <- function(m, target_name, ...) {
-  private <- maker_private(m)
+  private <- remake_private(m)
   t <- private$get_target(target_name)
 
   private$refresh()
@@ -11,11 +11,11 @@ make_dependencies <- function(m, target_name, ...) {
   private$make1(target_name, ..., dependencies_only=TRUE)
   deps_name <- t$depends_name[t$depends_type == "object"]
 
-  invisible(maker_environment(m, deps_name, t))
+  invisible(remake_environment(m, deps_name, t))
 }
 
-maker_script <- function(m, target_name=NULL) {
-  private <- maker_private(m)
+remake_script <- function(m, target_name=NULL) {
+  private <- remake_private(m)
   if (is.null(target_name)) {
     target_name <- private$target_default()
   }
@@ -33,7 +33,7 @@ maker_script <- function(m, target_name=NULL) {
   src <- c(unlist(pkgs),
            unlist(srcs),
            unlist(cmds))
-  class(src) <- "maker_script"
+  class(src) <- "remake_script"
   src
 }
 
@@ -41,11 +41,11 @@ maker_script <- function(m, target_name=NULL) {
 ## generally be?  When working in global mode, it's possible that
 ## assigning NULL onto an "object" could trigger this: that'd be
 ## nicer perhaps?
-maker_remove_target <- function(m, target_name, chain=TRUE) {
-  maker_private(m)$remove_target(target_name, chain)
+remake_remove_target <- function(m, target_name, chain=TRUE) {
+  remake_private(m)$remove_target(target_name, chain)
 }
 
-maker_target_names <- function(m, all=FALSE) {
+remake_target_names <- function(m, all=FALSE) {
   if (!all) {
     ok <- vlapply(m$targets, function(x) is.null(x$chain_parent))
     names(m$targets[ok])

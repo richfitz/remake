@@ -1,4 +1,4 @@
-# example configuration script for maker; using this to test out some
+# example configuration script for remake; using this to test out some
 # ideas.
 sources:
   - code.R

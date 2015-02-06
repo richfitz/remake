@@ -1,6 +1,6 @@
 # This is a knitr test
 
-The object `processed` will be found from `maker`.
+The object `processed` will be found from `remake`.
 
 ```{r}
 summary(processed)

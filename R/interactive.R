@@ -1,12 +1,12 @@
-.R6_maker_interactive <- R6Class(
-  "maker_interactive",
+.R6_remake_interactive <- R6Class(
+  "remake_interactive",
   public=list(
     m=NULL,
     interactive=NULL,
 
     initialize=function(verbose=TRUE, envir=NULL) {
-      self$interactive <- maker_interactive_config()
-      self$m <- .R6_maker$new(NULL, verbose, envir)
+      self$interactive <- remake_interactive_config()
+      self$m <- .R6_remake$new(NULL, verbose, envir)
       private$set_m_private_config(FALSE)
     },
 
@@ -21,9 +21,9 @@
       if (missing(value)) {
         message("Pass in libary/source/target calls here")
       } else  if (inherits(value, "target_base")) {
-        maker_interactive_add_target(self, value)
+        remake_interactive_add_target(self, value)
       } else if (is.character(value)) {
-        maker_interactive_add_sources(self, value)
+        remake_interactive_add_sources(self, value)
       } else {
         stop("Can't add objects of class: ",
              paste(class(value), collapse=" / "))
@@ -43,7 +43,7 @@
 
   private=list(
     set_m_private_config=function(refresh=TRUE) {
-      mp <- maker_private(self$m)
+      mp <- remake_private(self$m)
       mp$config <- self$interactive
       if (refresh) {
         mp$refresh()
@@ -52,7 +52,7 @@
   ))
 
 ## This file holds code for "interactive mode".  This is going to be
-## useful for building makerfiles interactively.
+## useful for building remakefiles interactively.
 interactive_drop_braces <- function(expr) {
   while (length(expr) > 1L && identical(expr[[1]], quote(`{`))) {
     if (length(expr) != 2L) {
@@ -63,7 +63,7 @@ interactive_drop_braces <- function(expr) {
   expr
 }
 
-maker_interactive_config <- function() {
+remake_interactive_config <- function() {
   list(targets=empty_named_list(),
        sources=character(0),
        packages=character(0),
@@ -81,22 +81,22 @@ print.target_placeholder <- function(x, ...) {
 }
 
 ## TODO: I think the placeholder thing is overkill: what we really
-## need is an active/inactive state for maker, then store everything
+## need is an active/inactive state for remake, then store everything
 ## in one place.  Keep the print bit, but dispatch on that based on
 ## the active/inactive state.
-maker_interactive_add_target <- function(obj, target) {
+remake_interactive_add_target <- function(obj, target) {
   obj$interactive$targets[[target$name]] <- target
   if (inherits(target, "target_object")) {
-    b <- maker_active_bindings(obj$m)
+    b <- remake_active_bindings(obj$m)
     if (!is.null(b)) {
       ## TODO: Deal with situation where binding exists (will be
       ## common).  Offer a 'force' option, delete bindings, etc.
-      maker_set_active_binding(obj$m, target$name, "target", b)
+      remake_set_active_binding(obj$m, target$name, "target", b)
     }
   }
 }
 
-maker_interactive_add_sources <- function(obj, value) {
+remake_interactive_add_sources <- function(obj, value) {
   ## NOTE: The other way of doing this is by assuming that
   ## things that exist or end in .[Rrs] or a slash are sources
   ## and try to load everything else as packages?  The other
@@ -110,9 +110,9 @@ maker_interactive_add_sources <- function(obj, value) {
   obj$interactive <- dat
 
   ## NOTE: we only rebuild the sources if running in global mode.
-  if (!is.null(maker_active_bindings(obj$m))) {
+  if (!is.null(remake_active_bindings(obj$m))) {
     obj$m$store$env$packages <- dat$packages
     obj$m$store$env$sources  <- dat$sources
-    maker_private(obj$m)$initialize_sources()
+    remake_private(obj$m)$initialize_sources()
   }
 }

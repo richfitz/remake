@@ -7,14 +7,14 @@
 diagram(m, targets = NULL)
 }
 \arguments{
-\item{m}{A maker object}
+\item{m}{A remake object}
 
 \item{targets}{Optional character vector of targets.  If
 specified, then only targets that these target depends on are
 included.  Useful for filtering the graph.}
 }
 \description{
-Plot the graph that maker generates.
+Plot the graph that remake generates.
 }
 \details{
 This is really just a placeholder, but I want this here early as

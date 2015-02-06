@@ -1,15 +1,15 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Build strategies")
 
 test_that("Plan", {
-  ## Harvested from maker -- may resurrect at some point:
+  ## Harvested from remake -- may resurrect at some point:
   m_status <- function(m, target_name=NULL) {
-    private <- maker_private(m)
+    private <- remake_private(m)
     if (is.null(target_name)) {
       target_name <- private$target_default()
     }
@@ -17,14 +17,14 @@ test_that("Plan", {
   }
 
   cleanup()
-  m <- maker()
-  p <- maker_private(m)$plan("plot.pdf")
+  m <- remake()
+  p <- remake_private(m)$plan("plot.pdf")
 
   cmp <- c("data.csv", "processed", "plot.pdf")
-  expect_that(maker_private(m)$plan("plot.pdf"), equals(cmp))
+  expect_that(remake_private(m)$plan("plot.pdf"), equals(cmp))
 
   ## Default plan:
-  expect_that(maker_private(m)$plan(), equals(c(cmp, "all")))
+  expect_that(remake_private(m)$plan(), equals(c(cmp, "all")))
 
   cmp_status <- cbind(dirty=rep(TRUE, 3),
                       dirty_by_descent=c(FALSE, TRUE, TRUE))

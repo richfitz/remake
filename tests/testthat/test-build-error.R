@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 ## First, arrange for the file to be made to exist so that deletion is
@@ -11,7 +11,7 @@ context("Build error")
 
 test_that("Check mocking works", {
   cleanup()
-  m <- maker("maker_build_error.yml")
+  m <- remake("remake_build_error.yml")
 
   ## Things are as they should be:
   m$store$env$env$download_data_works("data.csv")
@@ -33,7 +33,7 @@ test_that("Check mocking works", {
 
 test_that("Errored builds restore files", {
   cleanup()
-  m <- maker("maker_build_error.yml")
+  m <- remake("remake_build_error.yml")
   m$store$env$env$download_data_works("data.csv")
   hash <- tools::md5sum("data.csv")
 

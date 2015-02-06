@@ -1,14 +1,14 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
-context("Modular makerfiles")
+context("Modular remakefiles")
 
-test_that("Modular makerfile", {
+test_that("Modular remakefile", {
   cleanup()
-  m <- maker("modular.yml")
+  m <- remake("modular.yml")
 
   ## Not duplicated:
   expect_that(m$store$env$sources, equals("code.R"))
@@ -17,10 +17,10 @@ test_that("Modular makerfile", {
   ## afterwards.
   expect_that(names(m$targets)[1:4],
               equals(c("all", "processed", "plot.pdf", "data.csv")))
-  expect_that(maker_private(m)$target_default(), equals("all"))
+  expect_that(remake_private(m)$target_default(), equals("all"))
 
-  mod <- maker("modular_module.yml")
-  expect_that(maker_private(mod)$target_default(), equals("data.csv"))
+  mod <- remake("modular_module.yml")
+  expect_that(remake_private(mod)$target_default(), equals("data.csv"))
 
   m$make("data.csv")
 

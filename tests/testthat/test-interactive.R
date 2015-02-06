@@ -1,10 +1,10 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
-context("Interactive maker")
+context("Interactive remake")
 
 test_that("Drop braces", {
   expect_that(interactive_drop_braces(quote(a)),
@@ -37,7 +37,7 @@ test_that("Drop braces", {
 })
 
 test_that("add targets", {
-  m <- maker(NULL)
+  m <- remake(NULL)
   expect_that(names(m$interactive$targets), equals(character(0)))
   expect_that(m$active, is_false())
   expect_that(m$interactive$targets, is_identical_to(empty_named_list()))
@@ -58,7 +58,7 @@ test_that("add targets", {
 })
 
 test_that("add sources", {
-  m <- maker(NULL)
+  m <- remake(NULL)
   expect_that(m$interactive$sources, equals(character(0)))
 
   m$add <- character(0)
@@ -77,10 +77,10 @@ test_that("add sources", {
 
 test_that("all together (Active)", {
   cleanup()
-  m <- maker(NULL)
-  expect_that(inherits(m, "maker_interactive"), is_true())
+  m <- remake(NULL)
+  expect_that(inherits(m, "remake_interactive"), is_true())
 
-  m <- maker(NULL)
+  m <- remake(NULL)
   m$add <- "package:testthat"
   m$add <- "code.R"
   m$add <- target("data.csv", download_data(target_name),
@@ -100,9 +100,9 @@ test_that("Active and global", {
   cleanup()
 
   e <- new.env()
-  m <- maker(NULL, envir=e)
-  expect_that(inherits(m, "maker_interactive"), is_true())
-  expect_that(maker_active_bindings(m$m), not(is_null()))
+  m <- remake(NULL, envir=e)
+  expect_that(inherits(m, "remake_interactive"), is_true())
+  expect_that(remake_active_bindings(m$m), not(is_null()))
   expect_that(m$m$store, not(is_null()))
   expect_that(m$m$store$env, not(is_null()))
   expect_that(m$m$store$env, is_a("managed_environment"))
@@ -131,7 +131,7 @@ test_that("Active and global", {
   m$add <- target("plot.pdf", myplot(processed),
                   plot=list(width=8, height=4))
 
-  expect_that(maker_active_bindings(m$m)$bindings$target,
+  expect_that(remake_active_bindings(m$m)$bindings$target,
               equals("processed"))
 
   expect_that(m$active, is_false())

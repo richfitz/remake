@@ -2,7 +2,7 @@
 
 ## Why not make?
 
-I have used `make` on nontrivial projects (e.g., [how much of the world is woody](https://github.com/richfitz/woody) and [adequacy of models in comparative biology](https://github.com/richfitz/modeladequacy)).  All my R packages generally have a makefile for controlling the build and running tests (including `maker`!). While `make` can be used to create reproducible research workflows (e.g. [here](http://www.bioinformaticszen.com/post/decomplected-workflows-makefiles/) and [here](http://kbroman.org/minimal_make/)), it is a challenge.
+I have used `make` on nontrivial projects (e.g., [how much of the world is woody](https://github.com/richfitz/woody) and [adequacy of models in comparative biology](https://github.com/richfitz/modeladequacy)).  All my R packages generally have a makefile for controlling the build and running tests (including `remake`!). While `make` can be used to create reproducible research workflows (e.g. [here](http://www.bioinformaticszen.com/post/decomplected-workflows-makefiles/) and [here](http://kbroman.org/minimal_make/)), it is a challenge.
 
 ### Platform independence
 
@@ -20,7 +20,7 @@ Here, we're taking the same approach as [mustache](http://mustache.github.io/) -
 
 In a research setting, the rules are usually dependencies.  Rather than stringing together known tools that work (which is how `make` is designed to be used), we often are writing analysis scripts that the targets should depend on.  This leads to contortions in the makefile syntax that are not hugely clear.  It's also easy to get the dependencies wrong.  `Make` is not language-aware, so in general the best you can do is depend on a script.  But if that script calls functions in another script you miss situations to where rebuilding a target is necessary (similarly, if functions in that file change that are unrelated to your target, or are comments/whitespace there is no need to rebuild).
 
-`maker` solves this problem by automatically depending on the functions used as rules.  It inspects the functions and also depends on all the functions they call.  If functions are being called from a package, it depends on the package version -- if that changes the target should be rebuilt.  If functions are part of code you source into the project then any change that is not comments or whitespace to the rule function (or to functions it calls) triggers a rebuild.
+`remake` solves this problem by automatically depending on the functions used as rules.  It inspects the functions and also depends on all the functions they call.  If functions are being called from a package, it depends on the package version -- if that changes the target should be rebuilt.  If functions are part of code you source into the project then any change that is not comments or whitespace to the rule function (or to functions it calls) triggers a rebuild.
 
 There are limits to this of course: if your function calls `system()` or compiled code changes can be missed.
 

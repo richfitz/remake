@@ -1,22 +1,22 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Chained rules")
 
 test_that("Chained rules", {
   cleanup()
-  m <- maker("chain.yml")
+  m <- remake("chain.yml")
 
   res <- m$make("manual")
   expect_that(res, equals(6))
 
   ## There are two chain rules created:
-  expect_that(c("chained{1}", "chained{2}") %in% maker_target_names(m),
+  expect_that(c("chained{1}", "chained{2}") %in% remake_target_names(m),
               equals(c(FALSE, FALSE)))
-  expect_that(c("chained{1}", "chained{2}") %in% maker_target_names(m, TRUE),
+  expect_that(c("chained{1}", "chained{2}") %in% remake_target_names(m, TRUE),
               equals(c(TRUE, TRUE)))
 
   t <- m$targets[["chained"]]
@@ -51,13 +51,13 @@ test_that("Chained rules", {
 
   ## By default, so does remove_target:
   res <- m$make("chained")
-  maker_remove_target(m, "chained")
+  remake_remove_target(m, "chained")
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_false())
   expect_that(m$store$objects$contains("chained{2}"), is_false())
 
   res <- m$make("chained")
-  maker_remove_target(m, "chained", FALSE)
+  remake_remove_target(m, "chained", FALSE)
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_true())
   expect_that(m$store$objects$contains("chained{2}"), is_true())
@@ -65,7 +65,7 @@ test_that("Chained rules", {
 
 test_that("Chained rules -> file", {
   cleanup()
-  m <- maker("chain_file.yml")
+  m <- remake("chain_file.yml")
   m$make("data.csv")
   m$make("plot.pdf")
 
@@ -84,14 +84,14 @@ test_that("Chained rules -> file", {
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
-  maker_remove_target(m, "plot.pdf")
+  remake_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 })
 
 test_that("Chained rules -> plot", {
   cleanup()
-  m <- maker("chain_plot.yml")
+  m <- remake("chain_plot.yml")
   m$make("data.csv")
   m$make("plot.pdf")
 
@@ -110,7 +110,7 @@ test_that("Chained rules -> plot", {
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
-  maker_remove_target(m, "plot.pdf")
+  remake_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 })

@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Utilities")
@@ -32,21 +32,21 @@ test_that("insert_at", {
 
 test_that("zip_dir", {
   dir.create("test")
-  file.copy(c("code.R", "maker.yml"), "test")
+  file.copy(c("code.R", "remake.yml"), "test")
 
   dest <- zip_dir("test")
   expect_that(dest, equals("test.zip"))
   expect_that(file.exists("test.zip"), is_true())
 
   contents <- unzip("test.zip", list=TRUE)
-  expected <- c("test/code.R", "test/maker.yml")
+  expected <- c("test/code.R", "test/remake.yml")
   expect_that(all(expected %in% contents$Name), is_true())
   file.remove("test.zip")
 
   ## Then, out of place:
   path <- file.path(tempdir(), "test")
   dir.create(path)
-  file.copy(c("code.R", "maker.yml"), path)
+  file.copy(c("code.R", "remake.yml"), path)
 
   dest <- zip_dir(path)
   expect_that(dest, equals("test.zip"))

@@ -1,7 +1,7 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Knitr")
@@ -13,7 +13,7 @@ test_that("Defaults", {
 
 test_that("Build Rmd works", {
   cleanup()
-  m <- maker("knitr.yml")
+  m <- remake("knitr.yml")
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
@@ -26,7 +26,7 @@ test_that("Build Rmd works", {
 
 test_that("Build Rnw works", {
   cleanup()
-  m <- maker("knitr.yml")
+  m <- remake("knitr.yml")
   m$make("knitr.tex")
   expect_that(file.exists("knitr.tex"), is_true())
   expect_that(is_directory("figure"), is_true())
@@ -39,14 +39,14 @@ test_that("Build Rnw works", {
 
 test_that("Script", {
   cleanup()
-  m <- maker("knitr.yml")
-  src <- maker_script(m, "knitr.md")
+  m <- remake("knitr.yml")
+  src <- remake_script(m, "knitr.md")
   expect_that(last(src), equals('knitr::knit("knitr.Rmd", "knitr.md")'))
 })
 
 test_that("knitr depends (file only)", {
   cleanup()
-  m <- maker("knitr_file_dep.yml")
+  m <- remake("knitr_file_dep.yml")
   expect_that(file.exists("data.csv"), is_false())
   m$make()
   expect_that(file.exists("data.csv"), is_true())
@@ -54,7 +54,7 @@ test_that("knitr depends (file only)", {
 
 test_that("knitr options", {
   cleanup()
-  m <- maker("knitr_opts.yml")
+  m <- remake("knitr_opts.yml")
   m$make("knitr.md")
 
   ## Check I have the default knitr options:
@@ -74,7 +74,7 @@ test_that("knitr options", {
 
 test_that("Option sets", {
   cleanup()
-  m <- maker("knitr_options.yml")
+  m <- remake("knitr_options.yml")
   t <- m$targets[["knitr.md"]]
   dat <- yaml_read("knitr_options.yml")
   cmp <- c(dat$knitr_options$mystyle, list(input="knitr.Rmd"))
@@ -84,7 +84,7 @@ test_that("Option sets", {
 
 test_that("auto_figure_prefix", {
   cleanup()
-  m <- maker("knitr_prefix.yml")
+  m <- remake("knitr_prefix.yml")
   m$make("knitr.md")
   expect_that(file.exists("knitr.md"), is_true())
   expect_that(is_directory("figure"), is_true())
@@ -98,7 +98,7 @@ test_that("auto_figure_prefix", {
 
 test_that("Errors during compilation propagate", {
   cleanup()
-  m <- maker("knitr_error.yml")
+  m <- remake("knitr_error.yml")
   expect_that(m$make("knitr_rename.md"), throws_error())
   t <- m$targets[["knitr_rename.md"]]
   expect_that(t$knitr$options$error, is_false())
@@ -109,6 +109,6 @@ test_that("Errors during compilation propagate", {
 
 test_that("Renaming exported objects", {
   cleanup()
-  m <- maker("knitr_rename.yml")
+  m <- remake("knitr_rename.yml")
   m$make("knitr_rename.md")
 })

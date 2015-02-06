@@ -92,9 +92,9 @@ code_deps <- R6Class(
     ## information for that package.  We'll need to do that on the fly
     ## though.
     ##
-    ## TODO: Plotting targets might want to depend on the maker
+    ## TODO: Plotting targets might want to depend on the remake
     ## version, or check to see if they need to be upgraded based on
-    ## the maker version.
+    ## the remake version.
     info=function(x) {
       fns <- self$depends_functions(x)
       pkgs <- self$depends_packages(x)

@@ -4,7 +4,7 @@
 download_data_works <- download_data
 
 ## This simulates how download.file fails; it leaves an empty file in
-## the destination.  That's not great for us because if you run maker
+## the destination.  That's not great for us because if you run remake
 ## a *second* time it goes "oh sweet, the file has changed, let's
 ## rebuild" and you get rubbish.  Better is to restore the previous
 ## state on error.

@@ -1,17 +1,17 @@
 ##' @importFrom R6 R6Class
-.R6_maker <- R6Class(
-  "maker",
+.R6_remake <- R6Class(
+  "remake",
   public=list(
     store=NULL,
     targets=NULL,
 
-    initialize=function(maker_file="maker.yml", verbose=TRUE, envir=NULL) {
+    initialize=function(remake_file="remake.yml", verbose=TRUE, envir=NULL) {
       #
-      private$file <- maker_file
+      private$file <- remake_file
       private$path <- "."
-      private$verbose <- maker_verbose(verbose)
+      private$verbose <- remake_verbose(verbose)
       if (!is.null(envir)) {
-        private$active_bindings <- maker_active_bindings_manager(envir)
+        private$active_bindings <- remake_active_bindings_manager(envir)
       }
       private$initialize_message_format()
       private$refresh()
@@ -46,7 +46,7 @@
       if (first_time || !is.null(config)) {
         private$config <- config
         if (!first_time) {
-          private$print_message("READ", "", "# reloading makerfile")
+          private$print_message("READ", "", "# reloading remakefile")
         }
         private$reload_config()
       } else {
@@ -70,7 +70,7 @@
         reload <- is.null(private$hash) ||
           !identical(hash_files(names(private$hash)), private$hash)
         if (reload) {
-          config <- read_maker_file(private$file)
+          config <- read_remake_file(private$file)
         }
       }
       config
@@ -94,7 +94,7 @@
       private$initialize_default_target(private$config$target_default)
       private$initialize_message_format() # width may change?
       if (!is.null(private$active_bindings)) {
-        maker_reload_active_bindings(self, "target", private$active_bindings)
+        remake_reload_active_bindings(self, "target", private$active_bindings)
       }
     },
 
@@ -115,7 +115,7 @@
         tryCatch(self$store$env$reload(TRUE),
                  missing_packages=function(e) missing_packages_recover(e, self))
         if (!is.null(private$active_bindings)) {
-          maker_reload_active_bindings(self, "source", private$active_bindings)
+          remake_reload_active_bindings(self, "source", private$active_bindings)
         }
       }
     },
@@ -134,7 +134,7 @@
       } else {
         assert_scalar_character(default, "target_default")
         if (!(default %in% names(self$targets))) {
-          stop(sprintf("Default target %s not found in makerfile",
+          stop(sprintf("Default target %s not found in remakefile",
                        default))
         }
         private$default_target <- default
@@ -321,7 +321,7 @@
           ## dependent taragets though.
           extra <- load_extra_packages(target$packages)
           if (target$type == "cleanup") {
-            ## Do this here because it uses maker (via
+            ## Do this here because it uses remake (via
             ## private$remove_target).
             for (t in target$targets_to_remove) {
               private$remove_target(t, chain=TRUE)
@@ -378,48 +378,48 @@
     }
   ))
 
-##' Creates a maker instance to interact with.
-##' @title Create a maker object
-##' @param maker_file Name of the makerfile (by default
-##' \code{maker.yml})
-##' @param verbose Controls whether maker is verbose or not.  By
+##' Creates a remake instance to interact with.
+##' @title Create a remake object
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml})
+##' @param verbose Controls whether remake is verbose or not.  By
 ##' default it is (\code{TRUE}), which prints out the name of each
 ##' target as it is built/checked.  This argument is passed to
-##' \code{\link{maker_verbose}}; valid options are \code{TRUE},
-##' \code{FALSE} and also the result of calling \code{maker_verbose}.
+##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
+##' \code{FALSE} and also the result of calling \code{remake_verbose}.
 ##' @param envir An environment into which to create \emph{links} to
-##' maker-controlled objects (targets and sources).  \code{.GlobalEnv}
+##' remake-controlled objects (targets and sources).  \code{.GlobalEnv}
 ##' is a reasonable choice.  This will change in a future version.
-##' @param allow_cache Allow cached maker instances to be loaded?
+##' @param allow_cache Allow cached remake instances to be loaded?
 ##' @examples
 ##' \dontrun{
-##' # create a quiet maker instance
-##' m <- maker(verbose=FALSE)
+##' # create a quiet remake instance
+##' m <- remake(verbose=FALSE)
 ##' # create a fairly quiet instance that does not print information
 ##' # for targets that do nothing (are up-to-date).
-##' m <- maker(verbose=maker_verbose(noop=FALSE))
+##' m <- remake(verbose=remake_verbose(noop=FALSE))
 ##' # Build the default target:
 ##' m$make()
 ##' }
 ##' @export
-maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL,
+remake <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
                   allow_cache=TRUE) {
-  if (is.null(maker_file)) {
-    .R6_maker_interactive$new(verbose=verbose, envir=envir)
+  if (is.null(remake_file)) {
+    .R6_remake_interactive$new(verbose=verbose, envir=envir)
   } else {
     if (allow_cache) {
-      cached <- cache$fetch(maker_file, verbose, envir)
+      cached <- cache$fetch(remake_file, verbose, envir)
       if (is.null(cached)) {
-        message("[creating maker]")
-        ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+        message("[creating remake]")
+        ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
         cache$add(ret)
       } else {
-        message("[loading cached maker]")
+        message("[loading cached remake]")
         ret <- cached
       }
     } else {
       message("[skipping cache]")
-      ret <- .R6_maker$new(maker_file, verbose=verbose, envir=envir)
+      ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
     }
     ret
   }
@@ -427,7 +427,7 @@ maker <- function(maker_file="maker.yml", verbose=TRUE, envir=NULL,
 
 ## TODO: There is far too much going on in here: split this into
 ## logical chunks.
-read_maker_file <- function(filename, seen=character(0)) {
+read_remake_file <- function(filename, seen=character(0)) {
   if (filename %in% seen) {
     stop("Recursive include detected: ",
          paste(c(seen, filename), collapse=" -> "))
@@ -435,7 +435,7 @@ read_maker_file <- function(filename, seen=character(0)) {
 
   ## TODO: Sort out the logic here:
   if (dirname(filename) != "." && dirname(filename) != getwd()) {
-    stop("Logic around paths in out-of-directory maker files not decided")
+    stop("Logic around paths in out-of-directory remake files not decided")
   }
 
   dat <- yaml_read(filename)
@@ -477,14 +477,14 @@ read_maker_file <- function(filename, seen=character(0)) {
     ## files to be in the current working directory.
     ##
     ## TODO: I think the correct answer is to assume everything
-    ## relative to the main makerfile.  Possibly support a
+    ## relative to the main remakefile.  Possibly support a
     ## include-and-chdir approach too, where rules are rewritten to
     ## support relative paths, but that's going be hairy.
     if (any(dirname(dat$include) != ".")) {
-      stop("All included makerfiles must be in the current directory")
+      stop("All included remakefiles must be in the current directory")
     }
     for (f in dat$include) {
-      dat_sub <- read_maker_file(f, c(seen, filename))
+      dat_sub <- read_remake_file(f, c(seen, filename))
       dat$packages <- unique(c(dat$packages, dat_sub$packages))
       dat$sources  <- unique(c(dat$sources,  dat_sub$sources))
       ## No unique here because it destroys names.  There should be no
@@ -574,14 +574,14 @@ paint <- function(str, col) {
 ##' \code{command_abbreviate} does not matter.  Similarly, setting
 ##' \code{command=FALSE} means that \code{command_abbreviate} does not
 ##' matter.
-##' @title Control maker verbosity
-##' @param verbose Print progress at each step that maker does
+##' @title Control remake verbosity
+##' @param verbose Print progress at each step that remake does
 ##' something.
 ##' @param noop Print progress for steps that are non-operations, such
 ##' as targets that need nothing done to them.  Setting this to
 ##' \code{FALSE} is useful for very large projects.
 ##' @param command Print the command along with the progress
-##' information?  This is only printed when maker actually runs
+##' information?  This is only printed when remake actually runs
 ##' something.
 ##' @param command_abbreviate Abbreviate the command information so
 ##' that it fits on one line.  If \code{FALSE} then the command will
@@ -590,12 +590,12 @@ paint <- function(str, col) {
 ##' \code{message}, \code{cat} or \code{print}).  If \code{FALSE} then
 ##' these messages will be suppressed.
 ##' @export
-maker_verbose <- function(verbose=getOption("maker.verbose", TRUE),
-                          noop=getOption("maker.verbose.noop", TRUE),
-                          command=getOption("maker.verbose.command", TRUE),
+remake_verbose <- function(verbose=getOption("remake.verbose", TRUE),
+                          noop=getOption("remake.verbose.noop", TRUE),
+                          command=getOption("remake.verbose.command", TRUE),
                           command_abbreviate=TRUE,
                           target=NULL) {
-  if (inherits(verbose, "maker_verbose")) {
+  if (inherits(verbose, "remake_verbose")) {
     verbose
   } else {
     assert_scalar_logical(verbose)
@@ -611,18 +611,18 @@ maker_verbose <- function(verbose=getOption("maker.verbose", TRUE),
                    print_command=command,
                    print_command_abbreviate=command_abbreviate,
                    quiet_target=target),
-              class="maker_verbose")
+              class="remake_verbose")
   }
 }
 
-## Helper function to access the private fields of a maker object.
+## Helper function to access the private fields of a remake object.
 ## This is going to let us present a simple external interface to
-## maker by allowing free functions (not just members) to access the
-## maker internals.  The public/private gap here represents interface
+## remake by allowing free functions (not just members) to access the
+## remake internals.  The public/private gap here represents interface
 ## vs implementation detail.
 ##
 ## This helper will also get used extensively in tests.
-maker_private <- function(m) {
+remake_private <- function(m) {
   environment(m$initialize)$private
 }
 
@@ -630,15 +630,15 @@ maker_private <- function(m) {
 ##' @title Check if a target is current or not
 ##' @param target_name Name of the target.  An error is thrown if the
 ##' target does not exist.
-##' @param m A maker object.  If omitted, then one will be built using
-##. the defaults in \code{\link{maker}}
+##' @param m A remake object.  If omitted, then one will be built using
+##. the defaults in \code{\link{remake}}
 ##' @param check What to check.  It can be "exists", "depends", "code"
 ##' or "all.  By default, this comes from the target default.
 ##' @export
 ##' @author Rich FitzJohn
 is_current <- function(target_name, m=NULL, check=NULL) {
   if (is.null(m)) {
-    m <- maker()
+    m <- remake()
   }
   assert_has_target(target_name, m)
   target_is_current(m$targets[[target_name]], m$store, check)

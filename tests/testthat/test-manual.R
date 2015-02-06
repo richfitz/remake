@@ -1,14 +1,14 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Manual run")
 
 test_that("simple run", {
   cleanup()
-  m <- maker("maker.yml")
+  m <- remake("remake.yml")
 
   expect_that(is_current("data.csv", m), is_false())
   expect_that(is_current("processed", m), is_false())
@@ -63,7 +63,7 @@ test_that("simple run", {
   expect_that(res, equals(cmp))
 
   ## Run the build system manually:
-  mp <- maker_private(m)
+  mp <- remake_private(m)
   mp$update("data.csv", force=TRUE)
   mp$update("processed", force=TRUE)
   mp$update("plot.pdf", force=TRUE)
@@ -78,17 +78,17 @@ test_that("simple run", {
 test_that("Depending on a file we don't make", {
   cleanup()
   ## Manually run the download step from before -- now we have a file
-  ## that maker wants to depend on, but does not generate:
+  ## that remake wants to depend on, but does not generate:
   e <- new.env()
   source("code.R", e)
   e$download_data("data.csv")
   expect_that(file.exists("data.csv"), is_true())
 
-  ## This configuration is the same as maker.yml, but it does not
+  ## This configuration is the same as remake.yml, but it does not
   ## contain a rule for building data.csv
-  m <- maker("maker2.yml")
+  m <- remake("remake2.yml")
 
-  mp <- maker_private(m)
+  mp <- remake_private(m)
   expect_that(mp$update("data.csv", force=TRUE),
               throws_error("Can't build implicit targets"))
   mp$update("processed", force=TRUE)

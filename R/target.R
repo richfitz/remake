@@ -109,7 +109,7 @@ target_new_file <- function(name, command, opts, extra=NULL,
   ret
 }
 
-## This is called directly by maker, and skips going through
+## This is called directly by remake, and skips going through
 ## target_new_base.  That will probably change back shortly.
 target_new_file_implicit <- function(name, check_exists=TRUE) {
   if (check_exists && !file.exists(name)) {
@@ -252,10 +252,10 @@ target_new_fake <- function(name, command, opts, extra=NULL) {
   ret
 }
 
-target_new_utility <- function(name, utility, maker) {
+target_new_utility <- function(name, utility, remake) {
   ret <- target_new_base(name, NULL, NULL, NULL, "utility")
   ret$utility <- utility
-  ret$maker <- maker
+  ret$remake <- remake
   ret$status_string <- "UTIL"
   class(ret) <- c("target_utility", class(ret))
   ret
@@ -300,7 +300,7 @@ target_is_current <- function(target, store, check=NULL) {
     return(TRUE)
   } else if (!store$db$contains(target$name)) {
     ## This happens when a file target exists, but there is no record
-    ## of it being created (such as when the .maker directory is
+    ## of it being created (such as when the .remake directory is
     ## deleted or if it comes from elsewhere).  In which case we can't
     ## tell if it's up to date and assume not.
     ##
@@ -473,12 +473,12 @@ target_chain_match_dot <- function(x, pos, chain_names) {
   x
 }
 
-make_target_cleanup <- function(name, maker) {
+make_target_cleanup <- function(name, remake) {
   levels <- cleanup_target_names()
   name <- match_value(name, levels)
   i <- match(name, levels)
-  if (name %in% names(maker$targets)) {
-    t <- maker$targets[[name]]
+  if (name %in% names(remake$targets)) {
+    t <- remake$targets[[name]]
 
     ## These aren't tested:
     if (!is.null(t$chain_kids)) {
@@ -510,8 +510,8 @@ make_target_cleanup <- function(name, maker) {
 
   ## Add the actual bits to clean, making sure to exclude things
   ## destined to become cleanup targets.
-  target_level <- vcapply(maker$targets, function(x) x$cleanup_level)
-  t$targets_to_remove <- setdiff(names(maker$targets)[target_level == name],
+  target_level <- vcapply(remake$targets, function(x) x$cleanup_level)
+  t$targets_to_remove <- setdiff(names(remake$targets)[target_level == name],
                                  levels)
   t
 }
@@ -692,9 +692,9 @@ target_run <- function(target, store, quiet=NULL) {
   if (is.null(target$rule)) {
     return()
   } else if (target$type == "utility") {
-    return(target$utility(target$maker))
+    return(target$utility(target$remake))
   } else if (inherits(target, "target_knitr")) {
-    return(knitr_from_maker_target(target, store, quiet))
+    return(knitr_from_remake_target(target, store, quiet))
   }
 
   if (inherits(target, "target_plot")) {

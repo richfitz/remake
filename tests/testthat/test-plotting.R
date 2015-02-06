@@ -1,14 +1,14 @@
 if (interactive()) {
   devtools::load_all("../../")
   library(testthat)
-  source("helper-maker.R")
+  source("helper-remake.R")
 }
 
 context("Plot")
 
 test_that("Build works", {
   cleanup()
-  m <- maker("plot_simple.yml")
+  m <- remake("plot_simple.yml")
   m$make("plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   ## TODO: ideally check that it is the expected size
@@ -17,7 +17,7 @@ test_that("Build works", {
 
 test_that("Plot options", {
   cleanup()
-  m <- maker("plot_options.yml")
+  m <- remake("plot_options.yml")
 
   t1 <- m$targets[["plot1.pdf"]]
   t2 <- m$targets[["plot2.pdf"]]

@@ -2,12 +2,12 @@
 sources:
   - code.R
 
-## Most of a makerfile will be targets.  They can be listed in any
+## Most of a remakefile will be targets.  They can be listed in any
 ## order; whatever makes most sense.  Files can be split up and
 ## included into the main file if you need to impose more structure.
 targets:
   ## 'all' is a special target that will be used as the default
-  ## target by 'maker'.  It doesn't actually make anything but
+  ## target by 'remake'.  It doesn't actually make anything but
   ## "depends" on other targets.
   all:
     depends: plot.pdf
@@ -21,14 +21,14 @@ targets:
   ## 'processed' will be stored as an R object because it looks like
   ## an object name rather than a file name (file names have
   ## extensions or slashes in them).  It will be saved across
-  ## sessions.  Because it uses "data.csv", maker will work out that
+  ## sessions.  Because it uses "data.csv", remake will work out that
   ## this target depends on "data.csv".
   processed:
     command: process_data("data.csv")
 
-  ## Specifying 'plot: true' here tells maker that you are creating a
+  ## Specifying 'plot: true' here tells remake that you are creating a
   ## plot.  It will sort out opening/closing the pdf device for you.
-  ## Because 'myplot' uses 'processed', maker will work out that this
+  ## Because 'myplot' uses 'processed', remake will work out that this
   ## target requires the processed target to be made first.
   plot.pdf:
     command: myplot(processed)
