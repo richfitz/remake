@@ -1,3 +1,56 @@
+##' Creates a remake instance to interact with.
+##' @title Create a remake object
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml})
+##' @param verbose Controls whether remake is verbose or not.  By
+##' default it is (\code{TRUE}), which prints out the name of each
+##' target as it is built/checked.  This argument is passed to
+##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
+##' \code{FALSE} and also the result of calling \code{remake_verbose}.
+##' @param envir An environment into which to create \emph{links} to
+##' remake-controlled objects (targets and sources).  \code{.GlobalEnv}
+##' is a reasonable choice.  This will change in a future version.
+##' @param allow_cache Allow cached remake instances to be loaded?
+##' @examples
+##' \dontrun{
+##' # create a quiet remake instance
+##' m <- remake(verbose=FALSE)
+##' # create a fairly quiet instance that does not print information
+##' # for targets that do nothing (are up-to-date).
+##' m <- remake(verbose=remake_verbose(noop=FALSE))
+##' # Build the default target:
+##' m$make()
+##' }
+##' @export
+remake <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
+                   allow_cache=TRUE) {
+  remake2(remake_file, verbose, envir, allow_cache)
+}
+
+## The internal function that does a little more:
+remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
+                    allow_cache=TRUE, load_sources=TRUE) {
+  if (is.null(remake_file)) {
+    return(.R6_remake_interactive$new(verbose=verbose, envir=envir))
+  }
+
+  if (!allow_cache) {
+    return(.R6_remake$new(remake_file, verbose=verbose, envir=envir,
+                          load_sources=load_sources))
+  }
+
+  ret <- cache$fetch(remake_file, verbose, envir)
+  if (is.null(ret)) {
+    ret <- .R6_remake$new(remake_file, verbose=verbose,
+                          envir=envir, load_sources=load_sources)
+    ## NOTE: Possibly should only cache if load_sources is TRUE?
+    cache$add(ret)
+  } else if (load_sources && is.null(ret$store$env$env)) {
+    remake_private(ret)$initialize_sources()
+  }
+  return(ret)
+}
+
 ##' @importFrom R6 R6Class
 .R6_remake <- R6Class(
   "remake",
@@ -5,7 +58,8 @@
     store=NULL,
     targets=NULL,
 
-    initialize=function(remake_file="remake.yml", verbose=TRUE, envir=NULL) {
+    initialize=function(remake_file="remake.yml", verbose=TRUE,
+      envir=NULL, load_sources=TRUE) {
       #
       private$file <- remake_file
       private$path <- "."
@@ -14,7 +68,7 @@
         private$active_bindings <- remake_active_bindings_manager(envir)
       }
       private$initialize_message_format()
-      private$refresh()
+      private$refresh(load_sources)
     },
 
     make=function(target_names=NULL, ...) {
@@ -40,7 +94,7 @@
     active_bindings=NULL,
     fmt=NULL,
 
-    refresh=function() {
+    refresh=function(load_sources=TRUE) {
       first_time <- is.null(private$hash)
       config <- private$read_config()
       if (first_time || !is.null(config)) {
@@ -48,8 +102,8 @@
         if (!first_time) {
           private$print_message("READ", "", "# reloading remakefile")
         }
-        private$reload_config()
-      } else {
+        private$reload_config(load_sources)
+      } else if (load_sources) {
         private$initialize_sources()
       }
     },
@@ -76,13 +130,15 @@
       config
     },
 
-    reload_config=function() {
+    reload_config=function(load_sources) {
       private$hash <- private$config$hash
       if (!is.null(private$config) && !isFALSE(private$config$active)) {
         private$initialize_targets()
       }
       private$initialize_store()
-      private$initialize_sources()
+      if (load_sources) {
+        private$initialize_sources()
+      }
     },
 
     initialize_targets=function() {
@@ -377,50 +433,6 @@
       private$print_message(status, target_name, cmd, "round")
     }
   ))
-
-##' Creates a remake instance to interact with.
-##' @title Create a remake object
-##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml})
-##' @param verbose Controls whether remake is verbose or not.  By
-##' default it is (\code{TRUE}), which prints out the name of each
-##' target as it is built/checked.  This argument is passed to
-##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
-##' \code{FALSE} and also the result of calling \code{remake_verbose}.
-##' @param envir An environment into which to create \emph{links} to
-##' remake-controlled objects (targets and sources).  \code{.GlobalEnv}
-##' is a reasonable choice.  This will change in a future version.
-##' @param allow_cache Allow cached remake instances to be loaded?
-##' @examples
-##' \dontrun{
-##' # create a quiet remake instance
-##' m <- remake(verbose=FALSE)
-##' # create a fairly quiet instance that does not print information
-##' # for targets that do nothing (are up-to-date).
-##' m <- remake(verbose=remake_verbose(noop=FALSE))
-##' # Build the default target:
-##' m$make()
-##' }
-##' @export
-remake <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
-                  allow_cache=TRUE) {
-  if (is.null(remake_file)) {
-    .R6_remake_interactive$new(verbose=verbose, envir=envir)
-  } else {
-    if (allow_cache) {
-      cached <- cache$fetch(remake_file, verbose, envir)
-      if (is.null(cached)) {
-        ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
-        cache$add(ret)
-      } else {
-        ret <- cached
-      }
-    } else {
-      ret <- .R6_remake$new(remake_file, verbose=verbose, envir=envir)
-    }
-    ret
-  }
-}
 
 ## TODO: There is far too much going on in here: split this into
 ## logical chunks.

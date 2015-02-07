@@ -180,3 +180,33 @@ test_that("Caching", {
   m2 <- remake(envir=e)
   expect_that(cache$fetch("remake.yml", TRUE, e), equals(m2))
 })
+
+test_that("Loading without sources", {
+  cleanup()
+  ## No caching here:
+  expect_that(m <- .R6_remake$new(load_sources=FALSE),
+              not(shows_message()))
+  expect_that(m <- .R6_remake$new(load_sources=TRUE),
+              shows_message("loading sources"))
+
+  ## With caching:
+  cleanup()
+  expect_that(m <- remake2(load_sources=FALSE), not(shows_message()))
+  expect_that(m$store$env,     is_a("managed_environment"))
+  expect_that(m$store$env$env, is_null())
+  ## This means that things *will* get cleared
+  expect_that(m$store$env$is_current(), is_false())
+
+  ## And again from the cache no message:
+  expect_that(m <- remake2(load_sources=FALSE), not(shows_message()))
+
+  ## Check again:
+  m <- cache$fetch("remake.yml", TRUE, NULL)
+  expect_that(m, is_a("remake"))
+  expect_that(m$store$env$env, is_null())
+
+  ## This does load the sources
+  expect_that(m <- remake2(), shows_message("loading sources"))
+  ## Sources already loaded
+  expect_that(m <- remake2(), not(shows_message("loading sources")))
+})
