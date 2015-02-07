@@ -304,3 +304,6 @@ uninvisible <- function(x) {
 dquote <- function(x) {
   sprintf('"%s"', x)
 }
+squote <- function(x) {
+  sprintf("'%s'", x)
+}

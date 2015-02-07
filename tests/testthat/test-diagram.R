@@ -7,8 +7,6 @@ if (interactive()) {
 context("Diagrams")
 
 test_that("Can make diagram", {
-  m <- remake("remake.yml")
-  pdf("test-diagram-output.pdf")
-  on.exit(dev.off()) # called after leaving this block, incl on error
-  expect_that(diagram(m), not(throws_error()))
+  obj <- diagram()
+  expect_that(obj, is_a("grViz"))
 })

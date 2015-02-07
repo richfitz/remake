@@ -4,14 +4,13 @@
 \alias{diagram}
 \title{Make a figure with the dependency graph}
 \usage{
-diagram(m, targets = NULL)
+diagram(remake_file = "remake.yml", ...)
 }
 \arguments{
-\item{m}{A remake object}
+\item{remake_file}{Name of remake file (default is}
 
-\item{targets}{Optional character vector of targets.  If
-specified, then only targets that these target depends on are
-included.  Useful for filtering the graph.}
+\item{...}{Additional arguments thta control formatting but aren't
+documented and are subject to change.}
 }
 \description{
 Plot the graph that remake generates.
@@ -21,7 +20,5 @@ This is really just a placeholder, but I want this here early as
 an indication of where the package is headed.  Plus this is
 something I have always wanted in make.  Current version is not
 tunable on purpose.
-
-This function \emph{will} change.
 }
 
