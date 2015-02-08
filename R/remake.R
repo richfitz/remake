@@ -360,7 +360,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
       quiet_target=private$verbose$quiet_target, check=NULL,
       return_target=TRUE) {
       #
-      target <- private$get_target(target_name) # self$targets[[target_name]]
+      target <- self$targets[[target_name]]
       current <- !force && target_is_current(target, self$store, check)
 
       if (!isTRUE(target$implicit)) {

@@ -5,7 +5,7 @@ if (interactive()) {
   source("helper-remake.R")
 }
 
-context("Targets")
+context("Target packages")
 
 test_that("bootstrap", {
   expect_that(exists("install_github"), is_false())

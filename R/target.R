@@ -654,7 +654,7 @@ target_run_fake <- function(target, for_script=FALSE) {
       res <- paste(target$name, "<-", res)
     }
 
-    if (!is.null(target$packages)) {
+    if (for_script && !is.null(target$packages)) {
       res <- c(sprintf('library("%s")', target$packages), res)
     }
 
