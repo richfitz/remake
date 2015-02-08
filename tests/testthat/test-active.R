@@ -6,6 +6,22 @@ if (interactive()) {
 
 context("Active binding functions")
 
+test_that("code_dependencies skips active bindings", {
+  lava <- function(...) stop("I am lava, don't touch", call.=FALSE)
+  makeActiveBinding("foo", lava, .GlobalEnv)
+  on.exit(rm(list="foo", .GlobalEnv))
+  expect_that(foo, throws_error("I am lava"))
+  expect_that(foo <<- 1, throws_error("I am lava"))
+  f <- function(foo) foo + 1
+  nodeps <- list(functions=character(0), packages=character(0))
+  expect_that(code_dependencies(f, FALSE), equals(nodeps))
+
+  ## Arguments skip through:
+  bar <- function() 1
+  g <- function(bar) bar + 1
+  expect_that(code_dependencies(g, FALSE), equals(nodeps))
+})
+
 test_that("Create active bindings", {
   cleanup()
   m <- remake::remake(envir=new.env())

@@ -1,7 +1,19 @@
-code_dependencies <- function(f) {
+code_dependencies <- function(f, hide_errors=TRUE) {
   env <- environment(f)
+  ## Exclude these:
+  args <- names(formals(f))
+
   leaf <- function(e, w) {
-    r <- try(eval(e, env), silent=TRUE)
+    if (!is.symbol(e)) { # A literal of some type
+      return()
+    }
+    e_name <- deparse(e)
+    if (!exists(e_name, env)       || # local variable, probably
+        e_name %in% args           || # shadowed by function argument
+        is_active_binding(e_name)) {  # using remake active bindings
+      return()
+    }
+    r <- try(eval(e, env), silent=hide_errors)
     if (!is.null(r) && is.function(r) && !is.primitive(r)) {
       if (identical(environment(r), env)) {
         if (!identical(r, f)) {
