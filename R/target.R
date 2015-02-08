@@ -653,6 +653,11 @@ target_run_fake <- function(target, for_script=FALSE) {
     } else if (target$type == "object") {
       res <- paste(target$name, "<-", res)
     }
+
+    if (!is.null(target$packages)) {
+      res <- c(sprintf('library("%s")', target$packages), res)
+    }
+
     res
   }
 }
