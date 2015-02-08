@@ -93,11 +93,6 @@ install_remake <- function(dest) {
   Sys.chmod(file, "0755")
 }
 
-##' These are convenience functions that creates a remake object and
-##' runs \code{make} or \code{script} on it.  For \code{make}, if the
-##' final target is an object, that will be invisibly returned.  These
-##' exist only to avoid creating a remake object before doing something
-##' with it; this is all these functions do internally!
 ##' @title Make a single target
 ##' @param target_names Vector of names of targets to build, or
 ##' \code{NULL} to build the default target (if specified in the
@@ -107,10 +102,4 @@ install_remake <- function(dest) {
 ##' @export
 make <- function(target_names=NULL, remake_file="remake.yml") {
   remake(remake_file)$make(target_names)
-}
-
-##' @rdname make
-##' @export
-make_script <- function(target_names=NULL, remake_file="remake.yml") {
-  remake_script(remake(remake_file), target_names)
 }

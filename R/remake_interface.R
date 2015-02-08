@@ -14,29 +14,6 @@ make_dependencies <- function(m, target_name, ...) {
   invisible(remake_environment(m, deps_name, t))
 }
 
-remake_script <- function(m, target_name=NULL) {
-  private <- remake_private(m)
-  if (is.null(target_name)) {
-    target_name <- private$target_default()
-  }
-  pkgs <- lapply(m$store$env$packages,
-                 function(x) sprintf('library("%s")', x))
-  ## TODO: This does not work for *directories*.  Emit the body of
-  ## source_dir with appropriate things set.
-  srcs <- lapply(m$store$env$sources,
-                 function(x) sprintf('source("%s")', x))
-  ## Probably best to filter by "real" here?
-  plan <- private$plan(target_name)
-  cmds <- lapply(plan, function(i)
-    target_run_fake(m$targets[[i]], for_script=TRUE))
-
-  src <- c(unlist(pkgs),
-           unlist(srcs),
-           unlist(cmds))
-  class(src) <- "remake_script"
-  src
-}
-
 ## This one is used for testing, but I'm not sure how useful it will
 ## generally be?  When working in global mode, it's possible that
 ## assigning NULL onto an "object" could trigger this: that'd be

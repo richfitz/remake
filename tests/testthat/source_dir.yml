@@ -1,0 +1,5 @@
+sources: source_dir
+
+targets:
+  all:
+    command: identity(TRUE)

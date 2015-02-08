@@ -42,6 +42,19 @@ test_that("Simple interface", {
   expect_that(src, is_identical_to(cmp))
 })
 
+test_that("Source directory", {
+  cleanup()
+  dir.create("source_dir", FALSE)
+  writeLines(character(0), "source_dir/a.R")
+  writeLines(character(0), "source_dir/b.R")
+
+  str <- make_script(remake_file="source_dir.yml")
+  expect_that(str[[1]], equals('source("source_dir/a.R")'))
+  expect_that(str[[2]], equals('source("source_dir/b.R")'))
+  expect_that(str[[3]], equals('all <- identity(TRUE)'))
+  cleanup()
+})
+
 if (FALSE) {
 test_that("Chained targets", {
   cleanup()
