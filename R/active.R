@@ -18,6 +18,7 @@ make_active_binding_function <- function(m, name, type) {
           oo <- private$verbose$print_noop
           on.exit(private$verbose$print_noop <- oo)
           private$verbose$print_noop <- FALSE
+          private$refresh()
           uninvisible(private$make1(name))
         }
       } else if (type == "source") {

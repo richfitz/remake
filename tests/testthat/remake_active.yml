@@ -1,0 +1,5 @@
+sources: remake_active.R
+
+targets:
+  obj:
+    command: foo()

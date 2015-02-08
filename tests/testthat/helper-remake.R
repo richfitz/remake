@@ -9,6 +9,7 @@ cleanup <- function() {
                                  "knitr_file_dep.md",
                                  "test.zip", "remake.zip",
                                  "code_literal.R",
+                                 "remake_active.R",
                                  "tmp_quoting.yml")))
   unlink("figure", recursive=TRUE)
   unlink("test", recursive=TRUE)
