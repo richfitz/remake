@@ -303,7 +303,8 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
         cmd <- NULL
       }
 
-      status <- brackets(paint(status, status_colour(status)), style)
+      status <- brackets(paint(sprintf("%5s", status),
+                               status_colour(status)), style)
 
       if (!is.null(cmd)) {
         if (verbose$print_command_abbreviate) {
