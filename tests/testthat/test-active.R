@@ -9,7 +9,7 @@ context("Active binding functions")
 test_that("code_dependencies skips active bindings", {
   lava <- function(...) stop("I am lava, don't touch", call.=FALSE)
   makeActiveBinding("foo", lava, .GlobalEnv)
-  on.exit(rm(list="foo", .GlobalEnv))
+  on.exit(rm(list="foo", envir=.GlobalEnv))
   expect_that(foo, throws_error("I am lava"))
   expect_that(foo <<- 1, throws_error("I am lava"))
   f <- function(foo) foo + 1
