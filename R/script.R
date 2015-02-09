@@ -4,11 +4,21 @@
 ##' remakefile).
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml}).  This is passed to \code{remake()}.
+##' @param filename A filename to save the resulting script into.  If
+##' \code{NULL} (the default) then an a character vector is returned
+##' that can be inspected.  It can also be sourced without writing to
+##' file using \code{\link{source_remake_script}}.
 ##' @export
-make_script <- function(target_names=NULL, remake_file="remake.yml") {
-  remake_script(remake2(remake_file, load_sources=FALSE), target_names)
+make_script <- function(target_names=NULL, filename=NULL,
+                        remake_file="remake.yml") {
+  scr <- remake_script(remake2(remake_file, load_sources=FALSE), target_names)
+  if (is.null(filename)) {
+    scr
+  } else {
+    writeLines(scr, filename)
+    invisible(scr)
+  }
 }
-
 
 remake_script <- function(m, target_name=NULL) {
   private <- remake_private(m)

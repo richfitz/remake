@@ -4,12 +4,18 @@
 \alias{make_script}
 \title{Make a single target}
 \usage{
-make_script(target_names = NULL, remake_file = "remake.yml")
+make_script(target_names = NULL, filename = NULL,
+  remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Vector of names of targets to build, or
 \code{NULL} to build the default target (if specified in the
 remakefile).}
+
+\item{filename}{A filename to save the resulting script into.  If
+\code{NULL} (the default) then an a character vector is returned
+that can be inspected.  It can also be sourced without writing to
+file using \code{\link{source_remake_script}}.}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).  This is passed to \code{remake()}.}
