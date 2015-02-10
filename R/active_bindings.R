@@ -22,8 +22,8 @@ binding_types <- function() {
 ## active binding function for binding to a target (going via
 ## `remake_make1()`) or something from the managed environment (a
 ## simple `get()`).
-make_active_binding_function <- function(m, name, type) {
-  filename <- remake_private(m)$file
+make_active_binding_function <- function(obj, name, type) {
+  filename <- obj$file
   force(name)
   if (!(type %in% binding_types())) {
     stop("Unknown binding type ", type)
@@ -32,25 +32,20 @@ make_active_binding_function <- function(m, name, type) {
     if (missing(value)) {
       ## We'd fetch from cache here but that will behave badly with
       ## verbose I think.
-      m <- remake2(filename, NULL)
-      private <- remake_private(m)
+      m <- remake(filename)
       if (type == "target") {
-        if (isFALSE(remake_private(m)$config$active)) {
+        if (isFALSE(obj$config$active)) {
           ret <- list(name=name)
           class(ret) <- c("target_placeholder", class(ret))
           ret
           ## TODO: We might do something different on "pause" here,
           ## such as return the last known version of the data.
         } else {
-          ## TODO: This is going to change once the remake object is
-          ## not a R6 object.
-          oo <- private$verbose$print_noop
-          on.exit(private$verbose$print_noop <- oo)
-          private$verbose$print_noop <- FALSE
-          uninvisible(remake_make1(m, name))
+          obj$verbose$print_noop <- FALSE
+          uninvisible(remake_make1(obj, name))
         }
       } else if (type == "source") {
-        m$store$env$env[[name]]
+        obj$store$env$env[[name]]
       }
     } else {
       stop(sprintf('"%s" is managed by remake and is read-only', name),
@@ -88,9 +83,9 @@ binding_manager <- R6Class(
     },
 
     create_bindings=function(filename) {
-      m <- remake(filename)
-      self$set_bindings("source", m)
-      self$set_bindings("target", m)
+      obj <- remake(filename)
+      self$set_bindings("source", obj)
+      self$set_bindings("target", obj)
     },
 
     delete_bindings=function(filename) {
@@ -100,27 +95,27 @@ binding_manager <- R6Class(
       invisible(names)
     },
 
-    reload_bindings=function(type, m) {
-      file <- remake_private(m)$file
+    reload_bindings=function(type, obj) {
+      file <- obj$file
       if (!is.null(file) && file %in% self$files) {
-        self$set_bindings(type, m)
+        self$set_bindings(type, obj)
       }
     },
 
-    set_bindings=function(type, m) {
+    set_bindings=function(type, obj) {
       if (type == "target") {
-        objects <- filter_targets_by_type(m$targets, "object")
+        objects <- filter_targets_by_type(obj$targets, "object")
         ## Exclude chain targets:
         ok <- vlapply(objects, function(x) is.null(x$chain_parent))
         names <- unname(dependency_names(objects[ok]))
       } else if (type == "source") {
-        m$store$env$reload()
-        names <- ls(m$store$env$env, all.names=TRUE)
+        obj$store$env$reload()
+        names <- ls(obj$store$env$env, all.names=TRUE)
       } else {
         stop("Unknown type ", type)
       }
 
-      file <- remake_private(m)$file
+      file <- obj$file
 
       ## 1. Check:
       normal <- filter_active_bindings(names, self$envir, normal=TRUE)
@@ -143,7 +138,7 @@ binding_manager <- R6Class(
       ## 3. Set the bindings up
       new_bindings <- setdiff(names, self$bindings)
       for (i in setdiff(names, self$bindings)) {
-        makeActiveBinding(i, make_active_binding_function(m, i, type),
+        makeActiveBinding(i, make_active_binding_function(obj, i, type),
                           self$envir)
       }
 

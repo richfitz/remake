@@ -1,267 +1,68 @@
-##' Creates a remake instance to interact with.
-##'
-##' You probably should no longer interact with this: it will
-##' disappear in a version or two.
-##' @title Create a remake object
-##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml})
-##' @param verbose Controls whether remake is verbose or not.  By
-##' default it is (\code{TRUE}), which prints out the name of each
-##' target as it is built/checked.  This argument is passed to
-##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
-##' \code{FALSE} and also the result of calling \code{remake_verbose}.
-##' @param allow_cache Allow cached remake instances to be loaded?
-##' @export
 remake <- function(remake_file="remake.yml", verbose=TRUE,
-                   allow_cache=TRUE) {
-  remake2(remake_file, verbose, allow_cache)
-}
-
-## The internal function that does a little more:
-remake2 <- function(remake_file="remake.yml", verbose=TRUE,
-                    allow_cache=TRUE, load_sources=TRUE) {
+                   allow_cache=TRUE, load_sources=TRUE) {
   if (is.null(remake_file)) {
     return(.R6_remake_interactive$new(verbose=verbose))
   }
 
   if (!allow_cache) {
-    return(.R6_remake$new(remake_file, verbose=verbose,
-                          load_sources=load_sources))
+    return(remake_new(remake_file, verbose, load_sources))
   }
 
-  ## TODO: Once we return things as non-R6 lists we can just set
-  ## verbose here separately, which is cool.  A copy/clone method
-  ## would achive the same thing.
-  ret <- cache$fetch(remake_file, verbose)
+  ret <- cache$fetch(remake_file)
   if (is.null(ret)) {
-    ret <- .R6_remake$new(remake_file, verbose=verbose,
-                          load_sources=load_sources)
-    ## NOTE: Possibly should only cache if load_sources is TRUE?
+    ret <- remake_new(remake_file, verbose, load_sources)
     cache$add(ret)
   } else if (load_sources) {
-    remake_private(ret)$initialize_sources()
+    ret$verbose <- remake_verbose(verbose)
+    ret <- .remake_initialize_sources(ret)
   }
-  return(ret)
+  ret
 }
 
-##' @importFrom R6 R6Class
-.R6_remake <- R6Class(
-  "remake",
-  public=list(
-    store=NULL,
-    targets=NULL,
+remake_new <- function(remake_file="remake.yml", verbose=TRUE,
+                       load_sources=TRUE, config=NULL) {
+  obj <- list(file=remake_file, path=".",
+              verbose=remake_verbose(verbose),
+              ##
+              store=NULL, targets=NULL, config=NULL,
+              default_target=NULL, hash=NULL)
+  obj$fmt <- .remake_initialize_message_format(obj)
 
-    initialize=function(remake_file="remake.yml", verbose=TRUE,
-      load_sources=TRUE) {
-      #
-      private$file <- remake_file
-      private$path <- "."
-      private$verbose <- remake_verbose(verbose)
-      private$initialize_message_format()
-      private$refresh(load_sources)
-    }
-  ),
+  if (is.null(config) && !is.null(obj$file)) {
+    obj$config <- read_remake_file(obj$file)
+  } else {
+    obj$config <- config
+  }
 
-  private=list(
-    file=NULL,
-    path=NULL,
-    verbose=NULL,
-    config=NULL,
-    default_target=NULL,
-    hash=NULL,
-    fmt=NULL,
+  ## This is not totally clear that it's a good idea, but I really
+  ## like it when this prints if the file has changed.  This might be
+  ## controllable by an argument to this function soon?
+  remake_print_message(obj, "READ", "", "# reloading remakefile")
 
-    refresh=function(load_sources=TRUE) {
-      first_time <- is.null(private$hash)
-      config <- private$read_config()
-      if (first_time || !is.null(config)) {
-        private$config <- config
-        if (!first_time) {
-          remake_print_message(self, "READ", "", "# reloading remakefile")
-        }
-        private$reload_config(load_sources)
-      } else if (load_sources) {
-        private$initialize_sources()
-      }
-    },
+  obj$hash <- obj$config$hash
+  ## Do this when config is actualy there, and if it's not explicitly
+  ## flagged as inactive.
+  if (!is.null(obj$config) && !isFALSE(obj$config$active)) {
+    obj <- .remake_initialize_targets(obj)
+  }
 
-    read_config=function() {
-      config <- NULL
-      if (is.null(private$file)) {
-        ## Configuration will be stashed here already:
-        if (!is.null(private$config)) {
-          hash <- hash_object(private$config)
-          reload <- !identical(hash, private$hash)
-          if (reload) {
-            config <- private$config
-            config$hash <- hash_object(private$interactive)
-          }
-        }
-      } else {
-        reload <- is.null(private$hash) ||
-          !identical(hash_files(names(private$hash)), private$hash)
-        if (reload) {
-          config <- read_remake_file(private$file)
-        }
-      }
-      config
-    },
+  if (is.null(obj$config)) {
+    packages <- sources <- character(0)
+  } else {
+    packages <- obj$config$packages
+    sources  <- obj$config$sources
+  }
+  ## TODO: Push the environment creation into the constructor for store.
+  obj$store <- store$new(obj$path)
+  obj$store$env <- managed_environment$new(packages, sources)
 
-    reload_config=function(load_sources) {
-      private$hash <- private$config$hash
-      if (!is.null(private$config) && !isFALSE(private$config$active)) {
-        private$initialize_targets()
-      }
-      private$initialize_store()
-      if (load_sources) {
-        private$initialize_sources()
-      }
-    },
+  if (load_sources) {
+    obj <- .remake_initialize_sources(obj)
+  }
+  class(obj) <- "remake"
+  obj
+}
 
-    initialize_targets=function() {
-      self$targets <- NULL
-      private$add_targets(private$config$targets)
-      private$initialize_cleanup_targets()
-      private$initialize_targets_activate()
-      private$check_rule_target_clash()
-      private$initialize_default_target(private$config$target_default)
-      private$initialize_message_format() # width may change?
-      global_active_bindings$reload_bindings("target", self)
-    },
-
-    initialize_store=function() {
-      self$store <- store$new(private$path)
-      if (is.null(private$config)) {
-        packages <- sources <- character(0)
-      } else {
-        packages <- private$config$packages
-        sources  <- private$config$sources
-      }
-      self$store$env <- managed_environment$new(packages, sources)
-    },
-
-    initialize_sources=function() {
-      if (!is.null(self$store$env) && !self$store$env$is_current()) {
-        remake_print_message(self, "READ", "", "# loading sources")
-        tryCatch(self$store$env$reload(TRUE),
-                 missing_packages=function(e) missing_packages_recover(e, self))
-        global_active_bindings$reload_bindings("source", self)
-      }
-    },
-
-    initialize_cleanup_targets=function() {
-      targets <- lapply(cleanup_target_names(), make_target_cleanup, self)
-      private$add_targets(targets, force=TRUE)
-    },
-
-    ## NOTE: The logic here seems remarkably clumsy.
-    initialize_default_target=function(default) {
-      if (is.null(default)) {
-        if ("all" %in% names(self$targets)) {
-          private$default_target <- "all"
-        }
-      } else {
-        assert_scalar_character(default, "target_default")
-        if (!(default %in% names(self$targets))) {
-          stop(sprintf("Default target %s not found in remakefile",
-                       default))
-        }
-        private$default_target <- default
-      }
-    },
-
-    initialize_targets_activate=function() {
-      ## Add all targets that exist only as part of a chain.
-      chain_kids <- unlist(lapply(self$targets, "[[", "chain_kids"),
-                           FALSE)
-      if (length(chain_kids) > 0L) {
-        private$add_targets(chain_kids)
-      }
-
-      ## Identify and verify all "implicit" file targets
-      deps <- lapply(self$targets, "[[", "depends_name")
-      deps_uniq <- unique(unlist(unname(deps)))
-      deps_msg <- setdiff(deps_uniq, names(self$targets))
-      if (length(deps_msg) > 0L) {
-        err <- !target_is_file(deps_msg)
-        if (any(err)) {
-          stop(sprintf(
-            "Implicitly created targets must all be files (%s)",
-            paste(deps_msg[err], collapse=", ")))
-        }
-        deps_msg_missing <- !file.exists(deps_msg)
-        if (any(deps_msg_missing)) {
-          warning("Creating implicit target for nonexistant files:\n",
-                  paste0("\t", deps_msg[deps_msg_missing], collapse="\n"))
-        }
-        extra <- lapply(deps_msg, target_new_file_implicit, FALSE)
-        names(extra) <- deps_msg
-        self$targets <- c(self$targets, extra)
-      }
-
-      ## Associate all type information for targets (this is the slow part)
-      types <- dependency_types(self$targets)
-      check1 <- function(t) {
-        if (length(t$depends_name) > 0L) {
-          t$depends_type <- types[t$depends_name]
-          target_check_quoted(t)
-        }
-        t
-      }
-      self$targets <- lapply(self$targets, check1)
-    },
-
-    initialize_message_format=function() {
-      width <- getOption("width")
-      w0 <- 10 # nchar("[ BUILD ] ")
-      keep <- !vlapply(self$targets, function(x) isTRUE(x$implicit))
-      target_width <- max(0, nchar(names(self$targets)[keep]))
-      private$fmt <- list(
-        no_cmd="%s %s",
-        with_cmd=sprintf("%%s %%-%ds |  %%s", target_width),
-        target_width=target_width,
-        max_cmd_width=width - (w0 + 1 + target_width + 4))
-    },
-
-    check_rule_target_clash=function() {
-      ## TODO: Special effort needed for chained rules.
-      ## TODO: Filter by realness?
-      rules <- unlist(lapply(self$targets, function(x) x$rule))
-      dups <- intersect(rules, names(self$targets))
-      if (length(dups) > 0L) {
-        warning("Rule name clashes with target name: ",
-                paste(dups, collapse=", "))
-      }
-    },
-
-    add_targets=function(x, force=FALSE) {
-      if (!all(vlapply(x, inherits, "target_base"))) {
-        stop("All elements must be targets")
-      }
-      target_names <- vcapply(x, "[[", "name")
-      if (any(duplicated(target_names))) {
-        stop("All target names must be unique")
-      }
-      target_names_existing <- names(self$targets)
-      if (any(target_names %in% target_names_existing)) {
-        if (force) {
-          to_drop <- target_names_existing %in% target_names
-          if (any(to_drop)) {
-            self$targets <- self$targets[!to_drop]
-          }
-        } else {
-          stop("Targets already present: ",
-               paste(intersect(target_names, target_names_existing),
-                     collapse=", "))
-        }
-      }
-      names(x) <- target_names
-      self$targets <- c(self$targets, x)
-    }
-  ))
-
-## TODO: There is far too much going on in here: split this into
-## logical chunks.
 read_remake_file <- function(filename, seen=character(0)) {
   if (filename %in% seen) {
     stop("Recursive include detected: ",
@@ -450,54 +251,37 @@ remake_verbose <- function(verbose=getOption("remake.verbose", TRUE),
   }
 }
 
-## Helper function to access the private fields of a remake object.
-## This is going to let us present a simple external interface to
-## remake by allowing free functions (not just members) to access the
-## remake internals.  The public/private gap here represents interface
-## vs implementation detail.
-##
-## This helper will also get used extensively in tests.
-remake_private <- function(m) {
-  environment(m$initialize)$private
-}
-
-##' Check if a target is current or not.
-##' @title Check if a target is current or not
-##' @param target_name Name of the target.  An error is thrown if the
-##' target does not exist.
-##' @param m A remake object.  If omitted, then one will be built using
-##. the defaults in \code{\link{remake}}
-##' @param check What to check.  It can be "exists", "depends", "code"
-##' or "all.  By default, this comes from the target default.
-##' @export
-##' @author Rich FitzJohn
-is_current <- function(target_name, m=NULL, check=NULL) {
-  if (is.null(m)) {
-    m <- remake()
+## TODO: update this to take the filename as an argument:
+is_current <- function(target_name, obj=NULL, check=NULL) {
+  if (is.null(obj)) {
+    obj <- remake()
   }
-  assert_has_target(target_name, m)
-  target_is_current(m$targets[[target_name]], m$store, check)
+  assert_has_target(target_name, obj)
+  target_is_current(obj$targets[[target_name]], obj$store, check)
 }
 
-assert_has_target <- function(target_name, m) {
-  if (!(target_name %in% names(m$targets))) {
+assert_has_target <- function(target_name, obj) {
+  if (!(target_name %in% names(obj$targets))) {
     stop("No such target ", target_name)
   }
 }
 
-remake_default_target <- function(m) {
-  private <- remake_private(m)
-  if (is.null(private$default_target)) {
-    stop(private$file,
-         " does not define 'target_default' or have target 'all'")
+## TODO: This needs a new name.
+remake_default_target <- function(obj, target_name=NULL) {
+  if (is.null(target_name)) {
+    if (is.null(obj$default_target)) {
+      stop(obj$file,
+           " does not define 'target_default' or have target 'all'")
+    }
+    obj$default_target
+  } else {
+    target_name
   }
-  private$default_target
 }
 
-remake_print_message <- function(m, status, target_name,
+remake_print_message <- function(obj, status, target_name,
                                  cmd=NULL, style="square") {
-  private <- remake_private(m)
-  verbose <- private$verbose
+  verbose <- obj$verbose
   if (!verbose$print_progress ||
       !verbose$print_noop && status %in% c("", "OK")) {
     return()
@@ -505,49 +289,48 @@ remake_print_message <- function(m, status, target_name,
     cmd <- NULL
   }
 
+  fmt <- obj$fmt
   status <- brackets(paint(sprintf("%5s", status),
                            status_colour(status)), style)
 
   if (!is.null(cmd)) {
     if (verbose$print_command_abbreviate) {
-      w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
-      cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+      w_extra <- max(0, nchar(target_name) - fmt$target_width)
+      cmd <- abbreviate(cmd, fmt$max_cmd_width - w_extra)
     }
   }
   if (is.null(cmd)) {
-    str <- sprintf(private$fmt$no_cmd, status, target_name)
+    str <- sprintf(fmt$no_cmd, status, target_name)
   } else {
-    str <- sprintf(private$fmt$with_cmd, status, target_name,
+    str <- sprintf(fmt$with_cmd, status, target_name,
                    paint(cmd, "grey60"))
   }
   message(str)
 }
 
 
-remake_plan <- function(m, target_name=NULL, dependencies_only=FALSE) {
-  if (is.null(target_name)) {
-    target_name <- remake_default_target(m)
-  }
-  graph <- remake_dependency_graph(m)
+remake_plan <- function(obj, target_name=NULL, dependencies_only=FALSE) {
+  target_name <- remake_default_target(obj, target_name)
+  graph <- remake_dependency_graph(obj)
   dependencies(target_name, graph, dependencies_only)
 }
 
-remake_dependency_graph <- function(m) {
-  g <- lapply(m$targets, function(t) t$depends_name)
+remake_dependency_graph <- function(obj) {
+  g <- lapply(obj$targets, function(t) t$depends_name)
   topological_sort(g)
 }
 
-remake_update <- function(m, target_name, dry_run=FALSE, force=FALSE,
-                          quiet_target=m$verbose$quiet_target,
+remake_update <- function(obj, target_name, dry_run=FALSE, force=FALSE,
+                          quiet_target=obj$verbose$quiet_target,
                           check=NULL, return_target=TRUE) {
-  target <- m$targets[[target_name]]
-  current <- !force && target_is_current(target, m$store, check)
+  target <- obj$targets[[target_name]]
+  current <- !force && target_is_current(target, obj$store, check)
 
   if (!isTRUE(target$implicit)) {
     status <- if (current) "OK" else target$status_string
     cmd <- if (current) NULL else target_run_fake(target)
     style <- if (is.null(target$chain_parent)) "square" else "curly"
-    remake_print_message(m, status, target_name, cmd, style)
+    remake_print_message(obj, status, target_name, cmd, style)
   }
 
   if (!dry_run) {
@@ -562,17 +345,17 @@ remake_update <- function(m, target_name, dry_run=FALSE, force=FALSE,
         ## remake_remove_target), which is not available in
         ## target_build.
         for (t in target$targets_to_remove) {
-          remake_remove_target(m, t, chain=TRUE)
+          remake_remove_target(obj, t, chain=TRUE)
         }
-        target_run(target, m$store, quiet_target)
+        target_run(target, obj$store, quiet_target)
         ret <- NULL
       } else {
-        ret <- target_build(target, m$store, quiet_target)
+        ret <- target_build(target, obj$store, quiet_target)
       }
       unload_extra_packages(extra)
       invisible(ret)
     } else if (return_target) {
-      invisible(target_get(target, m$store))
+      invisible(target_get(target, obj$store))
     }
   }
 }
@@ -581,17 +364,17 @@ remake_update <- function(m, target_name, dry_run=FALSE, force=FALSE,
 ## probably wants changing though, because it's confusing with "add"
 ## that *creates* a target.  What this does is remove the target
 ## *product*.
-remake_remove_target <- function(m, target_name, chain=TRUE) {
-  assert_has_target(target_name, m)
-  target <- m$targets[[target_name]]
+remake_remove_target <- function(obj, target_name, chain=TRUE) {
+  assert_has_target(target_name, obj)
+  target <- obj$targets[[target_name]]
   if (chain && !is.null(target$chain_kids)) {
     chain_names <- dependency_names(target$chain_kids)
     for (t in chain_names) {
-      remake_remove_target(m, t, chain=FALSE)
+      remake_remove_target(obj, t, chain=FALSE)
     }
   }
 
-  store <- m$store
+  store <- obj$store
 
   if (target$type == "file") {
     did_remove_obj <- store$files$del(target$name, TRUE)
@@ -613,33 +396,52 @@ remake_remove_target <- function(m, target_name, chain=TRUE) {
     status <- ""
     cmd <- NULL
   }
-  remake_print_message(m, status, target_name, cmd, "round")
+  remake_print_message(obj, status, target_name, cmd, "round")
 }
 
-remake_make <- function(m, target_names=NULL, ...) {
-  if (is.null(target_names)) {
-    target_names <- remake_default_target(m)
-  }
+remake_make <- function(obj, target_names=NULL, ...) {
+  target_names <- remake_default_target(obj, target_names)
   for (t in target_names) {
-    remake_print_message(m, "MAKE", t, style="angle")
-    last <- remake_make1(m, t, ...)
+    remake_print_message(obj, "MAKE", t, style="angle")
+    last <- remake_make1(obj, t, ...)
   }
   invisible(last)
 }
 
-remake_make1 <- function(m, target_name, dry_run=FALSE, force=FALSE,
+remake_make1 <- function(obj, target_name, dry_run=FALSE, force=FALSE,
                          force_all=FALSE, quiet_target=NULL, check=NULL,
                          dependencies_only=FALSE) {
   if (is.null(quiet_target)) {
-    quiet_target <- remake_private(m)$verbose$quiet_target
+    quiet_target <- obj$verbose$quiet_target
   }
-  plan <- remake_plan(m, target_name, dependencies_only)
+  plan <- remake_plan(obj, target_name, dependencies_only)
   for (i in plan) {
     is_last <- i == target_name
-    last <- remake_update(m, i, dry_run,
+    last <- remake_update(obj, i, dry_run,
                           force_all || (force && is_last),
                           quiet_target=quiet_target, check=check,
                           return_target=is_last)
   }
   invisible(last)
+}
+
+## TODO: I'm not sure this one is actually useful.
+remake_dependencies <- function(obj, target_name, ...) {
+  assert_has_target(target_name, obj)
+  t <- obj$targets[[target_name]]
+
+  remake_print_message(obj, "ENV", t$name, style="angle")
+  remake_make1(obj, target_name, ..., dependencies_only=TRUE)
+  deps_name <- t$depends_name[t$depends_type == "object"]
+
+  invisible(remake_environment(obj, deps_name, t))
+}
+
+remake_target_names <- function(obj, all=FALSE) {
+  if (!all) {
+    ok <- vlapply(obj$targets, function(x) is.null(x$chain_parent))
+    names(obj$targets[ok])
+  } else {
+    names(obj$targets)
+  }
 }

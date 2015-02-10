@@ -170,15 +170,15 @@ missing_packages_condition <- function(packages) {
   stop(cond)
 }
 
-missing_packages_recover <- function(e, m) {
+missing_packages_recover <- function(e, obj) {
   extra <- read_remake_packages("remake_sources.yml")
-  file <- remake_private(m)$file
+  file <- obj$file
   packages <- e$packages
   if (getOption("remake.install.missing.packages", FALSE)) {
     install_packages(packages,
                      instructions=FALSE,
                      package_sources=extra)
-    m$store$env$reload(TRUE)
+    obj$store$env$reload(TRUE)
   } else {
     indent <- function(x) paste0("    ", x)
     str_manual <- indent(install_packages(packages,

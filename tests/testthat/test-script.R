@@ -59,7 +59,7 @@ test_that("Create directory", {
   cleanup()
 
   m <- remake::remake("remake_directory.yml")
-  m$make("export/plot.pdf")
+  remake_make(m, "export/plot.pdf")
   str <- make_script(remake_file="remake_directory.yml")
 
   expect_that(sum(grepl("dir.create", str, fixed=TRUE)), equals(1))

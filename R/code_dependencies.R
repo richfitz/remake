@@ -47,14 +47,7 @@ code_dependencies <- function(f, hide_errors=TRUE) {
   lapply(ret, unique)
 }
 
-hash_function <- function(f) {
-  ## Work around a hard-to-trigger bug: this global option affects
-  ## deparsing!
-  oo <- options(scipen=0)
-  on.exit(options(oo))
-  digest::digest(deparse(f))
-}
-
+## TODO: this looks overly complicated?
 functions_in_environment <- function(env) {
   pos <- ls(env)
   keep_if_fn <- function(x) {
@@ -65,6 +58,8 @@ functions_in_environment <- function(env) {
   obj[!vlapply(obj, is.null)]
 }
 
+## TODO: This can be replaced with the free function $info(rule) I
+## believe.
 code_deps <- R6Class(
   "code_deps",
   public=list(

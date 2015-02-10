@@ -11,7 +11,8 @@
 ##' @export
 make_script <- function(target_names=NULL, filename=NULL,
                         remake_file="remake.yml") {
-  scr <- remake_script(remake2(remake_file, load_sources=FALSE), target_names)
+  scr <- remake_script(remake(remake_file, load_sources=FALSE),
+                       target_names)
   if (is.null(filename)) {
     scr
   } else {
@@ -21,9 +22,7 @@ make_script <- function(target_names=NULL, filename=NULL,
 }
 
 remake_script <- function(m, target_name=NULL) {
-  if (is.null(target_name)) {
-    target_name <- remake_default_target(m)
-  }
+  target_name <- remake_default_target(m, target_name)
   pkgs <- lapply(m$store$env$packages,
                  function(x) sprintf('library("%s")', x))
   srcs <- lapply(m$store$env$find_files(),

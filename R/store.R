@@ -13,6 +13,7 @@
 ##   <digest>       -- actual data
 ##   <digest>__hash -- hash of the data
 ##   <digest>__name -- name of the data
+##' @importFrom R6 R6Class
 object_store <- R6Class(
   "object_store",
   public=list(

@@ -11,7 +11,7 @@
 ##' documented and are subject to change.
 ##' @export
 diagram <- function(remake_file="remake.yml", ...) {
-  m <- remake2(remake_file, load_sources=FALSE)
+  m <- remake(remake_file, load_sources=FALSE)
   str <- remake_diagram_command(m, ...)
   DiagrammeR::grViz(str)
 }

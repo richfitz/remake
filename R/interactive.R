@@ -3,15 +3,16 @@
   public=list(
     m=NULL,
     interactive=NULL,
+    verbose=NULL,
 
     initialize=function(verbose=TRUE) {
       self$interactive <- remake_interactive_config()
-      self$m <- .R6_remake$new(NULL, verbose)
-      private$set_m_private_config(FALSE)
+      self$verbose <- remake_verbose(verbose)
+      private$initialize_remake()
     },
 
     make=function(target_names=NULL, ...) {
-      self$active <- TRUE
+      self$active <- TRUE # NOTE: this is an active binding method!
       remake_make(self$m, target_names, ...)
     }
   ),
@@ -36,18 +37,14 @@
       } else {
         self$interactive$active <- value
         if (self$interactive$active) {
-          private$set_m_private_config(TRUE)
+          private$initialize_remake()
         }
       }
     }),
 
   private=list(
-    set_m_private_config=function(refresh=TRUE) {
-      mp <- remake_private(self$m)
-      mp$config <- self$interactive
-      if (refresh) {
-        mp$refresh()
-      }
+    initialize_remake=function() {
+      self$m <- remake_new(NULL, self$verbose, config=self$interactive)
     }
   ))
 
@@ -107,7 +104,7 @@ remake_interactive_add_sources <- function(obj, value) {
   ## if (<active bindings are on for this object>) {
   ##   obj$m$store$env$packages <- dat$packages
   ##   obj$m$store$env$sources  <- dat$sources
-  ##   remake_private(obj$m)$initialize_sources()
+  ##   <initialize obj$m's sources>
   ## }
   ##
   ## ...but this is going to require that our object is recognised in

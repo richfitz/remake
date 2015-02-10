@@ -241,16 +241,6 @@ target_infer_type <- function(name, dat) {
   type
 }
 
-##' Determine if a target is treated as a file or not.
-##'
-##' A target is a file if it contains a slash anywhere in the name, or
-##' if it ends in one of the known extensions.  The current set of
-##' known file extensions is available as \code{\link{extensions}()},
-##' but soon will become configurable.
-##' @title Determine if target is a file
-##' @param x Vector of target names
-##' @return A logical vector, the same length as \code{x}
-##' @export
 target_is_file <- function(x) {
   is_file <- grepl("/", x, fixed=TRUE)
   check <- !is_file
