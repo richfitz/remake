@@ -307,7 +307,3 @@ dquote <- function(x) {
 squote <- function(x) {
   sprintf("'%s'", x)
 }
-
-is_active_binding <- function(sym_name, envir=.GlobalEnv) {
-  exists(sym_name, envir, inherits=FALSE) && bindingIsActive(sym_name, envir)
-}

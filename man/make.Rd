@@ -4,7 +4,7 @@
 \alias{make}
 \title{Make a single target}
 \usage{
-make(target_names = NULL, remake_file = "remake.yml")
+make(target_names = NULL, remake_file = "remake.yml", verbose = TRUE)
 }
 \arguments{
 \item{target_names}{Vector of names of targets to build, or
@@ -13,6 +13,12 @@ remakefile).}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).  This is passed to \code{remake()}.}
+
+\item{verbose}{Controls whether remake is verbose or not.  By
+default it is (\code{TRUE}), which prints out the name of each
+target as it is built/checked.  This argument is passed to
+\code{\link{remake_verbose}}; valid options are \code{TRUE},
+\code{FALSE} and also the result of calling \code{remake_verbose}.}
 }
 \description{
 Make a single target

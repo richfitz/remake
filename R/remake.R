@@ -1,4 +1,7 @@
 ##' Creates a remake instance to interact with.
+##'
+##' You probably should no longer interact with this: it will
+##' disappear in a version or two.
 ##' @title Create a remake object
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml})
@@ -7,9 +10,6 @@
 ##' target as it is built/checked.  This argument is passed to
 ##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
 ##' \code{FALSE} and also the result of calling \code{remake_verbose}.
-##' @param envir An environment into which to create \emph{links} to
-##' remake-controlled objects (targets and sources).  \code{.GlobalEnv}
-##' is a reasonable choice.  This will change in a future version.
 ##' @param allow_cache Allow cached remake instances to be loaded?
 ##' @examples
 ##' \dontrun{
@@ -22,27 +22,30 @@
 ##' m$make()
 ##' }
 ##' @export
-remake <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
+remake <- function(remake_file="remake.yml", verbose=TRUE,
                    allow_cache=TRUE) {
-  remake2(remake_file, verbose, envir, allow_cache)
+  remake2(remake_file, verbose, allow_cache)
 }
 
 ## The internal function that does a little more:
-remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
+remake2 <- function(remake_file="remake.yml", verbose=TRUE,
                     allow_cache=TRUE, load_sources=TRUE) {
   if (is.null(remake_file)) {
-    return(.R6_remake_interactive$new(verbose=verbose, envir=envir))
+    return(.R6_remake_interactive$new(verbose=verbose))
   }
 
   if (!allow_cache) {
-    return(.R6_remake$new(remake_file, verbose=verbose, envir=envir,
+    return(.R6_remake$new(remake_file, verbose=verbose,
                           load_sources=load_sources))
   }
 
-  ret <- cache$fetch(remake_file, verbose, envir)
+  ## TODO: Once we return things as non-R6 lists we can just set
+  ## verbose here separately, which is cool.  A copy/clone method
+  ## would achive the same thing.
+  ret <- cache$fetch(remake_file, verbose)
   if (is.null(ret)) {
     ret <- .R6_remake$new(remake_file, verbose=verbose,
-                          envir=envir, load_sources=load_sources)
+                          load_sources=load_sources)
     ## NOTE: Possibly should only cache if load_sources is TRUE?
     cache$add(ret)
   } else if (load_sources && is.null(ret$store$env$env)) {
@@ -59,14 +62,11 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
     targets=NULL,
 
     initialize=function(remake_file="remake.yml", verbose=TRUE,
-      envir=NULL, load_sources=TRUE) {
+      load_sources=TRUE) {
       #
       private$file <- remake_file
       private$path <- "."
       private$verbose <- remake_verbose(verbose)
-      if (!is.null(envir)) {
-        private$active_bindings <- remake_active_bindings_manager(envir)
-      }
       private$initialize_message_format()
       private$refresh(load_sources)
     },
@@ -91,7 +91,6 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
     config=NULL,
     default_target=NULL,
     hash=NULL,
-    active_bindings=NULL,
     fmt=NULL,
 
     refresh=function(load_sources=TRUE) {
@@ -149,9 +148,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
       private$check_rule_target_clash()
       private$initialize_default_target(private$config$target_default)
       private$initialize_message_format() # width may change?
-      if (!is.null(private$active_bindings)) {
-        remake_reload_active_bindings(self, "target", private$active_bindings)
-      }
+      global_active_bindings$reload_bindings("target", self)
     },
 
     initialize_store=function() {
@@ -170,9 +167,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE, envir=NULL,
         private$print_message("READ", "", "# loading sources")
         tryCatch(self$store$env$reload(TRUE),
                  missing_packages=function(e) missing_packages_recover(e, self))
-        if (!is.null(private$active_bindings)) {
-          remake_reload_active_bindings(self, "source", private$active_bindings)
-        }
+        global_active_bindings$reload_bindings("source", self)
       }
     },
 

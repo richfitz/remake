@@ -15,6 +15,7 @@ cleanup <- function() {
   unlink("test", recursive=TRUE)
   unlink("source_dir", recursive=TRUE)
   cache$clear()
+  global_active_bindings$clear()
   invisible(NULL)
 }
 

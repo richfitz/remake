@@ -8,6 +8,11 @@ code_dependencies <- function(f, hide_errors=TRUE) {
       return()
     }
     e_name <- deparse(e)
+    ## TODO: Can possibly exclude based on the global active binding set?
+    ##
+    ## TODO: I think this is excluding too much: if the variable
+    ## exists in env without inheriting then we should use it, even if
+    ## it would be masked at a higher level by the active binding.
     if (!exists(e_name, env)       || # local variable, probably
         e_name %in% args           || # shadowed by function argument
         is_active_binding(e_name)) {  # using remake active bindings

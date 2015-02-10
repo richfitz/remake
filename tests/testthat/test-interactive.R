@@ -96,7 +96,10 @@ test_that("all together (Active)", {
   expect_that(file.exists("plot.pdf"), is_true())
 })
 
+## This is unceremoniously disabled for now because I'm going to
+## go back to the drawing board a little.
 test_that("Active and global", {
+  skip("Currently unimplemented")
   cleanup()
 
   e <- new.env()

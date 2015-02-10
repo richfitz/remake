@@ -99,7 +99,13 @@ install_remake <- function(dest) {
 ##' remakefile).
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml}).  This is passed to \code{remake()}.
+##' @param verbose Controls whether remake is verbose or not.  By
+##' default it is (\code{TRUE}), which prints out the name of each
+##' target as it is built/checked.  This argument is passed to
+##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
+##' \code{FALSE} and also the result of calling \code{remake_verbose}.
 ##' @export
-make <- function(target_names=NULL, remake_file="remake.yml") {
-  remake(remake_file)$make(target_names)
+make <- function(target_names=NULL, remake_file="remake.yml",
+                 verbose=TRUE) {
+  remake(remake_file, verbose)$make(target_names)
 }

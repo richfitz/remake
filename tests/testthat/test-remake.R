@@ -166,19 +166,18 @@ test_that("literals", {
 
 test_that("Caching", {
   cleanup()
-  expect_that(cache$fetch("remake.yml", TRUE, NULL),
+  expect_that(cache$fetch("remake.yml", TRUE),
               is_null())
   m <- remake("remake.yml")
-  expect_that(cache$fetch("remake.yml", TRUE, NULL),
+  expect_that(cache$fetch("remake.yml", TRUE),
               equals(m))
   cleanup()
-  expect_that(cache$fetch("remake.yml", TRUE, NULL),
+  expect_that(cache$fetch("remake.yml", TRUE),
               is_null())
 
-  e <- new.env()
-  expect_that(cache$fetch("remake.yml", TRUE, e), is_null())
-  m2 <- remake(envir=e)
-  expect_that(cache$fetch("remake.yml", TRUE, e), equals(m2))
+  expect_that(cache$fetch("remake.yml", FALSE), is_null())
+  m2 <- remake(verbose=FALSE)
+  expect_that(cache$fetch("remake.yml", FALSE), equals(m2))
 })
 
 test_that("Loading without sources", {
@@ -201,7 +200,7 @@ test_that("Loading without sources", {
   expect_that(m <- remake2(load_sources=FALSE), not(shows_message()))
 
   ## Check again:
-  m <- cache$fetch("remake.yml", TRUE, NULL)
+  m <- cache$fetch("remake.yml", TRUE)
   expect_that(m, is_a("remake"))
   expect_that(m$store$env$env, is_null())
 

@@ -1,13 +1,14 @@
 PACKAGE := $(shell grep '^Package:' DESCRIPTION | sed -E 's/^Package:[[:space:]]+//')
+RSCRIPT = Rscript --no-init-file
 
 all: install
 
 test:
-	Rscript -e 'library(methods); devtools::test()'
+	${RSCRIPT} -e 'library(methods); devtools::test()'
 
 roxygen:
 	@mkdir -p man
-	Rscript -e "library(methods); devtools::document()"
+	${RSCRIPT} -e "library(methods); devtools::document()"
 
 install:
 	R CMD INSTALL .

@@ -4,8 +4,7 @@
 \alias{remake}
 \title{Create a remake object}
 \usage{
-remake(remake_file = "remake.yml", verbose = TRUE, envir = NULL,
-  allow_cache = TRUE)
+remake(remake_file = "remake.yml", verbose = TRUE, allow_cache = TRUE)
 }
 \arguments{
 \item{remake_file}{Name of the remakefile (by default
@@ -17,14 +16,14 @@ target as it is built/checked.  This argument is passed to
 \code{\link{remake_verbose}}; valid options are \code{TRUE},
 \code{FALSE} and also the result of calling \code{remake_verbose}.}
 
-\item{envir}{An environment into which to create \emph{links} to
-remake-controlled objects (targets and sources).  \code{.GlobalEnv}
-is a reasonable choice.  This will change in a future version.}
-
 \item{allow_cache}{Allow cached remake instances to be loaded?}
 }
 \description{
 Creates a remake instance to interact with.
+}
+\details{
+You probably should no longer interact with this: it will
+disappear in a version or two.
 }
 \examples{
 \dontrun{

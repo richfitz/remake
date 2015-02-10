@@ -4,9 +4,9 @@
     m=NULL,
     interactive=NULL,
 
-    initialize=function(verbose=TRUE, envir=NULL) {
+    initialize=function(verbose=TRUE) {
       self$interactive <- remake_interactive_config()
-      self$m <- .R6_remake$new(NULL, verbose, envir)
+      self$m <- .R6_remake$new(NULL, verbose)
       private$set_m_private_config(FALSE)
     },
 
@@ -75,24 +75,17 @@ target <- function(name, expr, ...) {
   make_target(name, c(list(command=expr), list(...)))
 }
 
-##' @export
-print.target_placeholder <- function(x, ...) {
-  cat(sprintf("<target %s>\n", x$name))
-}
-
-## TODO: I think the placeholder thing is overkill: what we really
-## need is an active/inactive state for remake, then store everything
-## in one place.  Keep the print bit, but dispatch on that based on
-## the active/inactive state.
 remake_interactive_add_target <- function(obj, target) {
   obj$interactive$targets[[target$name]] <- target
   if (inherits(target, "target_object")) {
-    b <- remake_active_bindings(obj$m)
-    if (!is.null(b)) {
-      ## TODO: Deal with situation where binding exists (will be
-      ## common).  Offer a 'force' option, delete bindings, etc.
-      remake_set_active_binding(obj$m, target$name, "target", b)
-    }
+    ## TODO: Set the active bindings if they are active.  Unlike
+    ## sources we might need to do a bit more work because we're going
+    ## to try and add just one binding (and because targets aren't as
+    ## self contained as sources are).
+    ##
+    ## if (<active bindings are on for this object>) {
+    ##   global_active_bindings$create_target_binding(target, self)
+    ## }
   }
 }
 
@@ -109,10 +102,14 @@ remake_interactive_add_sources <- function(obj, value) {
   dat$sources <- union(dat$sources, value[is_source])
   obj$interactive <- dat
 
-  ## NOTE: we only rebuild the sources if running in global mode.
-  if (!is.null(remake_active_bindings(obj$m))) {
-    obj$m$store$env$packages <- dat$packages
-    obj$m$store$env$sources  <- dat$sources
-    remake_private(obj$m)$initialize_sources()
-  }
+  ## TODO: Set up active bindings.  In pseudo code:
+  ##
+  ## if (<active bindings are on for this object>) {
+  ##   obj$m$store$env$packages <- dat$packages
+  ##   obj$m$store$env$sources  <- dat$sources
+  ##   remake_private(obj$m)$initialize_sources()
+  ## }
+  ##
+  ## ...but this is going to require that our object is recognised in
+  ## the active bindings manager, which is not yet supported.
 }
