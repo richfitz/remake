@@ -60,7 +60,7 @@ remake_diagram_command <- function(m, styles=NULL) {
     styles <- diagram_styles_default()
   }
 
-  g <- remake_private(m)$dependency_graph()
+  g <- remake_dependency_graph(m)
 
   ## Filter to exclude cleanup targets:
   types <- dependency_types(m$targets)

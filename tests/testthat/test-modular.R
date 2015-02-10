@@ -17,10 +17,10 @@ test_that("Modular remakefile", {
   ## afterwards.
   expect_that(names(m$targets)[1:4],
               equals(c("all", "processed", "plot.pdf", "data.csv")))
-  expect_that(remake_private(m)$target_default(), equals("all"))
+  expect_that(remake_default_target(m), equals("all"))
 
   mod <- remake("modular_module.yml")
-  expect_that(remake_private(mod)$target_default(), equals("data.csv"))
+  expect_that(remake_default_target(mod), equals("data.csv"))
 
   m$make("data.csv")
 

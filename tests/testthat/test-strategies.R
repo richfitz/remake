@@ -9,22 +9,21 @@ context("Build strategies")
 test_that("Plan", {
   ## Harvested from remake -- may resurrect at some point:
   m_status <- function(m, target_name=NULL) {
-    private <- remake_private(m)
     if (is.null(target_name)) {
-      target_name <- private$target_default()
+      target_name <- remake_default_target(m)
     }
-    status(target_name, private$dependency_graph(), m)
+    status(target_name, remake_dependency_graph(m), m)
   }
 
   cleanup()
   m <- remake()
-  p <- remake_private(m)$plan("plot.pdf")
+  p <- remake_plan(m, "plot.pdf")
 
   cmp <- c("data.csv", "processed", "plot.pdf")
-  expect_that(remake_private(m)$plan("plot.pdf"), equals(cmp))
+  expect_that(remake_plan(m, "plot.pdf"), equals(cmp))
 
   ## Default plan:
-  expect_that(remake_private(m)$plan(), equals(c(cmp, "all")))
+  expect_that(remake_plan(m), equals(c(cmp, "all")))
 
   cmp_status <- cbind(dirty=rep(TRUE, 3),
                       dirty_by_descent=c(FALSE, TRUE, TRUE))

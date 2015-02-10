@@ -21,16 +21,15 @@ make_script <- function(target_names=NULL, filename=NULL,
 }
 
 remake_script <- function(m, target_name=NULL) {
-  private <- remake_private(m)
   if (is.null(target_name)) {
-    target_name <- private$target_default()
+    target_name <- remake_default_target(m)
   }
   pkgs <- lapply(m$store$env$packages,
                  function(x) sprintf('library("%s")', x))
   srcs <- lapply(m$store$env$find_files(),
                  function(x) sprintf('source("%s")', x))
   ## Probably best to filter by "real" here?
-  plan <- private$plan(target_name)
+  plan <- remake_plan(m, target_name)
   cmds <- lapply(plan, function(i)
     target_run_fake(m$targets[[i]], for_script=TRUE))
 

@@ -20,8 +20,8 @@ binding_types <- function() {
 
 ## This is the workhorse function that generates the right sort of
 ## active binding function for binding to a target (going via
-## `make1()`) or something from the managed environment (a simple
-## `get()`).
+## `remake_make1()`) or something from the managed environment (a
+## simple `get()`).
 make_active_binding_function <- function(m, name, type) {
   filename <- remake_private(m)$file
   force(name)
@@ -50,7 +50,7 @@ make_active_binding_function <- function(m, name, type) {
           on.exit(private$verbose$print_noop <- oo)
           private$verbose$print_noop <- FALSE
           private$refresh()
-          uninvisible(private$make1(name))
+          uninvisible(remake_make1(m, name))
         }
       } else if (type == "source") {
         m$store$env$env[[name]]

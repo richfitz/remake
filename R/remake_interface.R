@@ -3,23 +3,16 @@
 
 ## TODO: I'm not sure this one is actually useful.
 make_dependencies <- function(m, target_name, ...) {
+  assert_has_target(target_name, m)
   private <- remake_private(m)
-  t <- private$get_target(target_name)
+  t <- m$targets[[target_name]]
 
   private$refresh()
-  private$print_message("ENV", t$name, style="angle")
-  private$make1(target_name, ..., dependencies_only=TRUE)
+  remake_print_message(m, "ENV", t$name, style="angle")
+  remake_make1(m, target_name, ..., dependencies_only=TRUE)
   deps_name <- t$depends_name[t$depends_type == "object"]
 
   invisible(remake_environment(m, deps_name, t))
-}
-
-## This one is used for testing, but I'm not sure how useful it will
-## generally be?  When working in global mode, it's possible that
-## assigning NULL onto an "object" could trigger this: that'd be
-## nicer perhaps?
-remake_remove_target <- function(m, target_name, chain=TRUE) {
-  remake_private(m)$remove_target(target_name, chain)
 }
 
 remake_target_names <- function(m, all=FALSE) {

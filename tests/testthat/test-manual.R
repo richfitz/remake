@@ -63,10 +63,9 @@ test_that("simple run", {
   expect_that(res, equals(cmp))
 
   ## Run the build system manually:
-  mp <- remake_private(m)
-  mp$update("data.csv", force=TRUE)
-  mp$update("processed", force=TRUE)
-  mp$update("plot.pdf", force=TRUE)
+  remake_update(m, "data.csv", force=TRUE)
+  remake_update(m, "processed", force=TRUE)
+  remake_update(m, "plot.pdf", force=TRUE)
 
   expect_that(is_current("data.csv", m),  is_true())
   expect_that(is_current("processed", m), is_true())
@@ -88,11 +87,10 @@ test_that("Depending on a file we don't make", {
   ## contain a rule for building data.csv
   m <- remake("remake2.yml")
 
-  mp <- remake_private(m)
-  expect_that(mp$update("data.csv", force=TRUE),
+  expect_that(remake_update(m, "data.csv", force=TRUE),
               throws_error("Can't build implicit targets"))
-  mp$update("processed", force=TRUE)
-  mp$update("plot.pdf", force=TRUE)
+  remake_update(m, "processed", force=TRUE)
+  remake_update(m, "plot.pdf", force=TRUE)
   expect_that(file.exists("plot.pdf"), is_true())
   m$make("clean")
   expect_that(file.exists("plot.pdf"), is_false())

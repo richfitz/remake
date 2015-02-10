@@ -74,11 +74,11 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
     make=function(target_names=NULL, ...) {
       private$refresh()
       if (is.null(target_names)) {
-        target_names <- private$target_default()
+        target_names <- remake_default_target(self)
       }
       for (t in target_names) {
-        private$print_message("MAKE", t, style="angle")
-        last <- private$make1(t, ...)
+        remake_print_message(self, "MAKE", t, style="angle")
+        last <- remake_make1(self, t, ...)
       }
       invisible(last)
     }
@@ -99,7 +99,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
       if (first_time || !is.null(config)) {
         private$config <- config
         if (!first_time) {
-          private$print_message("READ", "", "# reloading remakefile")
+          remake_print_message(self, "READ", "", "# reloading remakefile")
         }
         private$reload_config(load_sources)
       } else if (load_sources) {
@@ -164,7 +164,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
 
     initialize_sources=function() {
       if (!is.null(self$store$env) && !self$store$env$is_current()) {
-        private$print_message("READ", "", "# loading sources")
+        remake_print_message(self, "READ", "", "# loading sources")
         tryCatch(self$store$env$reload(TRUE),
                  missing_packages=function(e) missing_packages_recover(e, self))
         global_active_bindings$reload_bindings("source", self)
@@ -256,14 +256,6 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
       }
     },
 
-    target_default=function() {
-      if (is.null(private$default_target)) {
-        stop(private$file,
-             " does not define 'target_default' or have target 'all'")
-      }
-      private$default_target
-    },
-
     add_targets=function(x, force=FALSE) {
       if (!all(vlapply(x, inherits, "target_base"))) {
         stop("All elements must be targets")
@@ -287,146 +279,6 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
       }
       names(x) <- target_names
       self$targets <- c(self$targets, x)
-    },
-
-    print_message=function(status, target_name, cmd=NULL, style="square") {
-      verbose <- private$verbose
-      if (!verbose$print_progress ||
-          !verbose$print_noop && status %in% c("", "OK")) {
-        return()
-      } else if (!verbose$print_command) {
-        cmd <- NULL
-      }
-
-      status <- brackets(paint(sprintf("%5s", status),
-                               status_colour(status)), style)
-
-      if (!is.null(cmd)) {
-        if (verbose$print_command_abbreviate) {
-          w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
-          cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
-        }
-      }
-      if (is.null(cmd)) {
-        str <- sprintf(private$fmt$no_cmd, status, target_name)
-      } else {
-        str <- sprintf(private$fmt$with_cmd, status, target_name,
-                       paint(cmd, "grey60"))
-      }
-      message(str)
-    },
-
-    get_target=function(target_name) {
-      if (!(target_name %in% names(self$targets))) {
-        stop("No such target ", target_name)
-      }
-      self$targets[[target_name]]
-    },
-
-    plan=function(target_name=NULL, dependencies_only=FALSE) {
-      if (is.null(target_name)) {
-        target_name <- private$target_default()
-      }
-      graph <- private$dependency_graph()
-      dependencies(target_name, graph, dependencies_only)
-    },
-
-    dependency_graph=function() {
-      g <- lapply(self$targets, function(t) t$depends_name)
-      topological_sort(g)
-    },
-
-    make1=function(target_name, dry_run=FALSE, force=FALSE,
-      force_all=FALSE, quiet_target=private$verbose$quiet_target, check=NULL,
-      dependencies_only=FALSE) {
-      #
-      plan <- private$plan(target_name, dependencies_only)
-      for (i in plan) {
-        is_last <- i == target_name
-        last <- private$update(i, dry_run,
-                               force_all || (force && is_last),
-                               quiet_target=quiet_target, check=check,
-                               return_target=is_last)
-      }
-      invisible(last)
-    },
-
-    update=function(target_name, dry_run=FALSE, force=FALSE,
-      quiet_target=private$verbose$quiet_target, check=NULL,
-      return_target=TRUE) {
-      #
-      target <- self$targets[[target_name]]
-      current <- !force && target_is_current(target, self$store, check)
-
-      if (!isTRUE(target$implicit)) {
-        status <- if (current) "OK" else target$status_string
-        cmd <- if (current) NULL else target_run_fake(target)
-        style <- if (is.null(target$chain_parent)) "square" else "curly"
-        private$print_message(status, target_name, cmd, style)
-      }
-
-      if (!dry_run) {
-        if (!current) {
-          ## See #12 - targets can specify conditional packages, and
-          ## we load them, but also unload them afterwards (including
-          ## dependencies).  This does not leave packages loaded for
-          ## dependent taragets though.
-          extra <- load_extra_packages(target$packages)
-          if (target$type == "cleanup") {
-            ## Do this here because it uses remake (via
-            ## private$remove_target).
-            for (t in target$targets_to_remove) {
-              private$remove_target(t, chain=TRUE)
-            }
-            target_run(target, self$store, quiet_target)
-            ret <- NULL
-          } else {
-            ret <- target_build(target, self$store, quiet_target)
-          }
-          unload_extra_packages(extra)
-          invisible(ret)
-        } else if (return_target) {
-          invisible(target_get(target, self$store))
-        }
-      }
-    },
-
-    ## TODO: This is currently used by the clean targets.  The name
-    ## probably wants changing though, because it's confusing with
-    ## $add that *creates* a target.  What this does is remove the
-    ## target *product*.
-    remove_target=function(target_name, chain=TRUE) {
-      target <- private$get_target(target_name)
-      if (chain && !is.null(target$chain_kids)) {
-        chain_names <- dependency_names(target$chain_kids)
-        for (t in chain_names) {
-          private$remove_target(t, chain=FALSE)
-        }
-      }
-
-      store <- self$store
-
-      if (target$type == "file") {
-        did_remove_obj <- store$files$del(target$name, TRUE)
-        did_remove_db  <- store$db$del(target$name, TRUE)
-        did_remove <- did_remove_obj || did_remove_db
-      } else if (target$type == "object") {
-        did_remove_obj <- store$objects$del(target$name, TRUE)
-        did_remove_db  <- store$db$del(target$name, TRUE)
-        did_remove <- did_remove_obj || did_remove_db
-      } else {
-        stop("Not something that can be deleted")
-      }
-
-      if (did_remove) {
-        status <- "DEL"
-        fn <- if (target$type == "object") "rm" else "file.remove"
-        cmd <- sprintf('%s("%s")', fn, target_name)
-      } else {
-        status <- ""
-        cmd <- NULL
-      }
-      private$print_message(status, target_name, cmd, "round")
     }
   ))
 
@@ -655,25 +507,150 @@ assert_has_target <- function(target_name, m) {
   }
 }
 
-remake_script <- function(m, target_name=NULL) {
+remake_default_target <- function(m) {
   private <- remake_private(m)
-  if (is.null(target_name)) {
-    target_name <- private$target_default()
+  if (is.null(private$default_target)) {
+    stop(private$file,
+         " does not define 'target_default' or have target 'all'")
   }
-  pkgs <- lapply(m$store$env$packages,
-                 function(x) sprintf('library("%s")', x))
-  ## TODO: This does not work for *directories*.  Emit the body of
-  ## source_dir with appropriate things set.
-  srcs <- lapply(m$store$env$sources,
-                 function(x) sprintf('source("%s")', x))
-  ## Probably best to filter by "real" here?
-  plan <- private$plan(target_name)
-  cmds <- lapply(plan, function(i)
-    target_run_fake(m$targets[[i]], for_script=TRUE))
+  private$default_target
+}
 
-  src <- c(unlist(pkgs),
-           unlist(srcs),
-           unlist(cmds))
-  class(src) <- "remake_script"
-  src
+remake_print_message <- function(m, status, target_name,
+                                 cmd=NULL, style="square") {
+  private <- remake_private(m)
+  verbose <- private$verbose
+  if (!verbose$print_progress ||
+      !verbose$print_noop && status %in% c("", "OK")) {
+    return()
+  } else if (!verbose$print_command) {
+    cmd <- NULL
+  }
+
+  status <- brackets(paint(sprintf("%5s", status),
+                           status_colour(status)), style)
+
+  if (!is.null(cmd)) {
+    if (verbose$print_command_abbreviate) {
+      w_extra <- max(0, nchar(target_name) - private$fmt$target_width)
+      cmd <- abbreviate(cmd, private$fmt$max_cmd_width - w_extra)
+    }
+  }
+  if (is.null(cmd)) {
+    str <- sprintf(private$fmt$no_cmd, status, target_name)
+  } else {
+    str <- sprintf(private$fmt$with_cmd, status, target_name,
+                   paint(cmd, "grey60"))
+  }
+  message(str)
+}
+
+
+remake_plan <- function(m, target_name=NULL, dependencies_only=FALSE) {
+  if (is.null(target_name)) {
+    target_name <- remake_default_target(m)
+  }
+  graph <- remake_dependency_graph(m)
+  dependencies(target_name, graph, dependencies_only)
+}
+
+remake_dependency_graph <- function(m) {
+  g <- lapply(m$targets, function(t) t$depends_name)
+  topological_sort(g)
+}
+
+remake_update <- function(m, target_name, dry_run=FALSE, force=FALSE,
+                          quiet_target=m$verbose$quiet_target,
+                          check=NULL, return_target=TRUE) {
+  target <- m$targets[[target_name]]
+  current <- !force && target_is_current(target, m$store, check)
+
+  if (!isTRUE(target$implicit)) {
+    status <- if (current) "OK" else target$status_string
+    cmd <- if (current) NULL else target_run_fake(target)
+    style <- if (is.null(target$chain_parent)) "square" else "curly"
+    remake_print_message(m, status, target_name, cmd, style)
+  }
+
+  if (!dry_run) {
+    if (!current) {
+      ## See #12 - targets can specify conditional packages, and
+      ## we load them, but also unload them afterwards (including
+      ## dependencies).  This does not leave packages loaded for
+      ## dependent taragets though.
+      extra <- load_extra_packages(target$packages)
+      if (target$type == "cleanup") {
+        ## Do this here because it uses the remake object (via
+        ## remake_remove_target), which is not available in
+        ## target_build.
+        for (t in target$targets_to_remove) {
+          remake_remove_target(m, t, chain=TRUE)
+        }
+        target_run(target, m$store, quiet_target)
+        ret <- NULL
+      } else {
+        ret <- target_build(target, m$store, quiet_target)
+      }
+      unload_extra_packages(extra)
+      invisible(ret)
+    } else if (return_target) {
+      invisible(target_get(target, m$store))
+    }
+  }
+}
+
+## TODO: This is currently used by the clean targets.  The name
+## probably wants changing though, because it's confusing with "add"
+## that *creates* a target.  What this does is remove the target
+## *product*.
+remake_remove_target <- function(m, target_name, chain=TRUE) {
+  assert_has_target(target_name, m)
+  target <- m$targets[[target_name]]
+  if (chain && !is.null(target$chain_kids)) {
+    chain_names <- dependency_names(target$chain_kids)
+    for (t in chain_names) {
+      remake_remove_target(m, t, chain=FALSE)
+    }
+  }
+
+  store <- m$store
+
+  if (target$type == "file") {
+    did_remove_obj <- store$files$del(target$name, TRUE)
+    did_remove_db  <- store$db$del(target$name, TRUE)
+    did_remove <- did_remove_obj || did_remove_db
+  } else if (target$type == "object") {
+    did_remove_obj <- store$objects$del(target$name, TRUE)
+    did_remove_db  <- store$db$del(target$name, TRUE)
+    did_remove <- did_remove_obj || did_remove_db
+  } else {
+    stop("Not something that can be deleted")
+  }
+
+  if (did_remove) {
+    status <- "DEL"
+    fn <- if (target$type == "object") "rm" else "file.remove"
+    cmd <- sprintf('%s("%s")', fn, target_name)
+  } else {
+    status <- ""
+    cmd <- NULL
+  }
+  remake_print_message(m, status, target_name, cmd, "round")
+}
+
+remake_make1 <- function(m, target_name, dry_run=FALSE, force=FALSE,
+                         force_all=FALSE, quiet_target=NULL, check=NULL,
+                         dependencies_only=FALSE) {
+  if (is.null(quiet_target)) {
+    quiet_target <- remake_private(m)$verbose$quiet_target
+  }
+  plan <- remake_plan(m, target_name, dependencies_only)
+  for (i in plan) {
+    is_last <- i == target_name
+    last <- remake_update(m, i, dry_run,
+                          force_all || (force && is_last),
+                          quiet_target=quiet_target, check=check,
+                          return_target=is_last)
+  }
+  invisible(last)
 }

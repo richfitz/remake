@@ -63,7 +63,7 @@ remake_archive_contents <- function(filename) {
 remake_archive_export <- function(remake, target_name, recursive=TRUE,
                                  filename="remake.zip") {
   if (recursive) {
-    graph <- remake_private(remake)$dependency_graph()
+    graph <- remake_dependency_graph(remake)
     target_name <- dependencies(target_name, graph)
   }
 
