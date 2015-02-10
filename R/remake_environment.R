@@ -91,8 +91,8 @@ print.remake_environment <- function(x, ...) {
   remake_environment_info(x)
 }
 
+## TODO: This is going to simplify down a lot soon.
 remake_environment <- function(m, names=character(0), target=NULL) {
-  remake_private(m)$refresh()
   e <- new.env(parent=m$store$env$env)
   m$store$objects$export(names, e)
   attr(e, "target") <- target

@@ -23,8 +23,8 @@ test_that("Targets return their output on build", {
   expect_that(remake_update(m, "data.csv"), equals("data.csv"))
 
   remake_remove_target(m, "data.csv")
-  expect_that(m$make("data.csv"), equals("data.csv"))
-  expect_that(m$make("data.csv"), equals("data.csv"))
+  expect_that(remake_make(m, "data.csv"), equals("data.csv"))
+  expect_that(remake_make(m, "data.csv"), equals("data.csv"))
 
   ## While object targets invisibly return their contents
   t <- m$targets[["processed"]]
@@ -35,8 +35,8 @@ test_that("Targets return their output on build", {
   expect_that(remake_update(m, "processed"), is_a("data.frame"))
 
   remake_remove_target(m, "processed")
-  expect_that(m$make("processed"), is_a("data.frame"))
-  expect_that(m$make("processed"), is_a("data.frame"))
+  expect_that(remake_make(m, "processed"), is_a("data.frame"))
+  expect_that(remake_make(m, "processed"), is_a("data.frame"))
 
   ## Fake targets return nothing:
   t <- m$targets[["all"]]
@@ -49,8 +49,8 @@ test_that("Targets return their output on build", {
 
   expect_that(remake_remove_target(m, "all"),
               throws_error("Not something that can be deleted"))
-  expect_that(m$make("all"), is_null())
-  expect_that(m$make("all"), is_null())
+  expect_that(remake_make(m, "all"), is_null())
+  expect_that(remake_make(m, "all"), is_null())
 })
 
 test_that("Extensions", {

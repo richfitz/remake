@@ -9,7 +9,7 @@ context("Plot")
 test_that("Build works", {
   cleanup()
   m <- remake("plot_simple.yml")
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   ## TODO: ideally check that it is the expected size
   cleanup()
@@ -33,7 +33,7 @@ test_that("Plot options", {
   expect_that(t3$plot$args, equals(empty_named_list()))
   expect_that(t4$plot$args, equals(empty_named_list()))
 
-  m$make()
+  remake_make(m)
 
   expect_that(file.exists("plot1.pdf"), is_true())
   expect_that(file.exists("plot2.pdf"), is_true())

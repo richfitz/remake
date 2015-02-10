@@ -54,7 +54,7 @@ test_that("Manual", {
   expect_that(target_is_current(t, store, "depends"), is_false())
   expect_that(target_is_current(t, store, "exists"),  is_true())
 
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   expect_that(target_is_current(t, store),          is_true())
   expect_that(target_is_current(t, store, "all"),     is_true())
   expect_that(target_is_current(t, store, "code"),    is_true())
@@ -74,7 +74,7 @@ test_that("Manual", {
   expect_that(target_is_current(t, store, "exists"),  is_true())
 
   ## And for the depends:
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   entry <- m$store$db$get("data.csv")
   entry$depends <- "Any information will cause failure"
   m$store$db$set("data.csv", entry)
@@ -100,7 +100,7 @@ test_that("In target", {
   expect_that(target_is_current(t, store, "all"), is_false())
 
   file_remove("data.csv")
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   expect_that(file.exists("data.csv"), is_true())
   expect_that(target_is_current(t, store),          is_true())
   expect_that(target_is_current(t, store, "all"),     is_true())
@@ -111,7 +111,7 @@ test_that("In target", {
   expect_that(is_current("data.csv", m), is_true())
 
   expect_that(m$store$db$contains("data.csv"), is_false())
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   ## Didn't make it: still not in the db!:
   expect_that(m$store$db$contains("data.csv"), is_false())
 
@@ -143,7 +143,7 @@ test_that("In remake", {
   expect_that(is_current("data.csv", m),           is_false())
   expect_that(is_current("data.csv", m, "exists"), is_false())
 
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
 
   expect_that(is_current("data.csv", m), is_true())
   expect_that(is_current("data.csv", m, "exists"), is_true())
@@ -163,6 +163,6 @@ test_that("is_current with defaults", {
   cleanup()
   m <- remake("remake.yml")
   expect_that(is_current("plot.pdf"), is_false())
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   expect_that(is_current("plot.pdf"), is_true())
 })

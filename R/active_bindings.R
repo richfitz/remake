@@ -32,11 +32,7 @@ make_active_binding_function <- function(m, name, type) {
     if (missing(value)) {
       ## We'd fetch from cache here but that will behave badly with
       ## verbose I think.
-      m <- cache$fetch(filename, NULL)
-      if (is.null(m)) {
-        ## This is probably fixable by rerunning the binding creation?
-        stop("Something terrible has happened")
-      }
+      m <- remake2(filename, NULL)
       private <- remake_private(m)
       if (type == "target") {
         if (isFALSE(remake_private(m)$config$active)) {
@@ -46,10 +42,11 @@ make_active_binding_function <- function(m, name, type) {
           ## TODO: We might do something different on "pause" here,
           ## such as return the last known version of the data.
         } else {
+          ## TODO: This is going to change once the remake object is
+          ## not a R6 object.
           oo <- private$verbose$print_noop
           on.exit(private$verbose$print_noop <- oo)
           private$verbose$print_noop <- FALSE
-          private$refresh()
           uninvisible(remake_make1(m, name))
         }
       } else if (type == "source") {

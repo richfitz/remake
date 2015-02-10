@@ -19,7 +19,7 @@ test_that("Target/rule clash", {
   cleanup()
   expect_that(m <- remake("remake_rule_clash.yml"),
               gives_warning("Rule name clashes with target name"))
-  m$make()
+  remake_make(m)
   expect_that(file.exists("plot.pdf"), is_true())
 })
 
@@ -109,7 +109,7 @@ test_that("literals", {
   
   expect_that(m$targets$data1$depends,
               is_identical_to(empty_named_integer()))
-  res <- m$make("data1")
+  res <- remake_make(m, "data1")
   expect_that(res, is_identical_to(list(TRUE)))
 
   db <- m$store$db$get("data1")
@@ -120,7 +120,7 @@ test_that("literals", {
 
   expect_that(is_current("data1", m), is_true())
 
-  res <- m$make("data2")
+  res <- remake_make(m, "data2")
   expect_that(res, is_identical_to(list(pi)))
 
   db <- m$store$db$get("data2")
@@ -130,7 +130,7 @@ test_that("literals", {
   expect_that(db$code$functions, equals(empty_named_list()))
   expect_that(db$code$packages, equals(list()))
   
-  res <- m$make("data3")
+  res <- remake_make(m, "data3")
   expect_that(res, is_identical_to(list(pi)))
   
   expect_that(db$fixed, equals(hash_object(list(pi))))
@@ -140,20 +140,22 @@ test_that("literals", {
   expect_that(db$code$packages, equals(list()))
 
   ## Getting a bit more silly down here:
-  res <- m$make("data4")
+  res <- remake_make(m, "data4")
   expect_that(res, is_identical_to(list("pi")))
 
-  res <- m$make("data5")
+  res <- remake_make(m, "data5")
   expect_that(res, is_identical_to(list("my_constant", pi)))
 
-  res <- m$make("data6")
+  res <- remake_make(m, "data6")
   expect_that(res, is_identical_to(list("my_constant", pi, list(TRUE))))
 
   ## Rewrite the code and check that it forces a rebuild as the
   ## *value* of the constant changes.
   writeLines(paste(str, "* 2"), "code_literal.R")
-  res <- m$make("data3")
-  
+
+  ## This doesn't trigger without the explicit refresh, which I don't
+  ## want to be doing.
+  res <- make("data3", remake_file="remake_literal.yml")
   expect_that(res, is_identical_to(list(2 * pi)))
 
   db <- m$store$db$get("data3")

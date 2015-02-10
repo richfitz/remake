@@ -12,7 +12,7 @@
 
     make=function(target_names=NULL, ...) {
       self$active <- TRUE
-      self$m$make(target_names, ...)
+      remake_make(self$m, target_names, ...)
     }
   ),
 

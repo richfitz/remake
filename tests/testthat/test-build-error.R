@@ -37,9 +37,9 @@ test_that("Errored builds restore files", {
   m$store$env$env$download_data_works("data.csv")
   hash <- tools::md5sum("data.csv")
 
-  expect_that(m$make("data.csv"),
+  expect_that(remake_make(m, "data.csv"),
               throws_error("There was an error downloading data!"))
-  expect_that(try(m$make("data.csv"), silent=TRUE),
+  expect_that(try(remake_make(m, "data.csv"), silent=TRUE),
               shows_message("Restoring previous version of data.csv"))
   ## Original unchanged:
   expect_that(tools::md5sum("data.csv"), equals(hash))
@@ -49,14 +49,14 @@ test_that("Errored builds restore files", {
               is_false())
 
   .GlobalEnv$.run_download_data_works <- TRUE
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   expect_that(file.exists("data.csv"), is_true())
 
   expect_that(m$store$db$contains("data.csv"), is_true())
 
   rm(.run_download_data_works, envir=.GlobalEnv)
 
-  expect_that(m$make("data.csv", force=TRUE),
+  expect_that(remake_make(m, "data.csv", force=TRUE),
               throws_error("There was an error downloading data!"))
   expect_that(m$store$db$contains("data.csv"), is_true())
   expect_that(tools::md5sum("data.csv"), equals(hash))

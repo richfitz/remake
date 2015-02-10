@@ -92,7 +92,7 @@ test_that("Depending on a file we don't make", {
   remake_update(m, "processed", force=TRUE)
   remake_update(m, "plot.pdf", force=TRUE)
   expect_that(file.exists("plot.pdf"), is_true())
-  m$make("clean")
+  remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(file.exists("data.csv"), is_true())
 

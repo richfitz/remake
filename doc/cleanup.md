@@ -26,12 +26,6 @@ target_name:
   cleanup: <cleanup level>
 ```
 
-The cleanup levels `tidy`, `clean` and `purge` are simply fake targets: if `m` is a `remake` object, they can be run as (for example):
-
-```
-m$make("clean")
-```
-
 # Hooks
 
 A remakefile can also contain targets `tidy`, `clean` and `purge`.  However, these are treated specially:

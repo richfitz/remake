@@ -25,15 +25,4 @@ Creates a remake instance to interact with.
 You probably should no longer interact with this: it will
 disappear in a version or two.
 }
-\examples{
-\dontrun{
-# create a quiet remake instance
-m <- remake(verbose=FALSE)
-# create a fairly quiet instance that does not print information
-# for targets that do nothing (are up-to-date).
-m <- remake(verbose=remake_verbose(noop=FALSE))
-# Build the default target:
-m$make()
-}
-}
 

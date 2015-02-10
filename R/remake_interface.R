@@ -2,12 +2,11 @@
 ## will be supported going forward.
 
 ## TODO: I'm not sure this one is actually useful.
-make_dependencies <- function(m, target_name, ...) {
+remake_dependencies <- function(m, target_name, ...) {
   assert_has_target(target_name, m)
   private <- remake_private(m)
   t <- m$targets[[target_name]]
 
-  private$refresh()
   remake_print_message(m, "ENV", t$name, style="angle")
   remake_make1(m, target_name, ..., dependencies_only=TRUE)
   deps_name <- t$depends_name[t$depends_type == "object"]

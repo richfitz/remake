@@ -10,7 +10,7 @@ test_that("Chained rules", {
   cleanup()
   m <- remake("chain.yml")
 
-  res <- m$make("manual")
+  res <- remake_make(m, "manual")
   expect_that(res, equals(6))
 
   ## There are two chain rules created:
@@ -36,7 +36,7 @@ test_that("Chained rules", {
 
   expect_that(length(t$chain_kids), equals(2))
 
-  res <- m$make("chained")
+  res <- remake_make(m, "chained")
   expect_that(res, equals(6))
 
   expect_that(m$store$objects$contains("chained"),    is_true())
@@ -44,19 +44,19 @@ test_that("Chained rules", {
   expect_that(m$store$objects$contains("chained{2}"), is_true())
 
   ## Cleaning removes them all:
-  m$make("clean")
+  remake_make(m, "clean")
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_false())
   expect_that(m$store$objects$contains("chained{2}"), is_false())
 
   ## By default, so does remove_target:
-  res <- m$make("chained")
+  res <- remake_make(m, "chained")
   remake_remove_target(m, "chained")
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_false())
   expect_that(m$store$objects$contains("chained{2}"), is_false())
 
-  res <- m$make("chained")
+  res <- remake_make(m, "chained")
   remake_remove_target(m, "chained", FALSE)
   expect_that(m$store$objects$contains("chained"), is_false())
   expect_that(m$store$objects$contains("chained{1}"), is_true())
@@ -66,8 +66,8 @@ test_that("Chained rules", {
 test_that("Chained rules -> file", {
   cleanup()
   m <- remake("chain_file.yml")
-  m$make("data.csv")
-  m$make("plot.pdf")
+  remake_make(m, "data.csv")
+  remake_make(m, "plot.pdf")
 
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
@@ -75,13 +75,13 @@ test_that("Chained rules -> file", {
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
   file.remove("plot.pdf")
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
 
-  m$make("clean")
+  remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
   remake_remove_target(m, "plot.pdf")
@@ -92,8 +92,8 @@ test_that("Chained rules -> file", {
 test_that("Chained rules -> plot", {
   cleanup()
   m <- remake("chain_plot.yml")
-  m$make("data.csv")
-  m$make("plot.pdf")
+  remake_make(m, "data.csv")
+  remake_make(m, "plot.pdf")
 
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
@@ -101,13 +101,13 @@ test_that("Chained rules -> plot", {
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
   file.remove("plot.pdf")
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
 
-  m$make("clean")
+  remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
   remake_remove_target(m, "plot.pdf")

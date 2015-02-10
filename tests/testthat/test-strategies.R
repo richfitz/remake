@@ -33,17 +33,17 @@ test_that("Plan", {
   expect_that(m_status(m), equals(rbind(cmp_status, all=c(TRUE, TRUE))))
 
   ## Now, build the data:
-  m$make("data.csv")
+  remake_make(m, "data.csv")
   cmp_status["data.csv","dirty"] <- FALSE
   cmp_status["processed","dirty_by_descent"] <- FALSE
   expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
 
-  m$make("processed")
+  remake_make(m, "processed")
   cmp_status["processed","dirty"] <- FALSE
   cmp_status["plot.pdf","dirty_by_descent"] <- FALSE
   expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
 
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   cmp_status["plot.pdf","dirty"] <- FALSE
   expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
   expect_that(m_status(m), equals(rbind(cmp_status, all=c(TRUE, FALSE))))

@@ -21,10 +21,10 @@ test_that("Build archive", {
 
   expect_that(remake_archive_export(m, "plot.pdf"),
               throws_error("file data.csv not found in file store"))
-  m$make("processed")
+  remake_make(m, "processed")
   expect_that(remake_archive_export(m, "plot.pdf"),
               throws_error("file plot.pdf not found in file store"))
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
 
   dest <- remake_archive_export(m, "plot.pdf")
   expect_that(dest, equals("remake.zip"))
@@ -44,7 +44,7 @@ test_that("Inspect archive", {
               throws_error("The file 'remake.zip' does not exist"))
 
   m <- remake("remake.yml")
-  m$make()
+  remake_make(m)
   dest <- remake_archive_export(m, "plot.pdf")
 
   expect_that(is_remake_archive("remake.zip"),
@@ -80,9 +80,9 @@ test_that("Inspect archive", {
 test_that("Import archive", {
   cleanup()
   m <- remake("remake.yml")
-  m$make()
+  remake_make(m)
   dest <- remake_archive_export(m, "plot.pdf")
-  m$make("purge")
+  remake_make(m, "purge")
 
   expect_that(is_current("data.csv", m),  is_false())
   expect_that(is_current("processed", m), is_false())

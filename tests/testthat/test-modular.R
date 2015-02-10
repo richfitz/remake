@@ -22,11 +22,11 @@ test_that("Modular remakefile", {
   mod <- remake("modular_module.yml")
   expect_that(remake_default_target(mod), equals("data.csv"))
 
-  m$make("data.csv")
+  remake_make(m, "data.csv")
 
   expect_that(is_current("data.csv", m),   is_true())
   expect_that(is_current("data.csv", mod), is_true())
 
-  mod$make("purge")
+  remake_make(mod, "purge")
   expect_that(file.exists("data.csv"), is_false())
 })

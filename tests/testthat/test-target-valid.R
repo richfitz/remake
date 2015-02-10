@@ -308,10 +308,10 @@ test_that("cleanup", {
   expect_that(t$depends_name, equals(c("data.csv", "tidy")))
 
   expect_that(file.exists("data.csv"), is_false())
-  expect_that(m$make("clean"),
+  expect_that(remake_make(m, "clean"),
               shows_message("running post-cleanup hook"))
   expect_that(file.exists("data.csv"), is_true())
-  expect_that(m$make("purge"),
+  expect_that(remake_make(m, "purge"),
               shows_message("running post-cleanup hook"))
   expect_that(file.exists("data.csv"), is_false())
 
@@ -324,7 +324,7 @@ test_that("cleanup", {
 test_that("get/set/archive object targets", {
   cleanup()
   m <- remake("remake.yml")
-  m$make("processed")
+  remake_make(m, "processed")
   t <- m$targets[["processed"]]
   expect_that(target_get(t, m$store), is_a("data.frame"))
   dep <- dependency_status(t, m$store)
@@ -365,7 +365,7 @@ test_that("get/set/archive object targets", {
 test_that("get/set/archive file targets", {
   cleanup()
   m <- remake("remake.yml")
-  m$make("plot.pdf")
+  remake_make(m, "plot.pdf")
   t <- m$targets[["plot.pdf"]]
   expect_that(target_get(t, m$store), equals("plot.pdf"))
   dep <- dependency_status(t, m$store)

@@ -11,16 +11,6 @@
 ##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
 ##' \code{FALSE} and also the result of calling \code{remake_verbose}.
 ##' @param allow_cache Allow cached remake instances to be loaded?
-##' @examples
-##' \dontrun{
-##' # create a quiet remake instance
-##' m <- remake(verbose=FALSE)
-##' # create a fairly quiet instance that does not print information
-##' # for targets that do nothing (are up-to-date).
-##' m <- remake(verbose=remake_verbose(noop=FALSE))
-##' # Build the default target:
-##' m$make()
-##' }
 ##' @export
 remake <- function(remake_file="remake.yml", verbose=TRUE,
                    allow_cache=TRUE) {
@@ -48,7 +38,7 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
                           load_sources=load_sources)
     ## NOTE: Possibly should only cache if load_sources is TRUE?
     cache$add(ret)
-  } else if (load_sources && is.null(ret$store$env$env)) {
+  } else if (load_sources) {
     remake_private(ret)$initialize_sources()
   }
   return(ret)
@@ -69,18 +59,6 @@ remake2 <- function(remake_file="remake.yml", verbose=TRUE,
       private$verbose <- remake_verbose(verbose)
       private$initialize_message_format()
       private$refresh(load_sources)
-    },
-
-    make=function(target_names=NULL, ...) {
-      private$refresh()
-      if (is.null(target_names)) {
-        target_names <- remake_default_target(self)
-      }
-      for (t in target_names) {
-        remake_print_message(self, "MAKE", t, style="angle")
-        last <- remake_make1(self, t, ...)
-      }
-      invisible(last)
     }
   ),
 
@@ -636,6 +614,17 @@ remake_remove_target <- function(m, target_name, chain=TRUE) {
     cmd <- NULL
   }
   remake_print_message(m, status, target_name, cmd, "round")
+}
+
+remake_make <- function(m, target_names=NULL, ...) {
+  if (is.null(target_names)) {
+    target_names <- remake_default_target(m)
+  }
+  for (t in target_names) {
+    remake_print_message(m, "MAKE", t, style="angle")
+    last <- remake_make1(m, t, ...)
+  }
+  invisible(last)
 }
 
 remake_make1 <- function(m, target_name, dry_run=FALSE, force=FALSE,

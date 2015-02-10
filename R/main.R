@@ -30,7 +30,7 @@ main <- function(args=commandArgs(TRUE)) {
     }
     writeLines(remake_script(m, targets))
   } else {
-    m$make(targets, dry_run=opts$dry_run)
+    remake_make(m, targets, dry_run=opts$dry_run)
   }
 }
 
@@ -107,5 +107,9 @@ install_remake <- function(dest) {
 ##' @export
 make <- function(target_names=NULL, remake_file="remake.yml",
                  verbose=TRUE) {
-  remake(remake_file, verbose)$make(target_names)
+  remake_make(remake(remake_file, verbose), target_names)
+}
+
+make_dependencies <- function(target_name, remake_file="remake.yml") {
+  remake_dependencies(remake(remake_file), target_name)
 }
