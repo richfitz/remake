@@ -1,0 +1,20 @@
+## This one puts the plot into a new directory
+sources:
+  - code.R
+
+targets:
+  all:
+    depends: export/plot.pdf
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command: process_data("data.csv")
+
+  export/plot.pdf:
+    command: myplot(processed)
+    plot:
+      width: 8
+      height: 4

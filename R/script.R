@@ -34,6 +34,18 @@ remake_script <- function(m, target_name=NULL) {
   cmds <- lapply(plan, function(i)
     target_run_fake(m$targets[[i]], for_script=TRUE))
 
+  ## Need to make missing paths.
+  files <- filter_targets_by_type(m$targets[plan], "file")
+  paths <- dirname(names(files))
+  ## Implicit targets exist...
+  implicit <- vlapply(files, inherits, "target_file_implicit")
+  ## ...so these paths must already exist...
+  paths_existing <- unique(c(".", paths[implicit]))
+  ## ...and these need creating:
+  paths_to_create <- setdiff(unique(paths[!implicit]), paths_existing)
+  cmds <- c(sprintf('dir.create("%s", FALSE, TRUE)', paths_to_create),
+            cmds)
+  
   src <- c(unlist(pkgs),
            unlist(srcs),
            unlist(cmds))

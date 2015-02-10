@@ -55,7 +55,18 @@ test_that("Source directory", {
   cleanup()
 })
 
-if (FALSE) {
+test_that("Create directory", {
+  cleanup()
+
+  m <- remake::remake("remake_directory.yml")
+  m$make("export/plot.pdf")
+  str <- make_script(remake_file="remake_directory.yml")
+
+  expect_that(sum(grepl("dir.create", str, fixed=TRUE)), equals(1))
+  expect_that('dir.create("export", FALSE, TRUE)' %in% str, is_true())
+})
+
+if (FALSE) { ## TODO -- looks like this might be failing?
 test_that("Chained targets", {
   cleanup()
   m <- remake("chain.yml")
