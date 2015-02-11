@@ -320,6 +320,9 @@ append_lines <- function(text, file) {
   writeLines(c(existing, text), file)
 }
 
+## Looks like this doesn't actually *fail* on windows, but throws a
+## warning.  That's charming.  So on *windows* we need to treat
+## warnings as errors 
 git_ignores <- function(files) {
   if (length(files) == 0) {
     logical(0)
@@ -327,8 +330,13 @@ git_ignores <- function(files) {
     tmp <- tempfile()
     on.exit(file.remove(tmp))
     writeLines(files, tmp)
-    ignored <- system2("git", c("check-ignore", "--stdin"), stdin=tmp,
-                       stdout=TRUE)
+
+    ## Try to turn command failure into an error everywhere
+    ignored <-
+      tryCatch(system2("git", c("check-ignore", "--stdin"),
+                       stdin=tmp, stdout=TRUE),
+               warning=function(e) stop(e))
+
     files %in% ignored
   }
 }
