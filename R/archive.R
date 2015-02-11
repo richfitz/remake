@@ -61,7 +61,9 @@ remake_archive_contents <- function(filename) {
 }
 
 remake_archive_export <- function(remake, target_name, recursive=TRUE,
-                                 filename="remake.zip") {
+                                  filename="remake.zip") {
+  ## TODO: Need to check that things are current first.
+  ## TODO: Don't include implicit targets
   if (recursive) {
     graph <- remake_dependency_graph(remake)
     target_name <- dependencies(target_name, graph)

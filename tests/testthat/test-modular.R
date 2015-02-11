@@ -1,9 +1,3 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Modular remakefiles")
 
 test_that("Modular remakefile", {

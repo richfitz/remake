@@ -1,8 +1,3 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-}
-
 context("Graph")
 
 test_that("Simple order", {

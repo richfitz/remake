@@ -1,12 +1,6 @@
 ## Tests of low-level target validity.  Some of these will require
 ## considerable mocking up.  I'm not doing this via yaml, because that
 ## seems like a pain :)
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Targets (low level)")
 
 test_that("reserved names", {

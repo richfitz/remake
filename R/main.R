@@ -1,6 +1,7 @@
 ##' The command line script, to be run outside of the package.  Don't
 ##' run this from within R (well, you can't actually).  This uses
-##' \code{commandArgs} to pass along arguments to \code{\link{remake}}.
+##' \code{commandArgs} to pass along arguments to various remake
+##' functions.
 ##' @title Command line interface to remake
 ##' @param args Not yet documented
 ##' @export
@@ -12,14 +13,17 @@ main <- function(args=commandArgs(TRUE)) {
   args <- optparse::parse_args(parser, args, positional_arguments=TRUE)
   opts <- args$options
   if (opts$version) {
-    print_version()
+    ## TODO: This will ideally also extract the github sha key if
+    ## installed with devtools?  Or see tree for more ideas.
+    v <- packageVersion("remake")
+    message(sprintf("remake version %s", v))
+    return(invisible())
+  }
+  if (opts$print_targets) {
+    message(paste(list_targets(opts$file), collapse="\n"))
     return(invisible())
   }
   m <- remake(opts$file, verbose=!opts$quiet)
-  if (opts$print_targets) {
-    print_targets(m)
-    return(invisible())
-  }
   targets <- args$args
   if (length(targets) == 0L) {
     targets <- NULL
@@ -44,10 +48,10 @@ remake_options <- function() {
     ## with values 0, 1, ...
     make_option(c("-q", "--quiet"), type="logical", default=FALSE,
                 action="store_true", help="Run quietly"),
-    make_option(c("-p", "--print-targets"), type="logical",
+    make_option(c("-l", "--list-targets"), type="logical",
                default=FALSE, action="store_true",
-               dest="print_targets",
-               help="Print names of valid targets and exit"),
+               dest="list_targets",
+               help="List names of valid targets and exit"),
     make_option(c("-n", "--dry-run"), type="logical",
                 default=FALSE, action="store_true", dest="dry_run",
                 help="Dry run (don't actually run anything)"),
@@ -58,58 +62,4 @@ remake_options <- function() {
                 help="Print R script to standard output"),
     make_option(c("-v", "--version"), type="logical", default=FALSE,
                 action="store_true", help="Version information"))
-}
-
-## TODO: This will ideally also extract the github sha key if
-## installed with devtools?  Or see tree for more ideas.
-print_version <- function() {
-  v <- packageVersion("remake")
-  message(sprintf("remake version %s", v))
-}
-
-print_targets <- function(m) {
-  message(paste(remake_target_names(m, FALSE), collapse="\n"))
-}
-
-##' Install running script to a local directory.  This directory
-##' should be on the \code{$PATH}.  Once this has been done, you can
-##' run remake with `remake`.  See `remake --help` for more information.
-##' @title Install running script.
-##'
-##' The installed script is just a wrapper to the function
-##' \code{\link{main}}; this means that upgrades to remake do not
-##' requir this to be rerun.  The installed script is extremely
-##' simple.
-##' @param dest Directory to install `remake` to.  Should be on your
-##' path, though the current directory may be useful to.
-##' @export
-install_remake <- function(dest) {
-  if (!file.exists(dest) || !is_directory(dest)) {
-    stop("Destination must be an existing directory")
-  }
-  code <- c("#!/usr/bin/env Rscript", "library(methods)", "remake::main()")
-  file <- file.path(dest, "remake")
-  writeLines(code, file)
-  Sys.chmod(file, "0755")
-}
-
-##' @title Make a single target
-##' @param target_names Vector of names of targets to build, or
-##' \code{NULL} to build the default target (if specified in the
-##' remakefile).
-##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml}).  This is passed to \code{remake()}.
-##' @param verbose Controls whether remake is verbose or not.  By
-##' default it is (\code{TRUE}), which prints out the name of each
-##' target as it is built/checked.  This argument is passed to
-##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
-##' \code{FALSE} and also the result of calling \code{remake_verbose}.
-##' @export
-make <- function(target_names=NULL, remake_file="remake.yml",
-                 verbose=TRUE) {
-  remake_make(remake(remake_file, verbose), target_names)
-}
-
-make_dependencies <- function(target_name, remake_file="remake.yml") {
-  remake_dependencies(remake(remake_file), target_name)
 }

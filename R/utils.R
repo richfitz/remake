@@ -197,6 +197,7 @@ file_copy <- function(from, to, ..., warn=TRUE) {
 ## This zips up the directory at `path` into basename(path).zip.
 ## Because of the limitations of `zip()`, we do need to change working
 ## directories temporarily.
+## TODO: Is this generally useful?
 zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
                     overwrite=TRUE) {
   assert_directory(path)
@@ -306,4 +307,28 @@ dquote <- function(x) {
 }
 squote <- function(x) {
   sprintf("'%s'", x)
+}
+
+append_lines <- function(text, file) {
+  assert_character(text)
+  assert_scalar_character(file)
+  if (file.exists(file)) {
+    existing <- readLines(file)
+  } else {
+    existing <- character(0)
+  }
+  writeLines(c(existing, text), file)
+}
+
+git_ignores <- function(files) {
+  if (length(files) == 0) {
+    logical(0)
+  } else {
+    tmp <- tempfile()
+    on.exit(file.remove(tmp))
+    writeLines(files, tmp)
+    ignored <- system2("git", c("check-ignore", "--stdin"), stdin=tmp,
+                       stdout=TRUE)
+    files %in% ignored
+  }
 }

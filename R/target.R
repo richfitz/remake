@@ -261,24 +261,6 @@ target_new_utility <- function(name, utility, remake) {
   ret
 }
 
-##' Returns the vector of known file extensions.  If a target ends in
-##' one of these, then it will be considered a file, rather than an
-##' object.
-##' @title Vector of file extensions
-##' @export
-extensions <- function() {
-  c(# Data
-    "csv", "tsv", "xls", "xlsx", "rds", "rda", "rdata",
-    # Free form
-    "txt", "log", "yml", "yaml", "xml",
-    # Text
-    "md", "tex", "r", "rmd", "rnw", "html", "htm", "bib",
-    # Graphics
-    "jpg", "jpeg", "png", "pdf", "eps", "ps", "bmp", "tiff", "svg",
-    # Archives
-    "zip", "gz", "tar", "bz2")
-}
-
 ## Determine if things are up to date.  That is the case if:
 ##
 ## If the file/object does not exist it's unclean (done)

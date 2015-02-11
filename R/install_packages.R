@@ -1,39 +1,3 @@
-##' Install missing packages
-##'
-##' No version comparison is done - see packrat for a more complete
-##' package management solution.
-##' @title Install missing packages
-##' @param remake_file Name of the remakefile to look for the list of
-##' required packages
-##' @param instructions Rather than install anything, prints
-##' instructions on how to install missing things
-##' @param missing_only Install \emph{everything}, rather than just
-##' missing packages.
-##' @param skip_target_packages Skip packages that are mentioned only
-##' in targets?
-##' @export
-##' @author Rich FitzJohn
-install_missing_packages <- function(remake_file="remake.yml",
-                                     instructions=FALSE,
-                                     missing_only=TRUE,
-                                     skip_target_packages=FALSE) {
-  dat <- read_remake_file(remake_file)
-  packages <- with_default(dat$packages, character(0))
-  if (!skip_target_packages) {
-    packages <- c(packages,
-                  unlist(lapply(dat$targets, function(x) x$packages)))
-  }
-  package_sources <- read_remake_packages("remake_sources.yml")
-  ret <- install_packages(packages,
-                          instructions=instructions,
-                          missing_only=missing_only,
-                          package_sources=package_sources)
-  if (instructions) {
-    message(ret)
-  }
-  invisible(packages)
-}
-
 install_packages <- function(packages,
                              instructions=FALSE,
                              missing_only=TRUE,

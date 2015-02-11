@@ -6,6 +6,9 @@ all: install
 test:
 	${RSCRIPT} -e 'library(methods); devtools::test()'
 
+test_all:
+	REMAKE_TEST_INSTALL_PACKAGES=true make test
+
 roxygen:
 	@mkdir -p man
 	${RSCRIPT} -e "library(methods); devtools::document()"

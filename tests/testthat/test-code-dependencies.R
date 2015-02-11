@@ -1,8 +1,3 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-}
-
 context("Code dependencies")
 
 ## Hashing environments is going to basically not work as it will

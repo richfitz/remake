@@ -1,15 +1,8 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
-## First, arrange for the file to be made to exist so that deletion is
-## a problem:
-
 context("Build error")
 
 test_that("Check mocking works", {
+  ## First, arrange for the file to be made to exist so that deletion
+  ## is a problem:
   cleanup()
   m <- remake("remake_build_error.yml")
 

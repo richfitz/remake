@@ -1,10 +1,4 @@
 ## Tests of current-ness.  This gets a bit hairy.
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Check currentness")
 
 ## There are several different things to check:

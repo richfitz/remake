@@ -12,6 +12,7 @@ main(args = commandArgs(TRUE))
 \description{
 The command line script, to be run outside of the package.  Don't
 run this from within R (well, you can't actually).  This uses
-\code{commandArgs} to pass along arguments to \code{\link{remake}}.
+\code{commandArgs} to pass along arguments to various remake
+functions.
 }
 

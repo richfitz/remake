@@ -12,23 +12,23 @@ remake_environment_info <- function(e) {
                         indent=8, exdent=8), collapse="\n"))
 }
 
-##' These functions may be useful in debugging workflows.  A
-##' \code{remake_environment} object is created by running
-##' \code{make_dependencies(m, target_name)}, where \code{target_name}
-##' is the name of some target.  This returns an environment with all
-##' the dependencies of that target so you can troubleshoot/develop
-##' the rule that will process it.  The \emph{parent} environment of
-##' this environment contains all the rules that remake knows about
-##' (loaded from the files in the \code{sources} section of the
-##' remakefile).  These functions ease interactions with these objects.
-##'
-##' @title Interact with "remake environment" objects
-##' @param e A \code{remake_environment} object.
-##' @param verbose Logical indicating if information will be printed.
-##' Because these functions to odd things to your search path, this is
-##' \code{TRUE} by default.
-##' @export
-##' @rdname remake_environment
+## These functions may be useful in debugging workflows.  A
+## \code{remake_environment} object is created by running
+## \code{remake_dependencies(m, target_name)}, where \code{target_name}
+## is the name of some target.  This returns an environment with all
+## the dependencies of that target so you can troubleshoot/develop
+## the rule that will process it.  The \emph{parent} environment of
+## this environment contains all the rules that remake knows about
+## (loaded from the files in the \code{sources} section of the
+## remakefile).  These functions ease interactions with these objects.
+##
+## @title Interact with "remake environment" objects
+## @param e A \code{remake_environment} object.
+## @param verbose Logical indicating if information will be printed.
+## Because these functions to odd things to your search path, this is
+## \code{TRUE} by default.
+## @export
+## @rdname remake_environment
 remake_environment_browse <- function(e, verbose=TRUE) {
   assert_inherits(e, "remake_environment")
   if (verbose) {
@@ -37,8 +37,8 @@ remake_environment_browse <- function(e, verbose=TRUE) {
   browse_env(e)
 }
 
-##' @export
-##' @rdname remake_environment
+## @export
+## @rdname remake_environment
 remake_attach <- function(e, verbose=TRUE) {
   assert_inherits(e, "remake_environment")
   if (verbose) {
@@ -54,10 +54,10 @@ remake_attach <- function(e, verbose=TRUE) {
   }
 }
 
-##' @export
-##' @rdname remake_environment
-##' @param warn Logical, indicating if a warning should be given when
-##' there are no remake environments to detach.
+## @export
+## @rdname remake_environment
+## @param warn Logical, indicating if a warning should be given when
+## there are no remake environments to detach.
 remake_detach <- function(warn=TRUE, verbose=TRUE) {
   ours <- grep("^remake:", search(), value=TRUE)
   if (length(ours) > 0L) {
@@ -86,7 +86,7 @@ browse_env <- function(e, ...) {
   f(e)
 }
 
-##' @export
+## @export
 print.remake_environment <- function(x, ...) {
   remake_environment_info(x)
 }

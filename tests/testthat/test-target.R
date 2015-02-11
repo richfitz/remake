@@ -1,10 +1,3 @@
-## These test various properties of targets.
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Targets")
 
 test_that("Targets return their output on build", {
@@ -54,5 +47,6 @@ test_that("Targets return their output on build", {
 })
 
 test_that("Extensions", {
-  expect_that(extensions(), is_identical_to(tolower(extensions())))
+  expect_that(file_extensions(),
+              is_identical_to(tolower(file_extensions())))
 })

@@ -1,13 +1,8 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-}
-
 context("Data stores")
 
 test_that("data store", {
   path <- tempfile()
-  st <- remake:::object_store$new(path)
+  st <- object_store$new(path)
   expect_that(file.exists(path), is_true())
   expect_that(st$ls(), equals(character(0)))
   expect_that(st$contains("foo"), is_false())
@@ -32,7 +27,7 @@ test_that("data store", {
   expect_that(st$get_hash("foo", TRUE), equals(digest::digest(1:10)))
 
   ## A different data store would see this:
-  st2 <- remake:::object_store$new(path)
+  st2 <- object_store$new(path)
   expect_that(st2$contains("foo"), is_true())
 
   ## Can export things:
@@ -102,7 +97,7 @@ test_that("data store", {
 })
 
 test_that("file store", {
-  st <- remake:::file_store$new()
+  st <- file_store$new()
 
   path <- tempdir()
   file <- file.path(path, "test.txt")
@@ -123,7 +118,7 @@ test_that("file store", {
 
 test_that("storing lists", {
   path <- tempfile()
-  st <- remake:::object_store$new(path)
+  st <- object_store$new(path)
 
   x <- as.list(1:10)
   st$set("as_object", x)

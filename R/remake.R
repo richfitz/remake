@@ -202,55 +202,6 @@ paint <- function(str, col) {
   }
 }
 
-##' Helper function to set options for verbosity.
-##'
-##' The first four options have a natural nesting: setting
-##' \code{progress=FALSE} prevents printing any progress information,
-##' so the value of \code{noop}, \code{command} and
-##' \code{command_abbreviate} does not matter.  Similarly, setting
-##' \code{command=FALSE} means that \code{command_abbreviate} does not
-##' matter.
-##' @title Control remake verbosity
-##' @param verbose Print progress at each step that remake does
-##' something.
-##' @param noop Print progress for steps that are non-operations, such
-##' as targets that need nothing done to them.  Setting this to
-##' \code{FALSE} is useful for very large projects.
-##' @param command Print the command along with the progress
-##' information?  This is only printed when remake actually runs
-##' something.
-##' @param command_abbreviate Abbreviate the command information so
-##' that it fits on one line.  If \code{FALSE} then the command will
-##' be allowed to run on for as many lines as required.
-##' @param target Print information that the target produces (via
-##' \code{message}, \code{cat} or \code{print}).  If \code{FALSE} then
-##' these messages will be suppressed.
-##' @export
-remake_verbose <- function(verbose=getOption("remake.verbose", TRUE),
-                          noop=getOption("remake.verbose.noop", TRUE),
-                          command=getOption("remake.verbose.command", TRUE),
-                          command_abbreviate=TRUE,
-                          target=NULL) {
-  if (inherits(verbose, "remake_verbose")) {
-    verbose
-  } else {
-    assert_scalar_logical(verbose)
-    assert_scalar_logical(noop)
-    assert_scalar_logical(command)
-    assert_scalar_logical(command_abbreviate)
-    if (!is.null(target)) {
-      assert_scalar_logical(target)
-      target <- !target
-    }
-    structure(list(print_progress=verbose,
-                   print_noop=noop,
-                   print_command=command,
-                   print_command_abbreviate=command_abbreviate,
-                   quiet_target=target),
-              class="remake_verbose")
-  }
-}
-
 ## TODO: update this to take the filename as an argument:
 is_current <- function(target_name, obj=NULL, check=NULL) {
   if (is.null(obj)) {

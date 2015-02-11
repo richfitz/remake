@@ -1,10 +1,3 @@
-## These test various properties of targets.
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Target packages")
 
 test_that("bootstrap", {

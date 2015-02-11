@@ -1,9 +1,3 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Build")
 
 test_that("Build works", {
@@ -100,9 +94,10 @@ test_that("simple interface", {
   cleanup()
 })
 
-test_that("make_dependencies", {
+test_that("remake_dependencies", {
   cleanup()
-  e <- make_dependencies("plot.pdf")
+  m <- remake()
+  e <- remake_dependencies(m, "plot.pdf")
   expect_that(e, is_a("remake_environment"))
 
   expect_that(ls(e), equals("processed"))

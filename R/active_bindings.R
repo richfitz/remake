@@ -1,19 +1,3 @@
-##' Load bindings from \code{remake} into the global environment
-##' (\code{\link{.GlobalEnv}}.  The resulting objects are "active
-##' bindings" that when accessed will trigger a build of an object.
-##' @title Load remake bindings into the global environment
-##' @param remake_file Name of the remakefile to read.  By default
-##' \code{"remake.yml"}.
-##' @export
-remake_create_bindings <- function(remake_file="remake.yml") {
-  global_active_bindings$create_bindings(remake_file)
-}
-##' @export
-##' @rdname remake_create_bindings
-remake_delete_bindings <- function(remake_file="remake.yml") {
-  global_active_bindings$delete_bindings(remake_file)
-}
-
 binding_types <- function() {
   c("source", "target")
 }

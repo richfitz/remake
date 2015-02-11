@@ -1,9 +1,3 @@
-if (interactive()) {
-  devtools::load_all("../../")
-  library(testthat)
-  source("helper-remake.R")
-}
-
 context("Active binding functions")
 
 test_that("code_dependencies skips active bindings", {
@@ -37,7 +31,7 @@ test_that("global binding manager", {
 
 test_that("low level", {
   cleanup()
-  m <- remake::remake()
+  m <- remake()
   expect_that(global_active_bindings$files, equals(character(0)))
 
   ## Now, let's set the active bindings.
@@ -88,7 +82,7 @@ test_that("low level", {
 test_that("High level", {
   cleanup()
 
-  remake_create_bindings()
+  create_bindings()
   expect_that(exists("processed"), is_true())
   expect_that(is_active_binding("processed"), is_true())
 
@@ -101,7 +95,7 @@ test_that("High level", {
 
   expect_that(processed <<- 1, throws_error("read-only"))
 
-  remake_delete_bindings()
+  delete_bindings()
   expect_that(exists("processed"), is_false())
 })
 
@@ -111,7 +105,7 @@ test_that("Source changes trigger rebuild on variable access", {
   code <- "foo <- function() 2"
   writeLines(code, filename_code)
 
-  remake_create_bindings("remake_active.yml")
+  create_bindings("remake_active.yml")
 
   expect_that(exists("obj", .GlobalEnv), is_true())
   expect_that(is_active_binding("obj"), is_true())

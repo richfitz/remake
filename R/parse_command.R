@@ -245,7 +245,7 @@ target_is_file <- function(x) {
   is_file <- grepl("/", x, fixed=TRUE)
   check <- !is_file
   if (any(check)) {
-    is_file[check] <- tolower(file_extension(x[check])) %in% extensions()
+    is_file[check] <- tolower(file_extension(x[check])) %in% file_extensions()
   }
   is_file
 }

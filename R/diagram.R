@@ -1,21 +1,3 @@
-##' Plot the graph that remake generates.
-##'
-##' This is really just a placeholder, but I want this here early as
-##' an indication of where the package is headed.  Plus this is
-##' something I have always wanted in make.  Current version is not
-##' tunable on purpose.
-##' @title Make a figure with the dependency graph
-##' @param remake_file Name of remake file (default is
-##\code{remake.yml}).
-##' @param ... Additional arguments thta control formatting but aren't
-##' documented and are subject to change.
-##' @export
-diagram <- function(remake_file="remake.yml", ...) {
-  m <- remake(remake_file, load_sources=FALSE)
-  str <- remake_diagram_command(m, ...)
-  DiagrammeR::grViz(str)
-}
-
 diagram_nodes <- function(styles, classes) {
   assert_named_list(styles)
   assert_named_character(classes)
