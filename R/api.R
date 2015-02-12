@@ -354,26 +354,31 @@ list_targets <- function(remake_file="remake.yml",
                          include_cleanup_targets=FALSE,
                          include_chain_intermediates=FALSE) {
   obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
-
-  ok <- rep_along(TRUE, obj$targets)
-  if (!is.null(type)) {
-    ok[!(dependency_types(obj$targets) %in% type)] <- FALSE
-  }
-
-  if (!include_implicit_files) {
-    ok[vlapply(obj$targets, inherits, "target_file_implicit")] <- FALSE
-  }
-  if (!include_cleanup_targets) {
-    if ("cleanup" %in% type) {
-      warning("cleanup type listed in type, but also ignored")
-    }
-    ok[names(obj$targets) %in% cleanup_target_names()] <- FALSE
-  }
-  if (!include_chain_intermediates) {
-    ok[!vlapply(obj$targets, function(x) is.null(x$chain_parent))] <- FALSE
-  }
-
-  names(obj$targets[ok])
+  remake_list_targets(obj,
+                      type,
+                      include_implicit_files,
+                      include_cleanup_targets,
+                      include_chain_intermediates)
+}
+##' @rdname list_targets
+##' @param target_names Names of targets to list dependencies of (for
+##' \code{list_dependencies}).  These dependencies will be filtered as
+##' for \code{list_targets}.  Dependencies are listed in topological
+##' order: targets have no dependencies that occur later than them in
+##' the vector.
+##' @export
+list_dependencies <- function(target_names,
+                              type=NULL,
+                              include_implicit_files=FALSE,
+                              include_cleanup_targets=FALSE,
+                              include_chain_intermediates=FALSE,
+                              remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
+  remake_list_dependencies(obj, target_names,
+                           type,
+                           include_implicit_files,
+                           include_cleanup_targets,
+                           include_chain_intermediates)
 }
 
 ##' Attempts to add targets that remake will generate to your

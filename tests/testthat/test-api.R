@@ -39,6 +39,61 @@ test_that("list_targets", {
               equals(c(cmp, "chained{1}", "chained{2}")))
 })
 
+test_that("list_dependencies", {
+  ## In topological order!
+  expect_that(list_dependencies("all"),
+              equals(c("data.csv", "processed", "plot.pdf", "all")))
+  expect_that(list_dependencies("processed"),
+              equals(c("data.csv", "processed")))
+  expect_that(list_dependencies("data.csv"),
+              equals(c("data.csv")))
+  ## Cleanup targets usually get filtered:
+  expect_that(list_dependencies("purge"),
+              equals(character(0)))
+  expect_that(list_dependencies("purge", include_cleanup_targets=TRUE),
+              equals(c("tidy", "clean", "purge")))
+
+  ## Chains:
+  expect_that(list_dependencies("chained", remake_file="chain.yml"),
+              equals("chained"))
+  expect_that(list_dependencies("chained",
+                                include_chain_intermediates=TRUE,
+                                remake_file="chain.yml"),
+              equals(c("chained{1}", "chained{2}", "chained")))
+
+  ## Implicit targets:
+  expect_that(list_dependencies("plot.pdf", remake_file="remake2.yml"),
+              equals(c("processed", "plot.pdf")))
+  expect_that(list_dependencies("plot.pdf",
+                                include_implicit_files=TRUE,
+                                remake_file="remake2.yml"),
+              equals(c("data.csv", "processed", "plot.pdf")))
+
+  ## Filter by type:
+  expect_that(list_dependencies("all", type="object"),
+              equals("processed"))
+  expect_that(list_dependencies("all", type="fake"),
+              equals("all"))
+  expect_that(list_dependencies("all", type="file"),
+              equals(c("data.csv", "plot.pdf")))
+  expect_that(list_dependencies("all", type="cleanup"),
+              gives_warning("cleanup type listed"))
+  expect_that(list_dependencies("all", type="cleanup",
+                                include_cleanup_targets=TRUE),
+              equals(character(0)))
+
+  ## Corner case:
+  expect_that(list_dependencies(character(0)),
+              equals(character(0)))
+  ## The message is not ideal, but I'm OK with an error:
+  expect_that(list_dependencies(NA),
+              throws_error())
+
+  ## Invalid targets:
+  expect_that(list_dependencies("no_such_target"),
+              throws_error("Unknown target"))
+})
+
 test_that("auto_gitignore", {
   ## NOTE: .remake is ignored by the repo .gitignore file; these tests
   ## will fail if not running there.  It will also fail if the global

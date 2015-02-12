@@ -710,3 +710,29 @@ target_run <- function(target, store, quiet=NULL) {
     do.call(target$rule, args, envir=store$env$env),
     message=function(e) if (quiet) invokeRestart("muffleMessage"))
 }
+
+filter_targets <- function(targets, type=NULL,
+                           include_implicit_files=FALSE,
+                           include_cleanup_targets=FALSE,
+                           include_chain_intermediates=FALSE) {
+  ok <- rep_along(TRUE, targets)
+
+  if (!is.null(type)) {
+    ok[!(dependency_types(targets) %in% type)] <- FALSE
+  }
+
+  if (!include_implicit_files) {
+    ok[vlapply(targets, inherits, "target_file_implicit")] <- FALSE
+  }
+  if (!include_cleanup_targets) {
+    if ("cleanup" %in% type) {
+      warning("cleanup type listed in type, but also ignored")
+    }
+    ok[names(targets) %in% cleanup_target_names()] <- FALSE
+  }
+  if (!include_chain_intermediates) {
+    ok[!vlapply(targets, function(x) is.null(x$chain_parent))] <- FALSE
+  }
+
+  names(targets[ok])
+}

@@ -8,9 +8,12 @@ test_that("Chained rules", {
   expect_that(res, equals(6))
 
   ## There are two chain rules created:
-  expect_that(c("chained{1}", "chained{2}") %in% remake_target_names(m),
+  expect_that(c("chained{1}", "chained{2}") %in%
+              list_targets(remake_file="chain.yml"),
               equals(c(FALSE, FALSE)))
-  expect_that(c("chained{1}", "chained{2}") %in% remake_target_names(m, TRUE),
+  expect_that(c("chained{1}", "chained{2}") %in%
+              list_targets(remake_file="chain.yml",
+                           include_chain_intermediates=TRUE),
               equals(c(TRUE, TRUE)))
 
   t <- m$targets[["chained"]]

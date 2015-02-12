@@ -388,11 +388,31 @@ remake_dependencies <- function(obj, target_name, ...) {
   invisible(remake_environment(obj, deps_name, t))
 }
 
-remake_target_names <- function(obj, all=FALSE) {
-  if (!all) {
-    ok <- vlapply(obj$targets, function(x) is.null(x$chain_parent))
-    names(obj$targets[ok])
-  } else {
-    names(obj$targets)
+remake_list_targets <- function(obj, type=NULL,
+                                include_implicit_files=FALSE,
+                                include_cleanup_targets=FALSE,
+                                include_chain_intermediates=FALSE) {
+  filter_targets(obj$targets,
+                 type,
+                 include_implicit_files,
+                 include_cleanup_targets,
+                 include_chain_intermediates)
+}
+
+remake_list_dependencies <- function(obj, target_names, type=NULL,
+                                     include_implicit_files=FALSE,
+                                     include_cleanup_targets=FALSE,
+                                     include_chain_intermediates=FALSE) {
+  ## TODO: Perhaps this should  be done by dependencies?
+  if (!all(target_names %in% names(obj$targets))) {
+    stop("Unknown target: ",
+         paste(setdiff(target_names, names(obj$targets)), collapse=", "))
   }
+  graph <- remake_dependency_graph(obj)
+  target_names <- dependencies(target_names, graph)
+  filter_targets(obj$targets[target_names],
+                 type,
+                 include_implicit_files,
+                 include_cleanup_targets,
+                 include_chain_intermediates)
 }
