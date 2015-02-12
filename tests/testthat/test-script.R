@@ -8,10 +8,36 @@ test_that("Build works", {
 
   expect_that(print(src), prints_text("download_data"))
 
-  e <- source_character(src, envir=new.env(parent=.GlobalEnv))
+  ## Sourcing the script will run run various "source" commands which
+  ## will modify the global environment.  That's not really ideal.
+  extras <- c("do_plot", "clean_hook", "download_data", "myplot",
+              "process_data")
+  rm_all_remake_objects <- function() {
+    suppressWarnings(rm(list=c("processed", extras), envir=.GlobalEnv))
+  }
+  rm_all_remake_objects()
+  on.exit(rm_all_remake_objects())
 
-  expect_that(ls(e), equals("processed"))
+  ## With source rewriting:
+  e <- source_character(src, envir=new.env(parent=.GlobalEnv),
+                        rewrite_source=TRUE)
+  expect_that(sort(ls(e)), equals(sort(c("processed", extras))))
   expect_that(file.exists("plot.pdf"), is_true())
+  expect_that(any(exists(extras, .GlobalEnv, inherits=FALSE)),
+              is_false())
+
+  e <- source_character(src, envir=new.env(parent=.GlobalEnv),
+                        rewrite_source=FALSE)
+  expect_that(ls(e), equals("processed"))
+  expect_that(all(exists(extras, .GlobalEnv, inherits=FALSE)),
+              is_true())
+
+  e <- source_character(src)
+  expect_that(e, is_identical_to(.GlobalEnv))
+  expect_that(all(c("processed", extras) %in% ls(.GlobalEnv)),
+              is_true())
+
+  rm_all_remake_objects()
   cleanup()
 })
 
@@ -22,7 +48,7 @@ test_that("Build works with plotting target", {
   expect_that(unclass(src), is_a("character"))
 
   e <- source_character(src, envir=new.env(parent=.GlobalEnv))
-  expect_that(ls(e), equals("processed"))
+  expect_that("processed" %in% ls(e), is_true())
   expect_that(file.exists("plot.pdf"), is_true())
   cleanup()
 })

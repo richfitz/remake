@@ -4,7 +4,7 @@
 \alias{source_character}
 \title{Source a remake script}
 \usage{
-source_character(str, envir = .GlobalEnv)
+source_character(str, envir = .GlobalEnv, rewrite_source = TRUE)
 }
 \arguments{
 \item{str}{A character vector containing code to be sourced.  Each
@@ -12,6 +12,15 @@ element of the vector will be treated as a separate line.}
 
 \item{envir}{An environment to source into (by default the global
 environment).}
+
+\item{rewrite_source}{Because calls to \code{source} within a
+script will still be evaluated in the global environment, so this
+may have side-effects when running in a non-global
+environment.  Setting \code{rewrite_source=TRUE} (the default)
+attempts to rewrite top-level calls to \code{source} to source
+locally.  This is likely error prone but the current
+implementation matches the way that \code{make_script} produces
+calls to \code{source}.}
 }
 \value{
 The environment into which the code is sourced,

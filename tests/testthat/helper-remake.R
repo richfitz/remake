@@ -10,12 +10,13 @@ cleanup <- function() {
                                  "test.zip", "remake.zip",
                                  "code_literal.R",
                                  "remake_active.R",
+                                 "remake",
                                  "tmp_quoting.yml")))
   unlink("figure", recursive=TRUE)
   unlink("test", recursive=TRUE)
   unlink("source_dir", recursive=TRUE)
-  cache$clear()
-  global_active_bindings$clear()
+  remake:::cache$clear()
+  remake:::global_active_bindings$clear()
   invisible(NULL)
 }
 

@@ -30,20 +30,23 @@ make <- function(target_name=NULL, ..., remake_file="remake.yml",
 ##' @param target_name Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
 ##' remakefile).
-##' @param ... Additional future arguments, ignored for now.
-##' Practically this means that all other arguments must be specified
-##' by full name.
-##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml}).  This is passed to \code{remake()}.
+##' @param verbose Be verbose when loading the remake file?
 ##' @param filename A filename to save the resulting script into.  If
 ##' \code{NULL} (the default) then an a character vector is returned
 ##' that can be inspected.  It can also be sourced without writing to
 ##' file using \code{\link{source_character}}.
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml}).  This is passed to \code{remake()}.
+##' @param ... Additional future arguments, ignored for now.
+##' Practically this means that all other arguments must be specified
+##' by full name.
 ##' @export
-make_script <- function(target_name=NULL, filename=NULL,
+make_script <- function(target_name=NULL,
+                        verbose=FALSE,
+                        filename=NULL,
                         remake_file="remake.yml") {
-  scr <- remake_script(remake(remake_file, load_sources=FALSE),
-                       target_name)
+  m <- remake(remake_file, verbose=verbose, load_sources=FALSE)
+  scr <- remake_script(m, target_name)
   if (is.null(filename)) {
     scr
   } else {
@@ -282,6 +285,14 @@ file_extensions <- function() {
 ##' element of the vector will be treated as a separate line.
 ##' @param envir An environment to source into (by default the global
 ##' environment).
+##' @param rewrite_source Because calls to \code{source} within a
+##' script will still be evaluated in the global environment, so this
+##' may have side-effects when running in a non-global
+##' environment.  Setting \code{rewrite_source=TRUE} (the default)
+##' attempts to rewrite top-level calls to \code{source} to source
+##' locally.  This is likely error prone but the current
+##' implementation matches the way that \code{make_script} produces
+##' calls to \code{source}.
 ##' @return The environment into which the code is sourced,
 ##' invisibly.  This is primarily useful when used as
 ##' \code{source_remake_script(script, envir=new.env())}, as the
@@ -293,8 +304,24 @@ file_extensions <- function() {
 ##'          "plot(x, y)")
 ##' e <- source_character(str, envir=new.env())
 ##' ls(e) # x, y
-source_character <- function(str, envir=.GlobalEnv) {
+source_character <- function(str, envir=.GlobalEnv, rewrite_source=TRUE) {
   assert_character(str)
+  if (!identical(envir, .GlobalEnv) && rewrite_source) {
+    ## TODO: should do this with parse or the codeTools stuff
+    ## probably.  For now I'm trying to match how this is written
+    ## out.  It's not beautiful for sure.  We would not want to
+    ## rewrite a line where source has been redefined of course!
+    str <- sub('^source\\("(.*)"\\)$', 'source("\\1", local=TRUE)', str)
+    ## This way runs with R's parser, but I'm not convinced it's much
+    ## better:
+    ## f <- function(x) {
+    ##   if (length(x) == 2L && identical(x[[1]], as.name("source"))) {
+    ##     x <- call("source", x[[2]], local=FALSE)
+    ##   }
+    ##   deparse(x)
+    ## }
+    ## str <- vcapply(parse(text=str), f)
+  }
   dest <- tempfile()
   writeLines(str, dest)
   on.exit(file.remove(dest))

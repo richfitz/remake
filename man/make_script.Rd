@@ -4,13 +4,15 @@
 \alias{make_script}
 \title{Make a single target}
 \usage{
-make_script(target_name = NULL, filename = NULL,
+make_script(target_name = NULL, verbose = FALSE, filename = NULL,
   remake_file = "remake.yml")
 }
 \arguments{
 \item{target_name}{Character vector of names of targets to build,
 or \code{NULL} to build the default target (if specified in the
 remakefile).}
+
+\item{verbose}{Be verbose when loading the remake file?}
 
 \item{filename}{A filename to save the resulting script into.  If
 \code{NULL} (the default) then an a character vector is returned
