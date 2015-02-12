@@ -131,3 +131,33 @@ test_that("auto_gitignore", {
   expect_that(auto_gitignore(), equals(character(0)))
   expect_that(readLines(".gitignore"), is_identical_to(str))
 })
+
+## This one is pretty well tested via remake_environment so probably
+## don't need to go crazy here.
+test_that("make_environment", {
+  cleanup()
+  e <- make_environment()
+  expect_that(ls(e),
+              equals(c("clean_hook", "do_plot", "download_data",
+                       "myplot", "process_data")))
+  ## TODO: Throw a better error:
+  expect_that(make_environment("processed"),
+              throws_error("key processed not found in object store"))
+  make()
+  expect_that("processed" %in% ls(make_environment("processed")),
+              is_true())
+
+  make(c("manual", "chained"), remake_file="chain.yml")
+  ## This *should* throw an error!  But because we share an object
+  ## store it works just fine.  This is more reason for different
+  ## stores to have different prefixes.
+  ## e <- make_environment(c("manual", "chained"))
+  e <- make_environment(c("manual", "chained"),
+                        dependencies=TRUE,
+                        copy_functions=FALSE,
+                        remake_file="chain.yml")
+
+  expect_that(sort(ls(e)),
+              equals(sort(c("chained", "manual", "manual_pt1",
+                            "manual_pt2"))))
+})

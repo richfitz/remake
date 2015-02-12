@@ -422,3 +422,36 @@ auto_gitignore <- function(remake_file="remake.yml", check_git=TRUE,
     invisible(files)
   }
 }
+
+##' Construct an environment with remake target products, useful for
+##' debugging.  Once you have an environment, you can
+##' \code{\link{attach}} it (yes, it \emph{is} useful for something,
+##' but be careful to \code{detach} later), extract elements or browse
+##' it.
+##' @title Construct environment
+##' @param target_names Vector of target names to export.  If omitted,
+##' then no targets are copied, though functions are still copied.
+##' @param dependencies Should the dependenciesof \code{target_names}
+##' also be copied over?  Setting this to \code{TRUE} is equivalent to
+##' \code{make_environment(list_dependencies(target_names, type="file"))}
+##' but shorter to type.
+##' @param copy_functions Should functions be directly copied into
+##' the retuned environment?  If \code{FALSE}, then the returned
+##' environment has an environment with functions as its
+##' \emph{parent}.  This is the same as the environment used by
+##' \code{remake} so don't assign anything in here!  (This may change
+##' if it ends up being a point of fragility.)
+##' @param verbose Be verbose?
+##' @param remake_file Remake file to use, by default
+##' \code{remake.yml}.
+##' @export
+make_environment <- function(target_names=character(0),
+                             dependencies=FALSE,
+                             copy_functions=TRUE,
+                             verbose=TRUE,
+                             remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=verbose)
+  remake_environment(obj, target_names,
+                     dependencies=dependencies,
+                     copy_functions=copy_functions)
+}

@@ -120,6 +120,9 @@ object_store <- R6Class(
 
     ## This is a *one way* function; changes won't be automatically
     ## propagated.
+    ##
+    ## TODO: need to assert that everything is here before running
+    ## export, otherwise we get weird errors.
     export=function(list=NULL, envir=.GlobalEnv, delayed=FALSE) {
       if (is.null(list)) {
         list <- self$ls()
@@ -142,6 +145,10 @@ object_store <- R6Class(
           assign(name_out, self$get(name_in), envir=envir)
         }
       }
+      ## msg <- !self$contains(list)
+      ## if (any(msg)) {
+      ##   stop("Missing objects: ", paste(msg, collapse=", "))
+      ## }
       for (i in seq_along(list)) {
         do_assign(names_out[i], list[i])
       }

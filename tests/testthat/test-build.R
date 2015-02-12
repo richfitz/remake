@@ -94,50 +94,6 @@ test_that("simple interface", {
   cleanup()
 })
 
-test_that("remake_dependencies", {
-  cleanup()
-  m <- remake()
-  e <- remake_dependencies(m, "plot.pdf")
-  expect_that(e, is_a("remake_environment"))
-
-  expect_that(ls(e), equals("processed"))
-
-  expect_that(remake_attach(e),
-              shows_message("Remake environment for building"))
-  expect_that("remake:plot.pdf" %in% search(), is_true())
-  expect_that("remake:functions" %in% search(), is_true())
-
-  expect_that(exists("processed"), is_true())
-  expect_that(processed, is_a("data.frame"))
-
-  expect_that(remake_detach(),
-              shows_message("Detaching"))
-  expect_that(remake_detach(),
-              gives_warning("No remake environments found on search path"))
-  expect_that(remake_detach(warn=FALSE),
-              not(gives_warning()))
-  expect_that(exists("processed"), is_false())
-
-  expect_that(remake_attach(e, verbose=FALSE),
-              not(shows_message()))
-  expect_that(exists("processed"), is_true())
-  expect_that(remake_detach(verbose=FALSE),
-              not(shows_message()))
-  expect_that(exists("processed"), is_false())
-})
-
-test_that("remake environment", {
-  cleanup()
-  m <- remake("remake.yml")
-  expect_that(remake_environment(m, "processed"),
-              throws_error("not found in object store"))
-  remake_make(m, "processed")
-  e <- remake_environment(m, "processed")
-  expect_that(attr(e, "target"), is_null())
-  expect_that(ls(e), equals("processed"))
-  expect_that(exists("download_data", e), is_true())
-})
-
 test_that("extra dependencies", {
   cleanup()
   m <- remake("remake_extra_deps.yml")

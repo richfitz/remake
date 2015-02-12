@@ -352,3 +352,23 @@ git_exists <- function() {
 git_sha <- function() {
   system2("git", c("rev-parse", "HEAD"), stdout=TRUE, stderr=FALSE)
 }
+
+copy_environment <- function(from, to) {
+  for (i in ls(from, all.names=TRUE)) {
+    assign(i, get(i, from), to)
+  }
+}
+
+## Not sure about this one...
+browse_environment <- function(e, ...) {
+  f <- function(.envir) {
+    for (.obj in ls(envir=.envir, all.names=TRUE)) {
+      tryCatch(assign(.obj, get(.obj, envir=e)),
+               error = function(e) {})
+    }
+    rm(.obj, .envir)
+    browser()
+  }
+  environment(f) <- parent.env(e)
+  f(e)
+}

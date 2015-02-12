@@ -376,18 +376,6 @@ remake_make1 <- function(obj, target_name, dry_run=FALSE, force=FALSE,
   invisible(last)
 }
 
-## TODO: I'm not sure this one is actually useful.
-remake_dependencies <- function(obj, target_name, ...) {
-  assert_has_target(target_name, obj)
-  t <- obj$targets[[target_name]]
-
-  remake_print_message(obj, "ENV", t$name, style="angle")
-  remake_make1(obj, target_name, ..., dependencies_only=TRUE)
-  deps_name <- t$depends_name[t$depends_type == "object"]
-
-  invisible(remake_environment(obj, deps_name, t))
-}
-
 remake_list_targets <- function(obj, type=NULL,
                                 include_implicit_files=FALSE,
                                 include_cleanup_targets=FALSE,
