@@ -12,7 +12,9 @@ auto_gitignore(remake_file = "remake.yml", check_git = TRUE,
 \code{remake.yml}.}
 
 \item{check_git}{Use the output of \code{git check-ignore} to
-determine which files are already ignored?}
+determine which files are already ignored?  This is only done if
+git is detected to be installed and if the working directory
+appears to be in a git repository.}
 
 \item{dry_run}{Don't modify the .gitignore, but instead return a
 character vector of what \emph{would} be added.}

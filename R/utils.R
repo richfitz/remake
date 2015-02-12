@@ -320,23 +320,35 @@ append_lines <- function(text, file) {
   writeLines(c(existing, text), file)
 }
 
-## Looks like this doesn't actually *fail* on windows, but throws a
-## warning.  That's charming.  So on *windows* we need to treat
-## warnings as errors 
+## Attempt to work out if git ignores a set of files.  Returns a
+## logical vector along the set.  If git is not installed, if we're
+## not in a git repo, or if there is an error running `git
+## check-ignore`, then all files are assumed not to be ignored.
 git_ignores <- function(files) {
-  if (length(files) == 0) {
-    logical(0)
+  if (length(files) == 0L || !git_exists()) {
+    rep_along(FALSE, files)
   } else {
     tmp <- tempfile()
     on.exit(file.remove(tmp))
     writeLines(files, tmp)
 
-    ## Try to turn command failure into an error everywhere
-    ignored <-
-      tryCatch(system2("git", c("check-ignore", "--stdin"),
-                       stdin=tmp, stdout=TRUE),
-               warning=function(e) stop(e))
-
+    recover_git <- function(e) {
+      warning(e)
+      character(0)
+    }
+    ignored <- tryCatch(system2("git", c("check-ignore", "--stdin"),
+                                stdin=tmp, stdout=TRUE, stderr=FALSE),
+                        condition=recover_git)
     files %in% ignored
   }
+}
+
+## Checks that git exists *and* that we're running in a git repo.
+git_exists <- function() {
+  res <- tryCatch(git_sha(), condition=function(e) e)
+  !inherits(res, "condition")
+}
+
+git_sha <- function() {
+  system2("git", c("rev-parse", "HEAD"), stdout=TRUE, stderr=FALSE)
 }

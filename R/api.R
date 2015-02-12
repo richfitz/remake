@@ -329,14 +329,16 @@ list_targets <- function(remake_file="remake.yml",
 ##' @param remake_file Name of the remake file to use, by default
 ##' \code{remake.yml}.
 ##' @param check_git Use the output of \code{git check-ignore} to
-##' determine which files are already ignored?
+##' determine which files are already ignored?  This is only done if
+##' git is detected to be installed and if the working directory
+##' appears to be in a git repository.
 ##' @param dry_run Don't modify the .gitignore, but instead return a
 ##' character vector of what \emph{would} be added.
 ##' @export 
 auto_gitignore <- function(remake_file="remake.yml", check_git=TRUE,
                            dry_run=FALSE) {
   files <- c(".remake", list_targets(remake_file, type="file"))
-  if (check_git) {
+  if (check_git && git_exists()) {
     ignored <- try(git_ignores(files))
     if (!inherits(ignored, "try-error")) {
       files <- files[!ignored]

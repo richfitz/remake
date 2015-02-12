@@ -43,11 +43,9 @@ test_that("auto_gitignore", {
   ## NOTE: .remake is ignored by the repo .gitignore file; these tests
   ## will fail if not running there.  It will also fail if the global
   ## gitignore is set and ignores anything here (which is moderately
-  ## unlikely).
-  ignore_remake <- try(git_ignores(".remake"), silent=TRUE)
-  if (inherits(ignore_remake, "try-error")) {
-    skip("Looks like git is not installed")
-  }
+  ## unlikely).  In any case, these tests are horribly fragile :(
+  has_git <- git_exists()
+  ignore_remake <- git_ignores(".remake")
   x <- if (ignore_remake) character(0) else ".remake"
 
   tmp <- backup(".gitignore")
@@ -56,15 +54,19 @@ test_that("auto_gitignore", {
   file.remove(".gitignore")
   expect_that(auto_gitignore(dry_run=TRUE),
               equals(c(x, "data.csv", "plot.pdf")))
+
   writeLines("plot.pdf", ".gitignore")
   expect_that(auto_gitignore(dry_run=TRUE),
               equals(c(x, "data.csv")))
   expect_that(auto_gitignore("remake2.yml", dry_run=TRUE),
               equals(c(x, character(0))))
+  expect_that(auto_gitignore(dry_run=TRUE, check_git=FALSE),
+              equals(c(".remake", "data.csv")))
 
+  ## Glob:
   writeLines("*.pdf", ".gitignore")
   expect_that(auto_gitignore(dry_run=TRUE),
-              equals(c(x, "data.csv")))
+              equals(c(x, "data.csv", if (!has_git) "plot.pdf")))
   expect_that(auto_gitignore(check_git=FALSE, dry_run=TRUE),
               equals(c(".remake", "data.csv", "plot.pdf")))
 

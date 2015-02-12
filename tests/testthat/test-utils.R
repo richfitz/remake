@@ -47,3 +47,15 @@ test_that("zip_dir", {
   expect_that(all(expected %in% contents$Name), is_true())
   file.remove("test.zip")
 })
+
+test_that("git_exists", {
+  ## Definitely not in a temp directory:
+  owd <- setwd(tempdir())
+  on.exit(setwd(owd))
+  expect_that(git_exists(), not(throws_error()))
+  expect_that(git_exists(), not(gives_warning()))
+  expect_that(git_exists(), is_false())
+
+  expect_that(git_ignores(character(0)), equals(logical(0)))
+  expect_that(git_ignores("foo"), equals(FALSE))
+})
