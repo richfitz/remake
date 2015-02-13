@@ -37,7 +37,7 @@ remake_new <- function(remake_file="remake.yml", verbose=TRUE,
   ## This is not totally clear that it's a good idea, but I really
   ## like it when this prints if the file has changed.  This might be
   ## controllable by an argument to this function soon?
-  remake_print_message(obj, "READ", "", "# reloading remakefile")
+  remake_print_message(obj, "LOAD", "")
 
   obj$hash <- obj$config$hash
   ## Do this when config is actualy there, and if it's not explicitly
@@ -184,6 +184,7 @@ status_colour <- function(str) {
          CLEAN="orange",
          DEL="red1",
          UTIL="darkorchid3",
+         LOAD="yellow1",
          READ="yellow1",
          PLOT="dodgerblue2",
          KNIT="hotpink",
@@ -203,6 +204,7 @@ paint <- function(str, col) {
 }
 
 ## TODO: update this to take the filename as an argument:
+## TODO: split into remake_is_current and is_current.
 is_current <- function(target_name, obj=NULL, check=NULL) {
   if (is.null(obj)) {
     obj <- remake()
@@ -214,6 +216,14 @@ is_current <- function(target_name, obj=NULL, check=NULL) {
 assert_has_target <- function(target_name, obj) {
   if (!(target_name %in% names(obj$targets))) {
     stop("No such target ", target_name)
+  }
+}
+
+assert_has_targets <- function(target_names, obj) {
+  if (!all(target_names %in% names(obj$targets))) {
+    stop("No such target ",
+         paste(setdiff(target_names, names(obj$targets)),
+               collapse=", "))
   }
 }
 
@@ -403,4 +413,17 @@ remake_list_dependencies <- function(obj, target_names, type=NULL,
                  include_implicit_files,
                  include_cleanup_targets,
                  include_chain_intermediates)
+}
+
+remake_is_current <- function(obj, target_names, check=NULL) {
+  assert_has_targets(target_names, obj)
+  vlapply(obj$targets[target_names], function(x)
+    target_is_current(x, obj$store, check))
+}
+
+assert_is_current <- function(obj, target_names, check=NULL) {
+  ok <- remake_is_current(obj, target_names)
+  if (!all(ok)) {
+    stop("Target not current: ", paste(names(ok[!ok]), collapse=", "))
+  }
 }

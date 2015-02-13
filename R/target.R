@@ -330,8 +330,16 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
     code <- store$env$deps$info(target$rule)
   }
 
+  ## Here, missing_ok needs to be true I think, or we can't ask about
+  ## the status of things that don't exist yet; it's different to the
+  ## previous missing_ok's which are about upstream dependencies.
+  hash <- store$get_hash(target$name, target$type, TRUE)
+
   list(version=store$version,
        name=target$name,
+       type=target$type,
+       hash=hash,
+       time=Sys.time(),
        depends=depends,
        fixed=fixed,
        code=code)
@@ -537,6 +545,8 @@ target_set <- function(target, store, value) {
                  dependency_status(target, store, check="all"))
   } else if (target$type == "object") {
     store$objects$set(target$name, value)
+    ## NOTE: Must do *after* setting the object, because we'll look up
+    ## the hash in a during dependency_status
     store$db$set(target$name,
                  dependency_status(target, store, check="all"))
   } else {

@@ -11,6 +11,7 @@ test_that("simple run", {
   ## This is possibly overkill:
   cmp <- list(version=m$store$version,
               name="data.csv",
+              type="file",
               depends=empty_named_list(),
               fixed=hash_object(list("data.csv")),
               code=list(
@@ -18,11 +19,14 @@ test_that("simple run", {
                                  m$store$env$env$download_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
-  expect_that(dependency_status(m$targets[["data.csv"]], m$store, TRUE),
-              equals(cmp))
+  x <- dependency_status(m$targets[["data.csv"]], m$store, TRUE)
+  expect_that(x[names(cmp)], equals(cmp))
+  expect_that(sort(setdiff(names(x), names(cmp))),
+              equals(sort(c("hash", "time"))))
 
   cmp <- list(version=m$store$version,
               name="processed",
+              type="object",
               depends=list("data.csv"=NA_character_),
               fixed=NULL,
               code=list(
@@ -30,8 +34,10 @@ test_that("simple run", {
                                  m$store$env$env$process_data)),
                 packages=list(utils=as.character(
                                 packageVersion("utils")))))
-  expect_that(dependency_status(m$targets[["processed"]], m$store, TRUE),
-              equals(cmp))
+  x <- dependency_status(m$targets[["processed"]], m$store, TRUE)
+  expect_that(x[names(cmp)], equals(cmp))
+  expect_that(sort(setdiff(names(x), names(cmp))),
+              equals(sort(c("hash", "time"))))
 
   ## NOTE: I don't really understand why we're sensitive to order
   ## here, differently from the command line and within R.  It seems
@@ -44,6 +50,7 @@ test_that("simple run", {
   res$code$packages <- res$code$packages[pkgs]
   cmp <- list(version=m$store$version,
               name="plot.pdf",
+              type="file",
               depends=list(processed=NA_character_),
               fixed=hash_object(list("plot.pdf")),
               code=list(
@@ -54,7 +61,9 @@ test_that("simple run", {
                   grDevices=as.character(packageVersion("grDevices")),
                   graphics=as.character(packageVersion("graphics"))
                   )))
-  expect_that(res, equals(cmp))
+  expect_that(res[names(cmp)], equals(cmp))
+  expect_that(sort(setdiff(names(res), names(cmp))),
+              equals(sort(c("hash", "time"))))
 
   ## Run the build system manually:
   remake_update(m, "data.csv", force=TRUE)

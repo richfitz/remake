@@ -166,3 +166,9 @@ assert_directory <- function(x, name=deparse(substitute(x))) {
     stop(sprintf("'%s' is not a directory", x), call.=FALSE)
   }
 }
+
+assert_remake_archive <- function(filename) {
+  if (!is_archive(filename)) {
+    stop(sprintf("'%s' is not a remake archive", filename))
+  }
+}

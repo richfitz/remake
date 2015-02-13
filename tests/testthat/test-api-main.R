@@ -1,4 +1,4 @@
-context("Main script")
+context("API: Main script")
 
 test_that("Default arguments", {
   ## Defaults:
@@ -54,7 +54,7 @@ test_that("Multiple targets", {
   ## TODO: This would be heaps easier if we logged what we did
   ## somewhere.
   expected <- c(
-    "[  READ ]",
+    "[  LOAD ]",
     "[  READ ]",
     "<  MAKE > processed",
     "[ BUILD ] data.csv",
@@ -82,7 +82,7 @@ test_that("Different remake file", {
 test_that("Script", {
   cleanup()
   expect_that(main(c("-s")),
-              shows_message("READ"))
+              shows_message("LOAD"))
   ## With quiet:
   expect_that(main(c("-s", "-q")),
               not(shows_message("READ")))

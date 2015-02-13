@@ -40,10 +40,6 @@ test_that("Can't do much with fake targets", {
   t <- make_target("a_fake_target", list(type="fake"))
   expect_that(target_get(t), throws_error("Not something that can be"))
   expect_that(target_set(t), throws_error("Not something that can be"))
-  expect_that(archive_export_target(t),
-              throws_error("Not something that can be"))
-  expect_that(archive_export_target(t, tempdir()),
-              throws_error("Not something that can be"))
 })
 
 test_that("Fake targets (invalid)", {
@@ -336,7 +332,10 @@ test_that("get/set/archive object targets", {
 
   name <- paste0(digest::digest(t$name), ".rds")
   expect_that(dir(file.path(path, "db")), equals(name))
-  expect_that(readRDS(file.path(path, "db", name)), equals(dep))
+  res <- readRDS(file.path(path, "db", name))
+  expect_that(res[names(res) != "time"],
+              equals(dep[names(dep) != "time"]))
+  expect_that(dep$time, is_more_than(res$time))
   unlink(path, recursive=TRUE)
 
   ## Set this to rubbish values:
@@ -350,8 +349,6 @@ test_that("get/set/archive object targets", {
   expect_that(archive_export_target(t, m$store, path),
               throws_error("processed not found in object store"))
 
-  expect_that(archive_export_target(t, m$store, path, missing_ok=TRUE),
-              is_false())
   unlink(path, recursive=TRUE)
 })
 
@@ -375,7 +372,10 @@ test_that("get/set/archive file targets", {
 
   name <- paste0(digest::digest(t$name), ".rds")
   expect_that(dir(file.path(path, "db")), equals(name))
-  expect_that(readRDS(file.path(path, "db", name)), equals(dep))
+  res <- readRDS(file.path(path, "db", name))
+  expect_that(res[names(res) != "time"],
+              equals(dep[names(dep) != "time"]))
+  expect_that(dep$time, is_more_than(res$time))
   unlink(path, recursive=TRUE)
 
   remake_remove_target(m, "plot.pdf")
@@ -385,8 +385,6 @@ test_that("get/set/archive file targets", {
   expect_that(archive_export_target(t, m$store, path),
               throws_error("plot.pdf not found in file store"))
 
-  expect_that(archive_export_target(t, m$store, path, missing_ok=TRUE),
-              is_false())
   unlink(path, recursive=TRUE)
 })
 

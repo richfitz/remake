@@ -12,17 +12,18 @@
 ##' @param ... Additional future arguments, ignored for now.
 ##' Practically this means that all other arguments must be specified
 ##' by full name.
-##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml}).
 ##' @param verbose Controls whether remake is verbose or not.  By
 ##' default it is (\code{TRUE}), which prints out the name of each
 ##' target as it is built/checked.  This argument is passed to
 ##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
 ##' \code{FALSE} and also the result of calling
 ##' \code{\link{remake_verbose}}.
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml}).
 ##' @export
-make <- function(target_name=NULL, ..., remake_file="remake.yml",
-                 verbose=TRUE) {
+make <- function(target_name=NULL, ...,
+                 verbose=TRUE,
+                 remake_file="remake.yml") {
   remake_make(remake(remake_file, verbose), target_name)
 }
 

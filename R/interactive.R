@@ -11,9 +11,9 @@
       private$initialize_remake()
     },
 
-    make=function(target_names=NULL, ...) {
+    make=function(target_name=NULL, ...) {
       self$active <- TRUE # NOTE: this is an active binding method!
-      remake_make(self$m, target_names, ...)
+      remake_make(self$m, target_name, ...)
     }
   ),
 
