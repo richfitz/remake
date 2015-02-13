@@ -10,15 +10,17 @@ test_that("Archive export", {
 
   expect_that(is_archive("remake.zip"), is_true())
   expect_that(is_archive(), is_true())
-  expect_that(list_archive(),
-              equals(c("processed", "data.csv", "plot.pdf")))
+  expect_that(sort(list_archive()),
+              equals(sort(c("processed", "data.csv", "plot.pdf"))))
 
 
   d <- list_archive(detail=TRUE)
   expect_that(d, is_a("data.frame"))
   expect_that(rownames(d), is_identical_to(list_archive()))
   expect_that(names(d), equals(c("type", "time", "hash")))
-  expect_that(d$type, equals(c("object", "file", "file")))
+  ## TODO: implement an unsorted compare.
+  expect_that(sort(d$type),
+              equals(sort(c("object", "file", "file"))))
   expect_that(d$time, is_a("POSIXct"))
   expect_that(d$hash, is_a("character"))
 
