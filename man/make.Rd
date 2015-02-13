@@ -2,12 +2,12 @@
 % Please edit documentation in R/api.R
 \name{make}
 \alias{make}
-\title{Make a single target}
+\title{Make one or more targets}
 \usage{
-make(target_name = NULL, ..., verbose = TRUE, remake_file = "remake.yml")
+make(target_names = NULL, ..., verbose = TRUE, remake_file = "remake.yml")
 }
 \arguments{
-\item{target_name}{Character vector of names of targets to build,
+\item{target_names}{Character vector of names of targets to build,
 or \code{NULL} to build the default target (if specified in the
 remakefile).}
 
@@ -26,6 +26,6 @@ target as it is built/checked.  This argument is passed to
 \code{remake.yml}).}
 }
 \description{
-Make a single target
+Make one or more targets
 }
 

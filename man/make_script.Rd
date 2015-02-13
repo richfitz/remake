@@ -2,13 +2,13 @@
 % Please edit documentation in R/api.R
 \name{make_script}
 \alias{make_script}
-\title{Make a single target}
+\title{Write standalone script to make targets}
 \usage{
-make_script(target_name = NULL, verbose = FALSE, filename = NULL,
+make_script(target_names = NULL, verbose = FALSE, filename = NULL,
   remake_file = "remake.yml")
 }
 \arguments{
-\item{target_name}{Character vector of names of targets to build,
+\item{target_names}{Character vector of names of targets to build,
 or \code{NULL} to build the default target (if specified in the
 remakefile).}
 
@@ -27,6 +27,6 @@ Practically this means that all other arguments must be specified
 by full name.}
 }
 \description{
-Make a single target
+Write standalone script to make targets
 }
 

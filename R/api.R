@@ -5,8 +5,8 @@
 ## Main functionality:
 ######################################################################
 
-##' @title Make a single target
-##' @param target_name Character vector of names of targets to build,
+##' @title Make one or more targets
+##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
 ##' remakefile).
 ##' @param ... Additional future arguments, ignored for now.
@@ -21,14 +21,14 @@
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml}).
 ##' @export
-make <- function(target_name=NULL, ...,
+make <- function(target_names=NULL, ...,
                  verbose=TRUE,
                  remake_file="remake.yml") {
-  remake_make(remake(remake_file, verbose), target_name)
+  remake_make(remake(remake_file, verbose), target_names)
 }
 
-##' @title Make a single target
-##' @param target_name Character vector of names of targets to build,
+##' @title Write standalone script to make targets
+##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
 ##' remakefile).
 ##' @param verbose Be verbose when loading the remake file?
@@ -42,12 +42,12 @@ make <- function(target_name=NULL, ...,
 ##' Practically this means that all other arguments must be specified
 ##' by full name.
 ##' @export
-make_script <- function(target_name=NULL,
+make_script <- function(target_names=NULL,
                         verbose=FALSE,
                         filename=NULL,
                         remake_file="remake.yml") {
   m <- remake(remake_file, verbose=verbose, load_sources=FALSE)
-  scr <- remake_script(m, target_name)
+  scr <- remake_script(m, target_names)
   if (is.null(filename)) {
     scr
   } else {
