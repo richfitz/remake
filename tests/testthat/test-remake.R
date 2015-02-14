@@ -140,8 +140,15 @@ test_that("literals", {
   res <- remake_make(m, "data5")
   expect_that(res, is_identical_to(list("my_constant", pi)))
 
-  res <- remake_make(m, "data6")
-  expect_that(res, is_identical_to(list("my_constant", pi, list(TRUE))))
+  ## This one here turns out to be considerably more complicated; it
+  ## will depend on whether the target of the I() command clashes with
+  ## an existing target.  I don't think that this should be allowed.
+  ## Do the check during the current "clash" check in
+  ## remake_internals.  I guess we're looking for non-argument entries
+  ## that are symbols.
+  ##
+  ## res <- remake_make(m, "data6")
+  ## expect_that(res, is_identical_to(list("my_constant", pi, list(TRUE))))
 
   ## Rewrite the code and check that it forces a rebuild as the
   ## *value* of the constant changes.
@@ -158,6 +165,9 @@ test_that("literals", {
   expect_that(db$depends, equals(empty_named_list()))
   expect_that(db$code$functions, equals(empty_named_list()))
   expect_that(db$code$packages, equals(list()))
+
+  expect_that(res <- make("data3", remake_file="remake_literal.yml"),
+              not(shows_message("BUILD")))
 })
 
 test_that("Caching", {

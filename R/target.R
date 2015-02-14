@@ -451,6 +451,7 @@ target_chain_match_dot <- function(x, pos, chain_names) {
     }
     dot_name <- chain_names[[pos - 1L]]
     x$depends_name[[j]] <- dot_name
+    x$command[[j + 1L]] <- as.name(dot_name)
     ## NOTE: there is a chance this is fragile.
     names(x$depends)[[j]] <- dot_name
   } else { # defensive - should be safe here.
@@ -574,42 +575,6 @@ target_check_quoted <- function(target) {
   }
 }
 
-dependencies_as_args <- function(target, store, fake=FALSE) {
-  if (is.null(target$rule)) {
-    list()
-  } else {
-    template <- target$args_template
-
-    if (fake) {
-      ## Quote template arguments that are character strings *and*
-      ## that nothing else will replace.  We could precompute this,
-      ## and probably should.
-      ##
-      ## Not sure where that makes the most sense to do though.
-      ## Probably we're going to do lookup on other arguments after
-      ## loading, so that would make most sense.  For now this will
-      ## do.
-      fixed <- which(!target$arg_is_target)
-      fixed_character <- fixed[vlapply(template[fixed], is.character)]
-      template[fixed_character] <-
-        lapply(template[fixed_character], sprintf, fmt='"%s"')
-      ## i <- setdiff(which(vlapply(template, is.character)),
-      ##              target$depends)
-      ## template[i] <- lapply(template[i], sprintf, fmt='"%s"')
-    }
-
-    is_arg <- !is.na(target$depends)
-    deps_name <- target$depends_name
-    deps_type <- unname(target$depends_type)
-    deps <- lapply(which(is_arg), function(i)
-                   list(name=deps_name[[i]], type=deps_type[[i]]))
-    args <- lapply(deps, function(x) target_get(x, store, fake))
-
-    template[as.integer(target$depends[is_arg])] <- args
-    template
-  }
-}
-
 plot_args <- function(target, fake=FALSE) {
   str <- if (fake) sprintf('"%s"', target$name) else target$name
   c(str, target$plot$args)
@@ -621,8 +586,7 @@ target_run_fake <- function(target, for_script=FALSE) {
   if (is.null(target$rule) || target$type == "cleanup") {
     NULL
   } else {
-    res <- do_call_fake(target$rule,
-                        dependencies_as_args(target, NULL, TRUE))
+    res <- deparse(target$command)
     if (inherits(target, "target_plot")) {
       if (for_script) {
         open <- do_call_fake(target$plot$device,
@@ -635,7 +599,13 @@ target_run_fake <- function(target, for_script=FALSE) {
       res <- sprintf('knitr::knit("%s", "%s")',
                      target$knitr$input, target$name)
     } else if (target$type == "object") {
-      res <- paste(target$name, "<-", res)
+      ## This is a trick to ensure correct printing of the LHS of the
+      ## assigmnent; it will keep the backticks around the LHS
+      ## variable names only when they're required syntactically
+      ## (they're already around the rhs).  This does mean that the
+      ## RHS gets parsed/deparsed several times though.
+      res <- sprintf("`%s` <- %s", target$name, res)
+      res <- deparse(parse(text=res, keep.source=FALSE)[[1]])
     }
 
     if (for_script && !is.null(target$packages)) {
@@ -691,26 +661,41 @@ target_run <- function(target, store, quiet=NULL) {
     on.exit(dev.off())
   }
 
-  args <- dependencies_as_args(target, store)
+  envir <- target_environment(target, store)
 
   ## Setting quiet in a target always overrides any runtime
   ## option.
   ## TODO: quiet is not getting sanitised here.  Run via isTRUE?
   quiet <- with_default(quiet, target$quiet)
-  ## Suppressing cat() is hard:
+
+  ## TODO: Do this like testthat does:
+  ##   temp <- file()
+  ##   on.exit(close(temp))
+  ##   result <- with_sink(temp,
+  ##     withCallingHandlers(withVisible(code), 
+  ##       message=mHandler))
+  ## which would allow capturing of messages for debugging later,
+  ## especially if an error is thrown.  However, it will not be
+  ## possible to interleave the message stream and the output stream.
   if (quiet) {
     temp <- file()
     sink(temp)
     on.exit(sink())
     on.exit(close(temp), add=TRUE)
   }
-  ## NOTE: it's actually pretty easy here to print the output
-  ## later if needed (e.g. if we catch errors in this bit).
-  ## However it will not be possible to interleave the message
-  ## stream and the output stream.
+
   withCallingHandlers(
-    do.call(target$rule, args, envir=store$env$env),
+    eval(target$command, envir),
     message=function(e) if (quiet) invokeRestart("muffleMessage"))
+}
+
+## TODO: This will eventually take the remake object instead, but that
+## requires rewriting target_run and all its tests.
+target_environment <- function(target, store) {
+  is_object_arg <-
+    !is.na(target$depends) & unname(target$depends_type) == "object"
+  x <- target$depends_name[is_object_arg]
+  remake_environment(list(store=store), x)
 }
 
 filter_targets <- function(targets, type=NULL,

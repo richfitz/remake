@@ -111,3 +111,14 @@ test_that("Chained rules -> plot", {
   expect_that(file.exists("plot.pdf"), is_false())
   expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
 })
+
+test_that("Printing chain rules", {
+  cleanup()
+  m <- remake("chain.yml")
+  expect_that(target_run_fake(m$targets[["chained{2}"]]),
+              equals("`chained{2}` <- f2(`chained{1}`)"))
+  expect_that(target_run_fake(m$targets[["chained{1}"]]),
+              equals("`chained{1}` <- f1()"))
+  expect_that(target_run_fake(m$targets[["chained"]]),
+              equals("chained <- f3(`chained{2}`)"))
+})

@@ -32,6 +32,9 @@ process_target_command <- function(name, dat) {
 
   if (!is.null(dat$command)) {
     cmd <- parse_target_command(name, dat$command)
+    ## TODO: need to join depends_rename here, though practically
+    ## that's only an issue for knitr?  E.g.,
+    ##   cmd$depends_rename <- names(cmd$args)
 
     ## TODO: This is *always* true now; not what we're really looking for..
     if ("depends" %in% names(dat) && length(dat$depends > 0)) {
@@ -153,19 +156,21 @@ parse_target_chain <- function(target, chain) {
 ## jepordise that.
 parse_command <- function(str) {
   res <- check_command(str)
+
   rule <- check_command_rule(res[[1]])
+
+  ## First, test for target-like-ness.  That will be things that are
+  ## names or character only.  Numbers, etc will drop through here:
+  is_target <- unname(vlapply(res[-1], is_target_like))
+
+  ## ...and we check them and I() arguments here:
+  if (any(!is_target)) {
+    i <- c(FALSE, !is_target)
+    res[i] <- lapply(res[i], check_literal_arg)
+  }
 
   ## OK, here's the template onto which we'll inject arguments.
   args <- as.list(res[-1])
-
-  ## First, test for target-like-ness.  That will be things that are
-  ## names or character only.  Numbers, etc will drop through here and
-  ## we'll pick them up shortly.
-  is_target <- unname(vlapply(args, is_target_like))
-
-  if (any(!is_target)) {
-    args[!is_target] <- lapply(args[!is_target], check_literal_arg)
-  }
 
   depends <- structure(which(is_target),
                        names=vcapply(args[is_target], as.character,

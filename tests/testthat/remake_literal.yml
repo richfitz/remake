@@ -5,7 +5,7 @@ sources:
 
 targets:
   all:
-    depends: [data1, data2, data3, data4, data5, data6]
+    depends: [data1, data2, data3, data4, data5]
   data1:
     command: list(TRUE)
   data2:
@@ -16,7 +16,9 @@ targets:
     command: list(I("pi"))
   data5:
     command: list(I("my_constant"), I(my_constant))
-  data6:
-    command: list(I("my_constant"), I(my_constant), my_constant)
-  my_constant:
-    command: list(TRUE)
+  # Disabled for now, as I think this should cause an error -- see
+  # notes in test-remake.R (TODO)
+  # data6:
+  #   command: list(I("my_constant"), I(my_constant), my_constant)
+  # my_constant:
+  #   command: list(TRUE)
