@@ -138,7 +138,6 @@ test_that("target_argument detection", {
                   is_target=FALSE,
                   command=quote(foo("a")))
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
-  cmp_pos$command <- quote(foo(target_name))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
 
@@ -148,7 +147,6 @@ test_that("target_argument detection", {
                    is_target=FALSE,
                    command=quote(foo(arg="a")))
   expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
-  cmp_name$command <- quote(foo(arg=target_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
 

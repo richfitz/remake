@@ -57,6 +57,7 @@ process_target_command <- function(name, dat) {
 ##  - use the target name, *in quotes*
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
+## TODO: "target" -> "target_name"
 parse_target_command <- function(target, command) {
   if (is.character(command) && length(command) > 1L) {
     ## This is an early exit, which is slightly evil but avoids this
@@ -103,6 +104,7 @@ parse_target_command <- function(target, command) {
       ## Then remove target_name from the dependencies.
       dat$args[[j]] <- target
       dat$depends <- dat$depends[-j]
+      dat$command[[j+1]] <- target
       dat$is_target[[j]] <- FALSE
     } else if (sum(i) > 1L) {
       n <- colSums(i)

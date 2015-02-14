@@ -466,7 +466,8 @@ target_chain_match_dot <- function(x, pos, chain_names) {
 make_target_cleanup <- function(name, remake) {
   levels <- cleanup_target_names()
   name <- match_value(name, levels)
-  i <- match(name, levels)
+
+  dat <- list(command=NULL, depends=character(0), quiet=FALSE, type="cleanup")
   if (name %in% names(remake$targets)) {
     t <- remake$targets[[name]]
 
@@ -474,36 +475,27 @@ make_target_cleanup <- function(name, remake) {
     if (!is.null(t$chain_kids)) {
       stop("Cleanup target cannot contain a chain")
     }
-    if (length(t$depends_name) > 0L) {
-      ## This is far from pretty.  Basically I need to know whether
-      ## the dependencies we have been given here came from a depends:
-      ## entry or from arguments to the command.  The former is fine,
-      ## the latter is not.  Previously this was what the
-      ## depends_is_fake argument was for.  The simplest way here is
-      ## just to parse the damn thing again:
-      if (length(parse_command(t$command)$depends) > 0L) {
-        stop("Cleanup target commands must have no arguments")
-      }
+    if (length(t$command) > 1L) {
+      stop("Cleanup target commands must have no arguments")
     }
-    command <- t$command
-    depends <- t$depends_name # watch out
+    dat$command <- t$command
+    dat$depends <- t$depends_name # watch out
+    dat$quiet   <- t$quiet
+  }
 
-    ## TODO: Ideally we'd also get quiet from the target here, too.
-  } else {
-    command <- NULL
-    depends <- character(0)
-  }
+  i <- match(name, levels)
   if (i > 1L) {
-    depends <- c(depends, levels[[i - 1L]])
+    dat$depends <- c(dat$depends, levels[[i - 1L]])
   }
-  t <- make_target(name, list(command=command, depends=depends, type="cleanup"))
+
+  ret <- make_target(name, dat)
 
   ## Add the actual bits to clean, making sure to exclude things
   ## destined to become cleanup targets.
   target_level <- vcapply(remake$targets, function(x) x$cleanup_level)
-  t$targets_to_remove <- setdiff(names(remake$targets)[target_level == name],
-                                 levels)
-  t
+  ret$targets_to_remove <-
+    setdiff(names(remake$targets)[target_level == name], levels)
+  ret
 }
 
 chained_rule_name <- function(name, i) {
