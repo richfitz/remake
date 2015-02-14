@@ -167,8 +167,23 @@ assert_directory <- function(x, name=deparse(substitute(x))) {
   }
 }
 
+## remake-specific assertions.  All non-api.
 assert_remake_archive <- function(filename) {
   if (!is_archive(filename)) {
     stop(sprintf("'%s' is not a remake archive", filename))
+  }
+}
+
+assert_has_target <- function(target_name, obj) {
+  if (!(target_name %in% names(obj$targets))) {
+    stop("No such target ", target_name)
+  }
+}
+
+assert_has_targets <- function(target_names, obj) {
+  if (!all(target_names %in% names(obj$targets))) {
+    stop("No such target ",
+         paste(setdiff(target_names, names(obj$targets)),
+               collapse=", "))
   }
 }

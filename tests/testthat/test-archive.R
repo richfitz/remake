@@ -79,16 +79,16 @@ test_that("Import archive", {
   dest <- remake_archive_export(m, "plot.pdf")
   remake_make(m, "purge")
 
-  expect_that(is_current("data.csv", m),  is_false())
-  expect_that(is_current("processed", m), is_false())
-  expect_that(is_current("plot.pdf", m),  is_false())
+  expect_that(remake_is_current(m, "data.csv"),  is_false())
+  expect_that(remake_is_current(m, "processed"), is_false())
+  expect_that(remake_is_current(m, "plot.pdf"),  is_false())
 
   remake_archive_import(m, dest)
 
   ## Magic!:
-  expect_that(is_current("data.csv", m),  is_true())
-  expect_that(is_current("processed", m), is_true())
-  expect_that(is_current("plot.pdf", m),  is_true())
+  expect_that(remake_is_current(m, "data.csv"),  is_true())
+  expect_that(remake_is_current(m, "processed"), is_true())
+  expect_that(remake_is_current(m, "plot.pdf"),  is_true())
 
   cleanup()
 })

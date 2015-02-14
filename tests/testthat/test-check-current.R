@@ -102,7 +102,7 @@ test_that("In target", {
   m$store$db$del("data.csv")
   expect_that(target_is_current(t, store),      is_true())
   expect_that(target_is_current(t, store, "all"), is_false())
-  expect_that(is_current("data.csv", m), is_true())
+  expect_that(remake_is_current(m, "data.csv"), is_true())
 
   expect_that(m$store$db$contains("data.csv"), is_false())
   remake_make(m, "data.csv")
@@ -134,29 +134,21 @@ test_that("In remake", {
   cleanup()
   m <- remake("remake_check.yml")
 
-  expect_that(is_current("data.csv", m),           is_false())
-  expect_that(is_current("data.csv", m, "exists"), is_false())
+  expect_that(remake_is_current(m, "data.csv"),           is_false())
+  expect_that(remake_is_current(m, "data.csv", "exists"), is_false())
 
   remake_make(m, "plot.pdf")
 
-  expect_that(is_current("data.csv", m), is_true())
-  expect_that(is_current("data.csv", m, "exists"), is_true())
+  expect_that(remake_is_current(m, "data.csv"), is_true())
+  expect_that(remake_is_current(m, "data.csv", "exists"), is_true())
 
-  expect_that(is_current("data.csv", m),           is_true())
-  expect_that(is_current("data.csv", m, "exists"), is_true())
+  expect_that(remake_is_current(m, "data.csv"),           is_true())
+  expect_that(remake_is_current(m, "data.csv", "exists"), is_true())
   expect_that(m$store$db$contains("data.csv"),     is_true())
 
-  expect_that(is_current("processed", m),           is_true())
-  expect_that(is_current("processed", m, "exists"), is_true())
+  expect_that(remake_is_current(m, "processed"),           is_true())
+  expect_that(remake_is_current(m, "processed", "exists"), is_true())
 
-  expect_that(is_current("plot.pdf", m),            is_true())
-  expect_that(is_current("plot.pdf", m, "exists"),  is_true())
-})
-
-test_that("is_current with defaults", {
-  cleanup()
-  m <- remake("remake.yml")
-  expect_that(is_current("plot.pdf"), is_false())
-  remake_make(m, "plot.pdf")
-  expect_that(is_current("plot.pdf"), is_true())
+  expect_that(remake_is_current(m, "plot.pdf"),            is_true())
+  expect_that(remake_is_current(m, "plot.pdf", "exists"),  is_true())
 })

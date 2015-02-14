@@ -94,6 +94,72 @@ test_that("list_dependencies", {
               throws_error("Unknown target"))
 })
 
+test_that("is_current", {
+  ## Verbose:
+  cleanup()
+  expect_that(is_current("all"), not(shows_message()))
+  cleanup()
+  expect_that(is_current("all", verbose=TRUE), shows_message("LOAD"))
+
+  ## Nonexistant targets throw error
+  expect_that(is_current("no_such_target"),
+              throws_error("No such target"))
+  expect_that(is_current(c("no_such_target", "another")),
+              throws_error("No such target"))
+
+  ## Zero length target
+  expect_that(is_current(character(0)), equals(logical(0)))
+
+  targets <- list_targets()
+  expect_that(is_current("all"), equals(FALSE))
+  expect_that(is_current(targets), equals(rep(FALSE, length(targets))))
+
+  make("data.csv")
+  expect_that(is_current("data.csv"), is_true())
+  expect_that(is_current(setdiff(targets, "data.csv")),
+              equals(rep(FALSE, length(targets) - 1)))
+
+  make()
+  ## Fake targets never up to date.
+  ## TODO: I wonder if this is actually the best behaviour; we could
+  ## be less simple-minded and store signaures of all dependencies.
+  ## The issue is what the hash of a fake target is.  The current
+  ## situation at least should trigger builds.
+  expect_that(is_current("all"), is_false())
+  expect_that(is_current(setdiff(targets, "all")),
+              equals(rep(TRUE, length(targets) - 1)))
+
+  ## Some of the examples from test-check-current.R
+  cleanup()
+
+  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
+              is_false())
+  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
+              is_false())
+
+  make("plot.pdf", remake_file="remake_check.yml")
+
+  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
+              is_true())
+  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
+              is_true())
+
+  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
+              is_true())
+  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
+              is_true())
+
+  expect_that(is_current("processed", remake_file="remake_check.yml"),
+              is_true())
+  expect_that(is_current("processed", "exists", remake_file="remake_check.yml"),
+              is_true())
+
+  expect_that(is_current("plot.pdf", remake_file="remake_check.yml"),
+              is_true())
+  expect_that(is_current("plot.pdf", "exists", remake_file="remake_check.yml"),
+              is_true())
+})
+
 test_that("auto_gitignore", {
   ## NOTE: .remake is ignored by the repo .gitignore file; these tests
   ## will fail if not running there.  It will also fail if the global

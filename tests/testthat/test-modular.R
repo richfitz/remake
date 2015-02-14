@@ -18,8 +18,8 @@ test_that("Modular remakefile", {
 
   remake_make(m, "data.csv")
 
-  expect_that(is_current("data.csv", m),   is_true())
-  expect_that(is_current("data.csv", mod), is_true())
+  expect_that(remake_is_current(m,   "data.csv"), is_true())
+  expect_that(remake_is_current(mod, "data.csv"), is_true())
 
   remake_make(mod, "purge")
   expect_that(file.exists("data.csv"), is_false())

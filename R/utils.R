@@ -372,3 +372,12 @@ browse_environment <- function(e, ...) {
   environment(f) <- parent.env(e)
   f(e)
 }
+
+##' @importFrom crayon make_style
+paint <- function(str, col) {
+  if (is.null(col)) {
+    str
+  } else {
+    make_style(col)(str)
+  }
+}

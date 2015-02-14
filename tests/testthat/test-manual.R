@@ -4,9 +4,9 @@ test_that("simple run", {
   cleanup()
   m <- remake("remake.yml")
 
-  expect_that(is_current("data.csv", m), is_false())
-  expect_that(is_current("processed", m), is_false())
-  expect_that(is_current("plot.pdf", m), is_false())
+  expect_that(remake_is_current(m, "data.csv"), is_false())
+  expect_that(remake_is_current(m, "processed"), is_false())
+  expect_that(remake_is_current(m, "plot.pdf"), is_false())
 
   ## This is possibly overkill:
   cmp <- list(version=m$store$version,
@@ -70,9 +70,9 @@ test_that("simple run", {
   remake_update(m, "processed", force=TRUE)
   remake_update(m, "plot.pdf", force=TRUE)
 
-  expect_that(is_current("data.csv", m),  is_true())
-  expect_that(is_current("processed", m), is_true())
-  expect_that(is_current("plot.pdf", m),  is_true())
+  expect_that(remake_is_current(m, "data.csv"),  is_true())
+  expect_that(remake_is_current(m, "processed"), is_true())
+  expect_that(remake_is_current(m, "plot.pdf"),  is_true())
 
   cleanup()
 })

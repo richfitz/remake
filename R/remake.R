@@ -194,39 +194,6 @@ status_colour <- function(str) {
          NULL)
 }
 
-##' @importFrom crayon make_style
-paint <- function(str, col) {
-  if (is.null(col)) {
-    str
-  } else {
-    make_style(col)(str)
-  }
-}
-
-## TODO: update this to take the filename as an argument:
-## TODO: split into remake_is_current and is_current.
-is_current <- function(target_name, obj=NULL, check=NULL) {
-  if (is.null(obj)) {
-    obj <- remake()
-  }
-  assert_has_target(target_name, obj)
-  target_is_current(obj$targets[[target_name]], obj$store, check)
-}
-
-assert_has_target <- function(target_name, obj) {
-  if (!(target_name %in% names(obj$targets))) {
-    stop("No such target ", target_name)
-  }
-}
-
-assert_has_targets <- function(target_names, obj) {
-  if (!all(target_names %in% names(obj$targets))) {
-    stop("No such target ",
-         paste(setdiff(target_names, names(obj$targets)),
-               collapse=", "))
-  }
-}
-
 ## TODO: This needs a new name.
 remake_default_target <- function(obj, target_name=NULL) {
   if (is.null(target_name)) {
@@ -418,12 +385,12 @@ remake_list_dependencies <- function(obj, target_names, type=NULL,
 remake_is_current <- function(obj, target_names, check=NULL) {
   assert_has_targets(target_names, obj)
   vlapply(obj$targets[target_names], function(x)
-    target_is_current(x, obj$store, check))
+    target_is_current(x, obj$store, check), USE.NAMES=FALSE)
 }
 
 assert_is_current <- function(obj, target_names, check=NULL) {
   ok <- remake_is_current(obj, target_names)
   if (!all(ok)) {
-    stop("Target not current: ", paste(names(ok[!ok]), collapse=", "))
+    stop("Target not current: ", paste(target_names[!ok], collapse=", "))
   }
 }

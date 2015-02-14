@@ -382,6 +382,37 @@ list_dependencies <- function(target_names,
                            include_chain_intermediates)
 }
 
+##' Determine if one or more targets are "current" or not.  A target
+##' is current if (1) it exists, (2) its immediate dependencies are
+##' unchanged since it was last built and (3) its code is unchanged
+##' since it was last built.
+##'
+##' Note that this function does not check all the way down the
+##' dependency tree; so if A depends on B and B depends on C, A may be
+##' current with respect to B but B may be out of date with respect to
+##' C.  Therefore running \code{make} would trigger building B, which
+##' \emph{may} imply rebuilding A.
+##' @title Determine if targets are current
+##' @param target_names Names of one or more targets to check
+##' @param check What to check.  By default (\code{check=NULL}) this
+##' will check both code and dependencies unless overridden in the
+##' makerfile.  Other valid options are \code{"exists"} (current if
+##' the target exists), \code{"depends"} (current if exists and
+##' dependencies unchanged), \code{"code"} (current if exists and code
+##' unchanged) or \code{"all"} (current if exists and both
+##' dependencies and code unchanged).
+##' @param verbose Be verbose when loading remake file?  Default is
+##' \code{FALSE}.
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml}).
+##' @return A logical vector the same length as \code{target_names}.
+##' @export
+is_current <- function(target_names, check=NULL,
+                       verbose=FALSE, remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=verbose)
+  remake_is_current(obj, target_names, check)
+}
+
 ##' Attempts to add targets that remake will generate to your
 ##' \code{.gitignore}.  If the file already exists, then the files
 ##' will be added (if not already present), otherwise a file will be
