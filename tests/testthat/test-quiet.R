@@ -65,27 +65,14 @@ test_that("Quiet targets", {
 })
 
 test_that("From remake", {
-  msg <- "make some noise"
   cleanup()
-
+  msg <- "make some noise"
   m <- remake("quiet.yml", verbose=FALSE)
-
   expect_that(remake_make(m, "noisy_message"), shows_message(msg))
-  remake_remove_target(m, "noisy_message")
-  expect_that(remake_make(m, "noisy_message", quiet_target=TRUE),
-              not(shows_message()))
-  remake_remove_target(m, "noisy_message")
-  expect_that(remake_make(m, "noisy_message", quiet_target=FALSE),
-              shows_message(msg))
-
-  remake_remove_target(m, "noisy_cat")
   expect_that(remake_make(m, "noisy_cat"), prints_text(msg))
-  remake_remove_target(m, "noisy_cat")
-  expect_that(remake_make(m, "noisy_cat", quiet_target=TRUE),
-              not(prints_text(msg)))
-  remake_remove_target(m, "noisy_cat")
-  expect_that(remake_make(m, "noisy_cat", quiet_target=FALSE),
-              prints_text(msg))
+
+  expect_that(remake_make(m, "quiet_message"), not(shows_message(msg)))
+  expect_that(remake_make(m, "quiet_cat"),     not(prints_text(msg)))
 })
 
 test_that("Quiet remake", {
@@ -96,21 +83,9 @@ test_that("Quiet remake", {
   m <- remake("quiet.yml", verbose=remake_verbose(FALSE, target=FALSE))
 
   expect_that(remake_make(m, "noisy_message"), not(shows_message(msg)))
-  remake_remove_target(m, "noisy_message")
-  expect_that(remake_make(m, "noisy_message", quiet_target=TRUE),
-              not(shows_message()))
-  remake_remove_target(m, "noisy_message")
-  expect_that(remake_make(m, "noisy_message", quiet_target=FALSE),
-              shows_message(msg))
-
-  remake_remove_target(m, "noisy_cat")
   expect_that(remake_make(m, "noisy_cat"), not(prints_text(msg)))
-  remake_remove_target(m, "noisy_cat")
-  expect_that(remake_make(m, "noisy_cat", quiet_target=TRUE),
-              not(prints_text(msg)))
-  remake_remove_target(m, "noisy_cat")
-  expect_that(remake_make(m, "noisy_cat", quiet_target=FALSE),
-              prints_text(msg))
+  expect_that(remake_make(m, "quiet_message"), not(shows_message(msg)))
+  expect_that(remake_make(m, "quiet_cat"),     not(prints_text(msg)))
 })
 
 test_that("Quiet chain", {

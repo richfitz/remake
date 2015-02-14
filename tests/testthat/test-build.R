@@ -4,9 +4,9 @@ test_that("Build works", {
   cleanup()
   m <- remake("remake.yml")
 
-  remake_make(m, "plot.pdf", dry_run=TRUE)
-  remake_make(m, "plot.pdf", dry_run=FALSE)
-  remake_make(m, "plot.pdf", dry_run=FALSE)
+  remake_make(m, "plot.pdf")
+  expect_that(file.exists("plot.pdf"), is_true())
+  remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   cleanup()
 })

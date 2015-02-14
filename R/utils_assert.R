@@ -174,16 +174,17 @@ assert_remake_archive <- function(filename) {
   }
 }
 
-assert_has_target <- function(target_name, obj) {
-  if (!(target_name %in% names(obj$targets))) {
-    stop("No such target ", target_name)
-  }
-}
-
 assert_has_targets <- function(target_names, obj) {
   if (!all(target_names %in% names(obj$targets))) {
     stop("No such target ",
          paste(setdiff(target_names, names(obj$targets)),
                collapse=", "))
+  }
+}
+
+assert_is_current <- function(obj, target_names, check=NULL) {
+  ok <- remake_is_current(obj, target_names)
+  if (!all(ok)) {
+    stop("Target not current: ", paste(target_names[!ok], collapse=", "))
   }
 }

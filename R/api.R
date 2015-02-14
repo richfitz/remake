@@ -78,6 +78,7 @@ install_missing_packages <- function(remake_file="remake.yml",
                                      instructions=FALSE,
                                      missing_only=TRUE,
                                      skip_target_packages=FALSE) {
+  ## TODO: should this be remake(remake_file, verbose, load_sources=FALSE)?
   dat <- read_remake_file(remake_file)
   packages <- with_default(dat$packages, character(0))
   if (!skip_target_packages) {

@@ -42,15 +42,10 @@ test_that("Errored builds restore files", {
               is_false())
 
   .GlobalEnv$.run_download_data_works <- TRUE
+  on.exit(rm(.run_download_data_works, envir=.GlobalEnv))
+
   remake_make(m, "data.csv")
   expect_that(file.exists("data.csv"), is_true())
 
   expect_that(m$store$db$contains("data.csv"), is_true())
-
-  rm(.run_download_data_works, envir=.GlobalEnv)
-
-  expect_that(remake_make(m, "data.csv", force=TRUE),
-              throws_error("There was an error downloading data!"))
-  expect_that(m$store$db$contains("data.csv"), is_true())
-  expect_that(tools::md5sum("data.csv"), equals(hash))
 })

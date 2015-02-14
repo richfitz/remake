@@ -168,32 +168,6 @@ read_remake_file <- function(filename, seen=character(0)) {
   dat
 }
 
-cleanup_levels <- function() {
-  c("tidy", "clean", "purge", "never")
-}
-
-cleanup_target_names <- function() {
-  c("tidy", "clean", "purge")
-}
-
-## Not sure I have a full list of these yet:
-status_colour <- function(str) {
-  switch(str,
-         BUILD="steelblue4",
-         OK="green3",
-         CLEAN="orange",
-         DEL="red1",
-         UTIL="darkorchid3",
-         LOAD="yellow1",
-         READ="yellow1",
-         PLOT="dodgerblue2",
-         KNIT="hotpink",
-         MAKE="deepskyblue",
-         ENV="deepskyblue",
-         "-----"="grey60",
-         NULL)
-}
-
 ## TODO: This needs a new name.
 remake_default_target <- function(obj, target_name=NULL) {
   if (is.null(target_name)) {
@@ -237,10 +211,10 @@ remake_print_message <- function(obj, status, target_name,
 }
 
 
-remake_plan <- function(obj, target_name=NULL, dependencies_only=FALSE) {
+remake_plan <- function(obj, target_name=NULL) {
   target_name <- remake_default_target(obj, target_name)
   graph <- remake_dependency_graph(obj)
-  dependencies(target_name, graph, dependencies_only)
+  dependencies(target_name, graph)
 }
 
 remake_dependency_graph <- function(obj) {
@@ -248,11 +222,10 @@ remake_dependency_graph <- function(obj) {
   topological_sort(g)
 }
 
-remake_update <- function(obj, target_name, dry_run=FALSE, force=FALSE,
-                          quiet_target=obj$verbose$quiet_target,
-                          check=NULL, return_target=TRUE) {
+remake_update <- function(obj, target_name, check=NULL,
+                          return_target=TRUE) {
   target <- obj$targets[[target_name]]
-  current <- !force && target_is_current(target, obj$store, check)
+  current <- remake_is_current(obj, target_name)
 
   if (!isTRUE(target$implicit)) {
     status <- if (current) "OK" else target$status_string
@@ -261,30 +234,28 @@ remake_update <- function(obj, target_name, dry_run=FALSE, force=FALSE,
     remake_print_message(obj, status, target_name, cmd, style)
   }
 
-  if (!dry_run) {
-    if (!current) {
-      ## See #12 - targets can specify conditional packages, and
-      ## we load them, but also unload them afterwards (including
-      ## dependencies).  This does not leave packages loaded for
-      ## dependent taragets though.
-      extra <- load_extra_packages(target$packages)
-      if (target$type == "cleanup") {
-        ## Do this here because it uses the remake object (via
-        ## remake_remove_target), which is not available in
-        ## target_build.
-        for (t in target$targets_to_remove) {
-          remake_remove_target(obj, t, chain=TRUE)
-        }
-        target_run(target, obj$store, quiet_target)
-        ret <- NULL
-      } else {
-        ret <- target_build(target, obj$store, quiet_target)
+  if (!current) {
+    ## See #12 - targets can specify conditional packages, and
+    ## we load them, but also unload them afterwards (including
+    ## dependencies).  This does not leave packages loaded for
+    ## dependent taragets though.
+    extra <- load_extra_packages(target$packages)
+    if (target$type == "cleanup") {
+      ## Do this here because it uses the remake object (via
+      ## remake_remove_target), which is not available in
+      ## target_build.
+      for (t in target$targets_to_remove) {
+        remake_remove_target(obj, t, chain=TRUE)
       }
-      unload_extra_packages(extra)
-      invisible(ret)
-    } else if (return_target) {
-      invisible(target_get(target, obj$store))
+      target_run(target, obj$store, obj$verbose$quiet_target)
+      ret <- NULL
+    } else {
+      ret <- target_build(target, obj$store, obj$verbose$quiet_target)
     }
+    unload_extra_packages(extra)
+    invisible(ret)
+  } else if (return_target) {
+    invisible(target_get(target, obj$store))
   }
 }
 
@@ -293,7 +264,7 @@ remake_update <- function(obj, target_name, dry_run=FALSE, force=FALSE,
 ## that *creates* a target.  What this does is remove the target
 ## *product*.
 remake_remove_target <- function(obj, target_name, chain=TRUE) {
-  assert_has_target(target_name, obj)
+  assert_has_targets(target_name, obj)
   target <- obj$targets[[target_name]]
   if (chain && !is.null(target$chain_kids)) {
     chain_names <- dependency_names(target$chain_kids)
@@ -336,19 +307,11 @@ remake_make <- function(obj, target_names=NULL, ...) {
   invisible(last)
 }
 
-remake_make1 <- function(obj, target_name, dry_run=FALSE, force=FALSE,
-                         force_all=FALSE, quiet_target=NULL, check=NULL,
-                         dependencies_only=FALSE) {
-  if (is.null(quiet_target)) {
-    quiet_target <- obj$verbose$quiet_target
-  }
-  plan <- remake_plan(obj, target_name, dependencies_only)
+remake_make1 <- function(obj, target_name, check=NULL) {
+  plan <- remake_plan(obj, target_name)
   for (i in plan) {
     is_last <- i == target_name
-    last <- remake_update(obj, i, dry_run,
-                          force_all || (force && is_last),
-                          quiet_target=quiet_target, check=check,
-                          return_target=is_last)
+    last <- remake_update(obj, i, check=check, return_target=is_last)
   }
   invisible(last)
 }
@@ -386,11 +349,4 @@ remake_is_current <- function(obj, target_names, check=NULL) {
   assert_has_targets(target_names, obj)
   vlapply(obj$targets[target_names], function(x)
     target_is_current(x, obj$store, check), USE.NAMES=FALSE)
-}
-
-assert_is_current <- function(obj, target_names, check=NULL) {
-  ok <- remake_is_current(obj, target_names)
-  if (!all(ok)) {
-    stop("Target not current: ", paste(target_names[!ok], collapse=", "))
-  }
 }

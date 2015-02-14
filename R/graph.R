@@ -48,16 +48,13 @@ dependencies_to_adjacency <- function(graph) {
   mat
 }
 
-dependencies <- function(node, graph, dependencies_only=FALSE) {
+dependencies <- function(node, graph) {
   seen <- structure(logical(length(graph)), names=names(graph))
   nodes <- node
   while (length(nodes) > 0L) {
     seen[nodes] <- TRUE
     kids <- unlist(unname(graph[nodes]))
     nodes <- kids[!seen[kids]]
-  }
-  if (dependencies_only) {
-    seen[node] <- FALSE
   }
   names(seen[seen])
 }

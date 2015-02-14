@@ -141,3 +141,29 @@
   }
   lapply(obj_targets, check1)
 }
+
+cleanup_levels <- function() {
+  c("tidy", "clean", "purge", "never")
+}
+
+cleanup_target_names <- function() {
+  c("tidy", "clean", "purge")
+}
+
+## Not sure I have a full list of these yet:
+status_colour <- function(str) {
+  switch(str,
+         BUILD="steelblue4",
+         OK="green3",
+         CLEAN="orange",
+         DEL="red1",
+         UTIL="darkorchid3",
+         LOAD="yellow1",
+         READ="yellow1",
+         PLOT="dodgerblue2",
+         KNIT="hotpink",
+         MAKE="deepskyblue",
+         ENV="deepskyblue",
+         "-----"="grey60",
+         NULL)
+}

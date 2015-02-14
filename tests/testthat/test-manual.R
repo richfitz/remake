@@ -66,9 +66,9 @@ test_that("simple run", {
               equals(sort(c("hash", "time"))))
 
   ## Run the build system manually:
-  remake_update(m, "data.csv", force=TRUE)
-  remake_update(m, "processed", force=TRUE)
-  remake_update(m, "plot.pdf", force=TRUE)
+  remake_update(m, "data.csv")
+  remake_update(m, "processed")
+  remake_update(m, "plot.pdf")
 
   expect_that(remake_is_current(m, "data.csv"),  is_true())
   expect_that(remake_is_current(m, "processed"), is_true())
@@ -90,10 +90,9 @@ test_that("Depending on a file we don't make", {
   ## contain a rule for building data.csv
   m <- remake("remake2.yml")
 
-  expect_that(remake_update(m, "data.csv", force=TRUE),
-              throws_error("Can't build implicit targets"))
-  remake_update(m, "processed", force=TRUE)
-  remake_update(m, "plot.pdf", force=TRUE)
+  expect_that(remake_update(m, "data.csv"), not(shows_message()))
+  remake_update(m, "processed")
+  remake_update(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
   remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
