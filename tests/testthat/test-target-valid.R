@@ -174,13 +174,13 @@ test_that("File targets", {
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends_name, equals(c("b", "c")))
-  expect_that(t$args[[1]], equals("foo.csv"))
+  expect_that(as.list(t$command[2]), equals(list("foo.csv")))
 
   t <- make_target("foo.csv", list(command="foo(name='foo.csv', b, C=c)"))
   expect_that(t$type, equals("file"))
   expect_that(t$rule, equals("foo"))
   expect_that(t$depends_name, equals(c("b", "c")))
-  expect_that(t$args[1], equals(list(name="foo.csv")))
+  expect_that(as.list(t$command[2]), equals(list(name="foo.csv")))
 })
 
 test_that("Implicit file targets", {

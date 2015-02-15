@@ -52,8 +52,7 @@ target_new_base <- function(name, command, opts, extra=NULL,
   if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
   }
-  ret$args_template <- command$args
-  if (any(duplicated(setdiff(names(ret$args_template), "")))) {
+  if (any(duplicated(setdiff(names(command$args), "")))) {
     stop("All named depends targets must be unique")
   }
 
@@ -321,8 +320,8 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
     ## as a map list because order is guaranteed.
     is_fixed <- !target$arg_is_target
     if (any(is_fixed)) {
-      fixed <- hash_object(lapply(target$args_template[is_fixed],
-                                  eval, store$env$env))
+      fixed_vars <- as.list(target$command[-1][is_fixed])
+      fixed <- hash_object(lapply(fixed_vars, eval, store$env$env))
     }
   }
 
@@ -555,7 +554,7 @@ target_set <- function(target, store, value) {
 target_check_quoted <- function(target) {
   i <- target$depends[!is.na(target$depends)]
   if (length(i > 0L)) {
-    quoted <- vlapply(target$args_template[i], is.character)
+    quoted <- vlapply(as.list(target$command[-1][i]), is.character)
     should_be_quoted <- target$depends_type[names(i)] == "file"
     if (any(should_be_quoted != quoted)) {
       err_quote <- names(i)[should_be_quoted  & !quoted]
