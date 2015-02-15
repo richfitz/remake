@@ -24,20 +24,16 @@ remake_new <- function(remake_file="remake.yml", verbose=TRUE,
   obj <- list(file=remake_file, path=".",
               verbose=remake_verbose(verbose),
               ##
+              fmt=.remake_initialize_message_format(NULL),
               store=NULL, targets=NULL, config=NULL,
               default_target=NULL, hash=NULL)
-  obj$fmt <- .remake_initialize_message_format(obj)
+  remake_print_message(obj, "LOAD", "")
 
   if (is.null(config) && !is.null(obj$file)) {
     obj$config <- read_remake_file(obj$file)
   } else {
     obj$config <- config
   }
-
-  ## This is not totally clear that it's a good idea, but I really
-  ## like it when this prints if the file has changed.  This might be
-  ## controllable by an argument to this function soon?
-  remake_print_message(obj, "LOAD", "")
 
   obj$hash <- obj$config$hash
   ## Do this when config is actualy there, and if it's not explicitly
@@ -191,21 +187,17 @@ remake_print_message <- function(obj, status, target_name,
     cmd <- NULL
   }
 
-  fmt <- obj$fmt
   status <- brackets(paint(sprintf("%5s", status),
                            status_colour(status)), style)
 
-  if (!is.null(cmd)) {
-    if (verbose$print_command_abbreviate) {
-      w_extra <- max(0, nchar(target_name) - fmt$target_width)
-      cmd <- abbreviate(cmd, fmt$max_cmd_width - w_extra)
-    }
-  }
   if (is.null(cmd)) {
-    str <- sprintf(fmt$no_cmd, status, target_name)
+    str <- sprintf("%s %s", status, target_name)
   } else {
-    str <- sprintf(fmt$with_cmd, status, target_name,
-                   paint(cmd, "grey60"))
+    if (verbose$print_command_abbreviate) {
+      w_extra <- max(0, nchar(target_name) - obj$fmt$target_width)
+      cmd <- abbreviate(cmd, obj$fmt$max_cmd_width - w_extra)
+    }
+    str <- sprintf(obj$fmt$fmt, status, target_name, paint(cmd, "grey60"))
   }
   message(str)
 }
