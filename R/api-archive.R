@@ -73,7 +73,6 @@ is_archive <- function(archive_file="remake.zip") {
   if (nrow(contents) == 0L) { # empty
     return(FALSE)
   }
-  paths <- path_split(contents$Name)
   tld <- remake_archive_tld(archive_file, error=FALSE)
   if (length(tld) > 1L) { # more than one top level direcyory
     return(FALSE)

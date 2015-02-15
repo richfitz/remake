@@ -14,9 +14,9 @@ make_active_binding_function <- function(obj, name, type) {
   }
   function(value) {
     if (missing(value)) {
-      ## We'd fetch from cache here but that will behave badly with
-      ## verbose I think.
-      m <- remake(filename)
+      ## TODO: Possibly fetch from cache here?  I'm mildly concerned
+      ## about an infinite loop.
+      obj <- remake(filename) # TODO: add `verbose=FALSE`
       if (type == "target") {
         if (isFALSE(obj$config$active)) {
           ret <- list(name=name)

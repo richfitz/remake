@@ -78,7 +78,7 @@ test_that("Object target", {
   expect_that(t$type, equals("object"))
 
   expect_that(t$name, equals("real"))
-  expect_that(t$depends, equals(empty_named_integer()))
+  expect_that(t$depends, equals(character(0)))
   expect_that(t$depends_name, equals(character(0)))
   expect_that(t$rule, equals("foo"))
   expect_that(t$cleanup_level, equals("tidy"))

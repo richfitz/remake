@@ -45,9 +45,7 @@ target_new_base <- function(name, command, opts, extra=NULL,
     ret$rule <- command$rule
   }
 
-  ret$depends <- with_default(command$depends, empty_named_integer())
-  ret$depends_name <- names(ret$depends)
-  ret$depends_rename <- command$depends_rename
+  ret$depends_name <- with_default(unname(command$depends), character(0))
   ret$arg_is_target <- with_default(command$is_target, logical(0))
   if (any(duplicated(ret$depends_name))) {
     stop("Dependency listed more than once")
@@ -116,10 +114,9 @@ target_new_file_implicit <- function(name, check_exists=TRUE) {
   }
   ret <- list(name=name,
               type="file",
-              depends=empty_named_integer(),
               depends_name=character(0),
               depends_type=character(0),
-              arg_is_target=integer(0),
+              arg_is_target=logical(0),
               implicit=TRUE,
               cleanup_level="never",
               check="exists")
@@ -166,7 +163,6 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
     stop(sprintf("%s: knitr targets must have a NULL rule",
                  name))
   }
-
   opts$quiet <- with_default(opts$quiet, TRUE)
 
   ## Then the knitr options:
@@ -220,17 +216,23 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
     knitr$options$error <- FALSE
   }
 
-  ## Build a dependency on the input, for obvious reasons, but flag
-  ## that it is not an argument to any command:
-  command$depends <- c(command$depends,
-                       structure(NA_integer_, names=knitr$input))
+  ## Remember any mapping here:
+  ## Build a dependency on the input, for obvious reasons
+  command$depends <- c(command$depends, knitr$input)
 
   ## Hack to let target_base know we're not implicit.  There does
   ## need to be something here as a few places test for null-ness.
   command$rule <- ".__knitr__"
   ret <- target_new_file(name, command, opts, extra, "knitr")
+
   class(ret) <- c("target_knitr", class(ret))
   ret$knitr <- knitr
+  ## TODO: This isolates some ugliness for now, but should be done via
+  ## opts or extra probably.
+  if (!is.null(names(command$depends))) {
+    ret$depends_rename <- command$depends
+  }
+  
   ret
 }
 
@@ -442,17 +444,15 @@ target_chain <- function(chain, parent, opts) {
   list(parent=parent, kids=kids)
 }
 
-target_chain_match_dot <- function(x, pos, chain_names) {
-  j <- which(as.character(x$depends_name) == ".")
+target_chain_match_dot <- function(target, pos, chain_names) {
+  j <- which(as.character(target$depends_name) == ".")
   if (length(j) == 1L) {
     if (j > length(chain_names)) {
       stop("Attempt to select impossible chain element") # defensive only
     }
     dot_name <- chain_names[[pos - 1L]]
-    x$depends_name[[j]] <- dot_name
-    x$command[[j + 1L]] <- as.name(dot_name)
-    ## NOTE: there is a chance this is fragile.
-    names(x$depends)[[j]] <- dot_name
+    target$depends_name[[j]] <- dot_name
+    target$command[[j + 1L]] <- as.name(dot_name)
   } else { # defensive - should be safe here.
     if (length(j) > 1L) {
       stop("never ok")
@@ -460,7 +460,7 @@ target_chain_match_dot <- function(x, pos, chain_names) {
       stop("missing")
     }
   }
-  x
+  target
 }
 
 make_target_cleanup <- function(name, remake) {
@@ -550,23 +550,28 @@ target_set <- function(target, store, value) {
 ## down the track.  Basically; file targets must be quoted, object
 ## targets must not be.  This lets us mimic R calls.  It's not
 ## actually required by any of the parsing machinery, but it means the
-## files will be easier to interpret.
+## files will be easier to interpret.  It *is* requred for making
+## valid scripts though.
 target_check_quoted <- function(target) {
-  i <- target$depends[!is.na(target$depends)]
-  if (length(i > 0L)) {
-    quoted <- vlapply(as.list(target$command[-1][i]), is.character)
-    should_be_quoted <- target$depends_type[names(i)] == "file"
-    if (any(should_be_quoted != quoted)) {
-      err_quote <- names(i)[should_be_quoted  & !quoted]
-      err_plain <- names(i)[!should_be_quoted &  quoted]
+  i <- target$arg_is_target
+  if (any(i)) {
+    args <- as.list(target$command[-1])
+    is_quoted <- vlapply(args[i], is.character)
+    should_be_quoted <-
+      target$depends_type[vcapply(args[i], as.character)] == "file"
+
+    if (any(should_be_quoted != is_quoted)) {
+      nms <- names(should_be_quoted)
+      err_quote <-  should_be_quoted & !is_quoted
+      err_plain <- !should_be_quoted &  is_quoted
       msg <- character(0)
-      if (length(err_quote) > 0) {
+      if (any(err_quote)) {
         msg <- c(msg, paste("Should be quoted:",
-                            paste(err_quote, collapse=", ")))
+                            paste(nms[err_quote], collapse=", ")))
       }
-      if (length(err_plain) > 0) {
+      if (any(err_plain)) {
         msg <- c(msg, paste("Should not be quoted:",
-                            paste(err_plain, collapse=", ")))
+                            paste(nms[err_plain], collapse=", ")))
       }
       stop(sprintf("Incorrect quotation in target '%s':\n%s",
                    target$name, paste(msg, collapse="\n")))
@@ -691,9 +696,7 @@ target_run <- function(target, store, quiet=NULL) {
 ## TODO: This will eventually take the remake object instead, but that
 ## requires rewriting target_run and all its tests.
 target_environment <- function(target, store) {
-  is_object_arg <-
-    !is.na(target$depends) & unname(target$depends_type) == "object"
-  x <- target$depends_name[is_object_arg]
+  x <- target$depends_name[unname(target$depends_type) == "object"]
   remake_environment(list(store=store), x)
 }
 

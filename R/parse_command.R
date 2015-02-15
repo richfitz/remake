@@ -3,8 +3,7 @@
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("command", "rule", "args", "depends", "is_target",
-            "depends_rename", "chain")
+  core <- c("command", "rule", "args", "depends", "is_target", "chain")
 
   ## Quick check that may disappear later:
   invalid <- c("rule", "target_argument", "quoted")
@@ -22,22 +21,15 @@ process_target_command <- function(name, dat) {
     ##     data: processed
     ## The contortions below do a reasonable job of dealing with this,
     ## but it's not enough.
-    deps <- unlist(from_yaml_map_list(dat$depends))
-    dat$depends <- structure(rep(NA_integer_, length(deps)), names=deps)
-    dat$depends_rename <- deps
+    dat$depends <- unlist(from_yaml_map_list(dat$depends))
   } else {
-    dat$depends <- empty_named_integer()
-    dat$depends_rename <- empty_named_character()
+    dat$depends <- character(0)
   }
 
   if (!is.null(dat$command)) {
     cmd <- parse_target_command(name, dat$command)
-    ## TODO: need to join depends_rename here, though practically
-    ## that's only an issue for knitr?  E.g.,
-    ##   cmd$depends_rename <- names(cmd$args)
 
-    ## TODO: This is *always* true now; not what we're really looking for..
-    if ("depends" %in% names(dat) && length(dat$depends > 0)) {
+    if (length(dat$depends > 0)) {
       if (is.null(cmd$chain)) {
         cmd$depends <- c(cmd$depends, dat$depends)
       } else {
@@ -60,21 +52,20 @@ process_target_command <- function(name, dat) {
 ##  - use the target name, *in quotes*
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
-## TODO: "target" -> "target_name"
-parse_target_command <- function(target, command) {
+parse_target_command <- function(target_name, command) {
   if (is.character(command) && length(command) > 1L) {
     ## This is an early exit, which is slightly evil but avoids this
     ## whole function being a big if/else statement.
-    return(parse_target_chain(target, command))
+    return(parse_target_chain(target_name, command))
   }
 
   dat <- parse_command(command)
   if (length(dat$depends) > 0L) {
     ## This whole section tries to work out the target_argument field.
-    targets <- names(dat$depends)
+    depends <- dat$depends
 
     ## Deal with dots first (move into parse_command?)
-    is_dot <- targets == "."
+    is_dot <- depends == "."
     if (sum(is_dot) > 1L) {
       stop("Only a single dot argument allowed")
     } else if (sum(is_dot) == 1L) {
@@ -85,18 +76,16 @@ parse_target_command <- function(target, command) {
     }
 
     ## Then with target_name
-    pos <- c(target, "target_name")
+    pos <- c(target_name, "target_name")
     ## Need to determine that there is only a single possible target:
-    i <- sapply(pos, function(x) targets == x)
-    if (length(targets) == 1) {
+    i <- sapply(pos, function(x) depends == x)
+    if (length(depends) == 1) {
       i <- rbind(i, deparse.level=0)
     }
 
     if (sum(i) == 1L) {
       j <- unname(which(rowSums(i) == 1L))
-
-      ## Checking (purely to keep things consistent -- this would
-      ## actually be fine)
+      ## Check quotedness:
       v <- dat$args[[j]]
       if (is.character(v) && v == "target_name") {
         stop("target_name must not be quoted (it's like a variable)")
@@ -105,9 +94,9 @@ parse_target_command <- function(target, command) {
       }
 
       ## Then remove target_name from the dependencies.
-      dat$args[[j]] <- target
+      dat$args[[j]] <- target_name
       dat$depends <- dat$depends[-j]
-      dat$command[[j+1]] <- target
+      dat$command[[j + 1L]] <- target_name
       dat$is_target[[j]] <- FALSE
     } else if (sum(i) > 1L) {
       n <- colSums(i)
@@ -120,12 +109,12 @@ parse_target_command <- function(target, command) {
   dat
 }
 
-parse_target_chain <- function(target, chain) {
-  chain <- lapply(chain, parse_target_command, target=target)
+parse_target_chain <- function(target_name, chain) {
+  chain <- lapply(chain, parse_target_command, target_name=target_name)
 
   ## TODO: Check >1 dot
   ## TODO: Drop "%in%"
-  has_dot <- vlapply(chain, function(x) "." %in% names(x$depends))
+  has_dot <- vlapply(chain, function(x) "." %in% x$depends)
 
   if (has_dot[[1]]) {
     stop("The first element in a chain cannot contain a dot ('.')")
@@ -135,7 +124,7 @@ parse_target_chain <- function(target, chain) {
   }
 
   calls_target <- function(x) {
-    any(vlapply(x$args, identical, target))
+    any(vlapply(unname(x$args), identical, target_name))
   }
   len <- length(chain)
   has_target_argument <- vlapply(chain, calls_target)
@@ -155,49 +144,46 @@ parse_target_chain <- function(target, chain) {
 ## passed through as as-is once we're done here, so make sure not to
 ## jepordise that.
 parse_command <- function(str) {
-  res <- check_command(str)
+  command <- check_command(str)
 
-  rule <- check_command_rule(res[[1]])
+  rule <- check_command_rule(command[[1]])
 
   ## First, test for target-like-ness.  That will be things that are
   ## names or character only.  Numbers, etc will drop through here:
-  is_target <- unname(vlapply(res[-1], is_target_like))
+  is_target <- unname(vlapply(command[-1], is_target_like))
 
   ## ...and we check them and I() arguments here:
   if (any(!is_target)) {
     i <- c(FALSE, !is_target)
-    res[i] <- lapply(res[i], check_literal_arg)
+    command[i] <- lapply(command[i], check_literal_arg)
   }
 
-  ## OK, here's the template onto which we'll inject arguments.
-  args <- as.list(res[-1])
+  ## TODO: DEPENDS: Who actually uses args, given it's defined so simply?
+  args <- as.list(command[-1])
+  depends <- vcapply(args[is_target], as.character)
 
-  depends <- structure(which(is_target),
-                       names=vcapply(args[is_target], as.character,
-                         USE.NAMES=FALSE))
-  
   list(rule=rule, args=args, depends=depends, is_target=is_target,
-       command=res)
+       command=command)
 }
 
 check_command <- function(str) {
   if (is.language(str)) {
-    res <- str
+    command <- str
   } else {
     assert_scalar_character(str)
-    res <- parse(text=as.character(str), keep.source=FALSE)
-    if (length(res) != 1L) {
+    command <- parse(text=as.character(str), keep.source=FALSE)
+    if (length(command) != 1L) {
       stop("Expected single expression")
     }
-    res <- res[[1]]
+    command <- command[[1]]
   }
-  if (length(res) == 0) {
+  if (length(command) == 0) {
     stop("I don't think this is possible")
   }
-  if (!is.call(res)) {
+  if (!is.call(command)) {
     stop("Expected a function call (even with no arguments)")
   }
-  res
+  command
 }
 
 check_command_rule <- function(x) {

@@ -8,9 +8,9 @@ read_file <- function(filename, ...) {
 yaml_load <- function(string) {
   ## More restrictive true/false handling.  Only accept if it maps to
   ## full true/false:
-  handlers <- list('bool#yes' = function(x) {
+  handlers <- list("bool#yes" = function(x) {
     if (identical(toupper(x), "TRUE")) TRUE else x},
-                   'bool#no' = function(x) {
+                   "bool#no" = function(x) {
     if (identical(toupper(x), "FALSE")) FALSE else x})
   yaml::yaml.load(string, handlers=handlers)
 }
