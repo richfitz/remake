@@ -253,15 +253,6 @@ target_new_fake <- function(name, command, opts, extra=NULL) {
   ret
 }
 
-target_new_utility <- function(name, utility, remake) {
-  ret <- target_new_base(name, NULL, NULL, NULL, "utility")
-  ret$utility <- utility
-  ret$remake <- remake
-  ret$status_string <- "UTIL"
-  class(ret) <- c("target_utility", class(ret))
-  ret
-}
-
 ## Determine if things are up to date.  That is the case if:
 ##
 ## If the file/object does not exist it's unclean (done)
@@ -275,7 +266,7 @@ target_is_current <- function(target, store, check=NULL) {
   check <- with_default(check, target$check)
   check <- match_value(check, check_levels())
 
-  if (target$type %in% c("cleanup", "fake", "utility")) {
+  if (target$type %in% c("cleanup", "fake")) {
     return(FALSE)
   } else if (!store$contains(target$name, target$type)) {
     return(FALSE)
@@ -654,8 +645,6 @@ target_build <- function(target, store, quiet=NULL) {
 target_run <- function(target, store, quiet=NULL) {
   if (is.null(target$rule)) {
     return()
-  } else if (target$type == "utility") {
-    return(target$utility(target$remake))
   } else if (inherits(target, "target_knitr")) {
     return(knitr_from_remake_target(target, store, quiet))
   }
