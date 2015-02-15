@@ -19,10 +19,16 @@ get_device <- function(name) {
 ## actually open.  This is because any function `dev` can be passed
 ## through and there is no way of determining that this is actually a
 ## plotting device.
-open_device <- function(dev, args, envir=.GlobalEnv) {
+open_device <- function(filename, dev, opts, envir=.GlobalEnv) {
   prev <- dev.cur()
-  do.call(dev, args, envir=envir)
+  eval(plot_call(filename, dev, opts), envir=envir)
   if (identical(dev.cur(), prev)) {
     stop("Failed to open a plotting device")
   }
+}
+
+plot_call <- function(filename, dev, opts) {
+  as.call(c(list(as.name(dev)),
+            list(filename),
+            opts))
 }

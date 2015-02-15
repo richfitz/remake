@@ -131,8 +131,6 @@ target_new_plot <- function(name, command, opts, extra=NULL) {
   ret <- target_new_file(name, command, opts, extra, "plot")
   ##  ret$plot <- opts$plot # checked at activate()
 
-  ## NOTE: This is done during activate because we need access to
-  ## the set of plot options.  That seems suboptimal.
   dev <- get_device(tools::file_ext(name))
   plot_args <- opts$plot
   if (identical(plot_args, TRUE) || is.null(plot_args)) {
@@ -570,11 +568,6 @@ target_check_quoted <- function(target) {
   }
 }
 
-plot_args <- function(target, fake=FALSE) {
-  str <- if (fake) sprintf('"%s"', target$name) else target$name
-  c(str, target$plot$args)
-}
-
 ## Might compute these things at startup, given they are constants
 ## over the life of the object.
 target_run_fake <- function(target, for_script=FALSE) {
@@ -584,9 +577,8 @@ target_run_fake <- function(target, for_script=FALSE) {
     res <- deparse(target$command)
     if (inherits(target, "target_plot")) {
       if (for_script) {
-        open <- do_call_fake(target$plot$device,
-                             format_fake_args(plot_args(target, fake=TRUE)))
-        res <- c(open, res, "dev.off()")
+        open <- plot_call(target$name, target$plot$device, target$plot$args)
+        res <- c(deparse(open), res, "dev.off()")
       } else {
         res <- paste(res, "# ==>", target$name)
       }
@@ -650,7 +642,8 @@ target_run <- function(target, store, quiet=NULL) {
   }
 
   if (inherits(target, "target_plot")) {
-    open_device(target$plot$device, plot_args(target), store$env$env)
+    open_device(target$name, target$plot$device, target$plot$args,
+                store$env$env)
     on.exit(dev.off())
   }
 
