@@ -369,21 +369,6 @@ identical_map <- function(x, y) {
   length(x) == length(y) && all(nms %in% names(y)) && identical(y[nms], x)
 }
 
-format_fake_args <- function(args) {
-  nms <- names(args)
-  args <- unlist(args)
-  if (!is.null(nms)) {
-    nms <- names(args)
-    args <- ifelse(nms == "", args, paste(nms, args, sep="="))
-  }
-  paste(args, collapse=", ")
-}
-
-do_call_fake <- function(cmd, args) {
-  assert_scalar_character(cmd)
-  sprintf("%s(%s)", cmd, format_fake_args(args))
-}
-
 ## There aren't many of these yet; might end up with more over time
 ## though.
 target_reserved_names <- function() {
@@ -502,19 +487,11 @@ check_depends <- function(x) {
   x %in% c("all", "depends")
 }
 
-target_get <- function(target, store, fake=FALSE) {
+target_get <- function(target, store) {
   if (target$type == "file") {
-    if (fake) {
-      sprintf('"%s"', target$name)
-    } else {
-      target$name
-    }
+    target$name
   } else if (target$type == "object") {
-    if (fake) {
-      target$name
-    } else {
-      store$objects$get(target$name)
-    }
+    store$objects$get(target$name)
   } else {
     stop("Not something that can be got")
   }

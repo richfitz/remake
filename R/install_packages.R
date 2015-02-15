@@ -67,24 +67,35 @@ install_packages_extra <- function(dat, instructions=FALSE) {
   install_packages_extra1 <- function(package) {
     x <- dat[[package]]
     fn_name <- install_function(x$source)
+
+    ## Check args:
     fn_r <- getExportedValue("devtools", fn_name)
     pos <- union(names(formals(fn_r)), common)
     opts <- intersect(setdiff(names(x), "source"), pos)
+
+    ## Move first argument to the first position and unname it, to
+    ## match canonical style:
+    x_opts <- x[opts]
+    i <- match(pos[[1]], names(x_opts))
+    if (!is.na(i)) {
+      x_opts <- c(unname(x_opts[i]), x_opts[-i])
+    }
+
+    call <- as.call(c(list(as.symbol(fn_name)), x_opts))
+
     if (instructions) {
-      x_opts <- x[opts]
-      i <- vlapply(x_opts, is.character)
-      x_opts[i] <- lapply(x_opts[i], dquote)
-      j <- match(pos[[1]], names(x_opts))
-      if (!is.na(j)) {
-        x_opts <- c(unname(x_opts[j]), x_opts[-j])
-      }
-      do_call_fake(paste0("devtools::", fn_name), x_opts)
+      ## devtools::install_<source> usually fully qualified:
+      paste0("devtools::", deparse(call))
     } else {
-      do.call(fn_r, x[opts])
+      ## A bit of faff involved here:
+      e <- new.env(parent=.GlobalEnv)
+      assign(fn_name, fn_r, e)
+      eval(call, e)
       package
     }
   }
-  sapply(names(dat), install_packages_extra1, USE.NAMES=FALSE)
+
+  vcapply(names(dat), install_packages_extra1, USE.NAMES=FALSE)
 }
 
 missing_packages <- function(packages) {
