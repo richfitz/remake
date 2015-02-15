@@ -77,6 +77,8 @@
             paste(dups, collapse=", "))
   }
 
+  .remake_check_target_literal_clash(obj)
+
   ## Check the default target:
   default <- obj$config$target_default
   if (is.null(default)) {
@@ -140,6 +142,31 @@
     t
   }
   lapply(obj_targets, check1)
+}
+
+.remake_check_target_literal_clash <- function(obj) {
+  ## Check that literal things don't clash with targets.
+  target_literal_clash <- function(t) {
+    ret <- character(0)
+    pos <- !t$arg_is_target
+    if (any(pos)) {
+      literal <- as.list(t$command[-1][pos])
+      i <- vlapply(literal, is.symbol)
+      if (any(i)) {
+        ret <- intersect(vcapply(literal[i], as.character),
+                         names(obj$targets))
+      }
+    }
+    ret
+  }
+  clash <- lapply(obj$targets, target_literal_clash)
+  i <- viapply(clash, length) > 0L
+  if (any(i)) {
+    err <- sprintf(" - %s: %s",
+                   names(obj$targets)[i],
+                   vcapply(clash[i], paste, collapse=", "))
+    stop("target/literal clash:\n", paste(err, collapse="\n"))
+  }
 }
 
 cleanup_levels <- function() {
