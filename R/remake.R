@@ -342,3 +342,10 @@ remake_is_current <- function(obj, target_names, check=NULL) {
   vlapply(obj$targets[target_names], function(x)
     target_is_current(x, obj$store, check), USE.NAMES=FALSE)
 }
+
+remake_who_refers_to <- function(obj, target_names) {
+  deps <- lapply(obj$targets, "[[", "depends_name")
+  mat <- vapply(target_names, function(e)
+    vlapply(deps, function(x) e %in% x), logical(length(deps)))
+  unname(apply(mat, 2, function(x) paste(names(deps)[x], collapse=", ")))
+}

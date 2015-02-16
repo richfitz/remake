@@ -136,3 +136,43 @@ test_that("Loading without sources", {
   ## Sources already loaded
   expect_that(m <- remake(), not(shows_message("loading sources")))
 })
+
+test_that("Missing targets", {
+  cleanup()
+  filename <- "tmp_missing_targets.yml"
+  dat <- list(targets=
+                list(a_target=
+                       list(command="download_data(another_target)"),
+                     another_target=
+                       list(command="f()")))
+  writeLines(yaml::as.yaml(dat), filename)
+  on.exit(file_remove(filename))
+  ## Sanity check!
+  expect_that(remake(filename), not(throws_error()))
+
+  ## Misspelling:
+  dat$targets$a_target$command <- "download_data(aother_target)"
+  writeLines(yaml::as.yaml(dat), filename)
+  expect_that(remake(filename),
+              throws_error("created targets must all be files"))
+  str <- "aother_target: (in a_target) -- did you mean: another_target"
+  expect_that(remake(filename),
+              throws_error(str, fixed=TRUE))
+
+  ## Warning if it looks like a file.
+  dat$targets$a_target$command <- "download_data('an/other_target')"
+  writeLines(yaml::as.yaml(dat), filename)
+  expect_that(remake(filename),
+              gives_warning("Creating implicit target for nonexistant files"))
+  str <- "an/other_target: (in a_target) -- did you mean: another_target"
+  expect_that(remake(filename, allow_cache=FALSE),
+              gives_warning(str, fixed=TRUE))
+
+  ## No suggestions:
+  oo <- options(remake.dym=FALSE)
+  on.exit(options(oo), add=TRUE)
+  expect_that(remake(filename, allow_cache=FALSE),
+              gives_warning("Creating implicit target for nonexistant files"))
+  expect_that(remake(filename, allow_cache=FALSE),
+              not(gives_warning(str, fixed=TRUE)))
+})

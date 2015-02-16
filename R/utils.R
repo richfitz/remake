@@ -382,3 +382,13 @@ paint <- function(str, col) {
     make_style(col)(str)
   }
 }
+
+did_you_mean <- function(name, pos, prefix="did you mean: ") {
+  close <- vcapply(name, function(x)
+    paste(agrep(name, pos, ignore.case=TRUE, value=TRUE), collapse=", "))
+  i <- nchar(close) > 0
+  if (!is.null(prefix)) {
+    close[i] <- paste0(prefix, close[i])
+  }
+  unname(close)
+}

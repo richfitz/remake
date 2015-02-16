@@ -116,14 +116,36 @@
   if (length(deps_msg) > 0L) {
     err <- !target_is_file(deps_msg)
     if (any(err)) {
-      stop(sprintf(
-        "Implicitly created targets must all be files (%s)",
-        paste(deps_msg[err], collapse=", ")))
+      err_names <- deps_msg[err]
+      err_used <- remake_who_refers_to(obj, err_names)
+      msg <- sprintf(" - %s: (in %s)", err_names, err_used)
+      if (getOption("remake.dym", TRUE)) {
+        pos <- unique(c(names(obj$targets),
+                        setdiff(deps_uniq, deps_msg)))
+        ## Consider checking files too?
+        ##   pos <- unique(c(pos, list.files(recursive=TRUE)))
+        suggestion <- did_you_mean(err_names, pos, " -- did you mean: ")
+        msg <- paste0(msg, suggestion)
+      }
+      stop(paste(c("Implicitly created targets must all be files:", msg),
+                   collapse="\n"))
     }
     deps_msg_missing <- !file.exists(deps_msg)
     if (any(deps_msg_missing)) {
-      warning("Creating implicit target for nonexistant files:\n",
-              paste0("\t", deps_msg[deps_msg_missing], collapse="\n"))
+      msg_names <- deps_msg[deps_msg_missing]
+      msg_used <- remake_who_refers_to(obj, msg_names)
+      msg <- sprintf(" - %s: (in %s)", msg_names, msg_used)
+      if (getOption("remake.dym", TRUE)) {
+        pos <- unique(c(names(obj$targets),
+                        setdiff(deps_uniq, deps_msg)))
+        ## Consider checking files too?
+        ##   pos <- unique(c(pos, list.files(recursive=TRUE)))
+        suggestion <- did_you_mean(msg_names, pos, " -- did you mean: ")
+        msg <- paste0(msg, suggestion)
+      }
+      warning(paste(c("Creating implicit target for nonexistant files",
+                      msg), collapse="\n"),
+              immediate.=TRUE)
     }
     extra <- lapply(deps_msg, target_new_file_implicit, FALSE)
     names(extra) <- deps_msg
