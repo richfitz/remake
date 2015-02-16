@@ -59,21 +59,13 @@ test_that("loading a remakefile with a missing package", {
   expect_that(remake("remake_missing_package.yml"),
               throws_error('install.packages("nosuchpackage")', fixed=TRUE))
 
-  ## skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
-  ## oo <- options(remake.install.missing.packages=TRUE)
-  ## on.exit(options(oo))
-  ##
-  ## TODO: This actually only errors after dropping *back* into remake;
-  ## should turn the warning it gives into an error I think.
-  ##
-  ## TODO: I can't actually test this, oddly; somehow the tryCatch
-  ## doesn't nest or something?
-  ## expect_that(remake("remake_missing_package.yml"),
-  ##             throws_error("is not available"))
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
+  with_options(list(remake.install.missing.packages=TRUE),
+               expect_that(remake("remake_missing_package.yml"),
+                           throws_error("there is no package called")))
 })
 
 test_that("loading a remakefile with a missing package", {
-  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -83,12 +75,49 @@ test_that("loading a remakefile with a missing package", {
 
   expect_that(m <- remake("remake_missing_sowsear.yml"),
               throws_error("devtools::install_github"))
+
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   oo <- options(remake.install.missing.packages=TRUE)
   on.exit(options(oo))
   expect_that(m <- remake("remake_missing_sowsear.yml"),
               shows_message("Downloading github repo"))
   expect_that(m, is_a("remake"))
   expect_that("sowsear" %in% .packages(), is_true())
+  unload_extra_packages("sowsear")
+
+  file_remove(path, recursive=TRUE)
+  .libPaths(path)
+})
+
+test_that("loading a remakefile with a missing target-specific package", {
+  cleanup()
+  if ("sowsear" %in% .packages(TRUE)) {
+    remove.packages("sowsear", .libPaths())
+  }
+  path <- tempfile()
+  dir.create(path)
+  .libPaths(path)
+
+  expect_that(m <- remake("remake_missing_sowsear2.yml", allow_cache=FALSE),
+              gives_warning("devtools::install_github"))
+  with_options(list(remake.warn.missing.target.packages=FALSE),
+               expect_that(m <- remake("remake_missing_sowsear2.yml",
+                                       allow_cache=FALSE),
+                           not(gives_warning())))
+
+  expect_that(remake_make(m, "data.csv"),
+              not(throws_error()))
+
+  expect_that(remake_make(m, "processed"),
+              throws_error("devtools::install_github"))
+  expect_that(remake_is_current(m, "processed"), is_false())
+
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
+  with_options(list(remake.install.missing.packages=TRUE),
+               expect_that(remake_make(m, "processed"),
+                           shows_message("Downloading github repo")))
+  expect_that(remake_is_current(m, "processed"), is_true())
+  expect_that("sowsear" %in% .packages(), is_false())
 
   file_remove(path, recursive=TRUE)
   .libPaths(path)

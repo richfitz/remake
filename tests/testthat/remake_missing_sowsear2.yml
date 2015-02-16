@@ -3,9 +3,6 @@
 sources:
   - code.R
 
-packages:
-  - nosuchpackage
-
 targets:
   all:
     depends: processed
@@ -16,3 +13,5 @@ targets:
 
   processed:
     command: process_data("data.csv")
+    packages:
+      - sowsear

@@ -3,9 +3,17 @@
   ## NOTE: This one here is working entirely by reference.
   if (!is.null(obj$store$env) && !obj$store$env$is_current()) {
     remake_print_message(obj, "READ", "", "# loading sources")
-    tryCatch(obj$store$env$reload(TRUE),
-             missing_packages=function(e) missing_packages_recover(e, obj))
+    load_packages(obj$store$packages, obj$file)
+    obj$store$env$reload(TRUE)
     global_active_bindings$reload_bindings("source", obj)
+
+    missing_target_packages <- setdiff(target_packages(obj), .packages())
+    if (length(missing_target_packages) > 0L &&
+        getOption("remake.warn.missing.target.packages", TRUE)) {
+      str <- missing_package_instructions(missing_target_packages,
+                                          obj$file, target_specific=TRUE)
+      warning(str, call.=FALSE, immediate.=TRUE)
+    }
   }
   obj
 }

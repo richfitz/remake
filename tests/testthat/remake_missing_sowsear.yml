@@ -8,7 +8,7 @@ packages:
 
 targets:
   all:
-    depends: plot.pdf
+    depends: processed
 
   data.csv:
     command: download_data(target_name)

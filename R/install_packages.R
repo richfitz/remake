@@ -1,3 +1,40 @@
+load_packages <- function(packages, filename=NULL) {
+  msg <- missing_packages(packages)
+  if (length(msg) > 0L) {
+    missing_packages_recover(msg, filename)
+  }
+  for (p in packages) {
+    suppressMessages(library(p, character.only=TRUE, quietly=TRUE))
+  }
+}
+
+load_extra_packages <- function(packages, filename=NULL) {
+  prev <- .packages()
+  load_packages(packages, filename)
+  invisible(setdiff(.packages(), prev))
+}
+
+## This tries to unload packages in the reverse order they were loaded
+## in, so aside from circular dependencies this should work OK.
+unload_extra_packages <- function(packages) {
+  for (p in packages) {
+    detach(sprintf("package:%s", p), character.only=TRUE)
+  }
+}
+
+target_packages <- function(obj) {
+  sort(unique(unlist(lapply(obj$targets, "[[", "packages"))))
+}
+
+missing_packages <- function(packages) {
+  setdiff(packages, .packages(TRUE))
+}
+
+missing_packages_condition <- function(packages) {
+  stop(cond)
+}
+
+## Installation bits below here...
 install_packages <- function(packages,
                              instructions=FALSE,
                              missing_only=TRUE,
@@ -98,10 +135,6 @@ install_packages_extra <- function(dat, instructions=FALSE) {
   vcapply(names(dat), install_packages_extra1, USE.NAMES=FALSE)
 }
 
-missing_packages <- function(packages) {
-  setdiff(packages, .packages(TRUE))
-}
-
 ## Not trying to support much of what packrat does: just trying to
 ## keep it reasonably simple.
 read_remake_packages <- function(filename) {
@@ -137,38 +170,36 @@ install_function <- function(src) {
          stop("Invalid source ", src))
 }
 
-missing_packages_condition <- function(packages) {
-  msg <- paste("Some packages are missing:",
-               paste(packages, collapse=", "))
-  cond <- list(message=msg, packages=packages)
-  class(cond) <- c("missing_packages", "condition")
-  stop(cond)
-}
-
-missing_packages_recover <- function(e, obj) {
-  extra <- read_remake_packages("remake_sources.yml")
-  file <- obj$file
-  packages <- e$packages
+missing_packages_recover <- function(packages, filename=NULL) {
   if (getOption("remake.install.missing.packages", FALSE)) {
+    extra <- read_remake_packages("remake_sources.yml")
+    oo <- options(warn=2)
+    on.exit(options(oo))
     install_packages(packages,
                      instructions=FALSE,
                      package_sources=extra)
-    obj$store$env$reload(TRUE)
   } else {
-    indent <- function(x) paste0("    ", x)
-    str_manual <- indent(install_packages(packages,
-                                          instructions=TRUE,
-                                          package_sources=extra))
-    if (is.null(file)) {
-      str_remake <- character(0)
-    } else {
-      str_remake <- sprintf('remake::install_missing_packages("%s")',
-                           file)
-      str_remake <- c(indent(str_remake), "or:")
-    }
-
-    str <- paste(c(e$message, "Install with:", str_remake, str_manual),
-                 collapse="\n")
-    stop(str, call.=FALSE)
+    stop(missing_package_instructions(packages, filename), call.=FALSE)
   }
+}
+
+missing_package_instructions <- function(packages, filename,
+                                         target_specific=FALSE) {
+  indent <- function(x) paste0("    ", x)
+  extra <- read_remake_packages("remake_sources.yml")
+  str_manual <- indent(install_packages(packages,
+                                        instructions=TRUE,
+                                        package_sources=extra))
+  if (is.null(filename)) {
+    str_remake <- character(0)
+  } else {
+    str_remake <- sprintf('remake::install_missing_packages("%s")',
+                          filename)
+    str_remake <- c(indent(str_remake), "or:")
+  }
+
+  msg <- sprintf("Some %spackages are missing:",
+                 if (target_specific) "(target-specific) " else "")
+  msg <- paste(msg, paste(packages, collapse=", "))
+  paste(c(msg, "Install with:", str_remake, str_manual), collapse="\n")
 }

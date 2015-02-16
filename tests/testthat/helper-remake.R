@@ -1,3 +1,9 @@
+## Very cryptic way of setting CRAN mirrors apparently required,
+## presumably to make R CMD check even more fun:
+## http://stackoverflow.com/questions/16826933/installation-of-r-fpc-package
+local({r <- getOption("repos");
+       r["CRAN"] <- "http://cran.r-project.org"; options(repos=r)})
+
 cleanup <- function() {
   file_remove(".remake", recursive=TRUE)
   suppressWarnings(file.remove(c("data.csv", "plot.pdf",
@@ -35,4 +41,10 @@ skip_unless_set <- function(name) {
 
 skip_unless_travis <- function() {
   skip_unless_set("TRAVIS")
+}
+
+with_options <- function(new, code) {
+  old <- options(new)
+  on.exit(options(old))
+  force(code)
 }

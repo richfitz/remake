@@ -231,7 +231,7 @@ remake_update <- function(obj, target_name, check=NULL,
     ## we load them, but also unload them afterwards (including
     ## dependencies).  This does not leave packages loaded for
     ## dependent taragets though.
-    extra <- load_extra_packages(target$packages)
+    extra <- load_extra_packages(target$packages, obj$file)
     if (target$type == "cleanup") {
       ## Do this here because it uses the remake object (via
       ## remake_remove_target), which is not available in

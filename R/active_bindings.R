@@ -91,7 +91,6 @@ binding_manager <- R6Class(
         names <- remake_list_targets(obj, "object",
                                      include_chain_intermediates=FALSE)
       } else if (type == "source") {
-        obj$store$env$reload()
         names <- ls(obj$store$env$env, all.names=TRUE)
       } else {
         stop("Unknown type ", type)
