@@ -84,6 +84,16 @@ test_that("Create directory", {
   expect_that('dir.create("export", FALSE, TRUE)' %in% str, is_true())
 })
 
+test_that("Load extra packages", {
+  cleanup()
+  m <- remake("remake_target_packages.yml")
+  str <- make_script(c("all", "will_load"),
+                     remake_file="remake_target_packages.yml")
+  expect_that('library("devtools")' %in% str, is_true())
+  expect_that(sum(str == 'library("devtools")'), equals(1))
+  expect_that(which(str == 'library("devtools")') != 1, is_true())
+})
+
 if (FALSE) { ## TODO -- looks like this might be failing?
 test_that("Chained targets", {
   cleanup()
