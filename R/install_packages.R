@@ -30,10 +30,6 @@ missing_packages <- function(packages) {
   setdiff(packages, .packages(TRUE))
 }
 
-missing_packages_condition <- function(packages) {
-  stop(cond)
-}
-
 ## Installation bits below here...
 install_packages <- function(packages,
                              instructions=FALSE,
