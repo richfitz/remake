@@ -195,7 +195,7 @@ file_store <- R6Class(
       ## TODO: Generalise this pattern (see also get_hash)
       exists <- self$contains(filename)
       if (exists) {
-        file.remove(self$fullname(filename))
+        file_remove(self$fullname(filename))
       } else if (!missing_ok) {
         stop(sprintf("file %s not found in file store", filename))
       }
@@ -266,7 +266,7 @@ remake_db <- R6Class(
     del=function(key, missing_ok=FALSE) {
       exists <- self$contains(key)
       if (exists) {
-        file.remove(self$fullname(key))
+        file_remove(self$fullname(key))
       } else if (!missing_ok) {
         stop(sprintf("key %s not found in remake database", key))
       }
@@ -342,7 +342,7 @@ store <- R6Class(
     },
 
     destroy=function() {
-      unlink(self$path, recursive=TRUE)
+      file_remove(self$path, recursive=TRUE)
       self$path <- NULL
       self$db <- NULL
       self$objects <- NULL

@@ -336,7 +336,7 @@ test_that("get/set/archive object targets", {
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))
   expect_that(dep$time, is_more_than(res$time))
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
 
   ## Set this to rubbish values:
   target_set(t, m$store, "foo")
@@ -349,7 +349,7 @@ test_that("get/set/archive object targets", {
   expect_that(archive_export_target(t, m$store, path),
               throws_error("processed not found in object store"))
 
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
 })
 
 ## Things that need activation:
@@ -376,7 +376,7 @@ test_that("get/set/archive file targets", {
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))
   expect_that(dep$time, is_more_than(res$time))
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
 
   remake_remove_target(m, "plot.pdf")
 
@@ -385,7 +385,7 @@ test_that("get/set/archive file targets", {
   expect_that(archive_export_target(t, m$store, path),
               throws_error("plot.pdf not found in file store"))
 
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
 })
 
 test_that("Error messages", {

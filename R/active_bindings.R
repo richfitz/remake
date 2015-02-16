@@ -88,10 +88,8 @@ binding_manager <- R6Class(
 
     set_bindings=function(type, obj) {
       if (type == "target") {
-        objects <- filter_targets_by_type(obj$targets, "object")
-        ## Exclude chain targets:
-        ok <- vlapply(objects, function(x) is.null(x$chain_parent))
-        names <- unname(dependency_names(objects[ok]))
+        names <- remake_list_targets(obj, "object",
+                                     include_chain_intermediates=FALSE)
       } else if (type == "source") {
         obj$store$env$reload()
         names <- ls(obj$store$env$env, all.names=TRUE)

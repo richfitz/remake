@@ -71,7 +71,7 @@ test_that("Chained rules -> file", {
 
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
-  file.remove("plot.pdf")
+  file_remove("plot.pdf")
   remake_make(m, "plot.pdf")
 
   remake_make(m, "clean")
@@ -97,7 +97,7 @@ test_that("Chained rules -> plot", {
 
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
-  file.remove("plot.pdf")
+  file_remove("plot.pdf")
   remake_make(m, "plot.pdf")
 
   remake_make(m, "clean")

@@ -172,7 +172,7 @@ test_that("auto_gitignore", {
   tmp <- backup(".gitignore")
   on.exit(restore(".gitignore", tmp))
 
-  file.remove(".gitignore")
+  file_remove(".gitignore")
   expect_that(auto_gitignore(dry_run=TRUE),
               equals(c(x, "data.csv", "plot.pdf")))
 
@@ -191,7 +191,7 @@ test_that("auto_gitignore", {
   expect_that(auto_gitignore(check_git=FALSE, dry_run=TRUE),
               equals(c(".remake", "data.csv", "plot.pdf")))
 
-  file.remove(".gitignore")
+  file_remove(".gitignore")
   str <- auto_gitignore()
   expect_that(readLines(".gitignore"), is_identical_to(str))
   expect_that(auto_gitignore(), equals(character(0)))

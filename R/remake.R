@@ -259,7 +259,7 @@ remake_remove_target <- function(obj, target_name, chain=TRUE) {
   assert_has_targets(target_name, obj)
   target <- obj$targets[[target_name]]
   if (chain && !is.null(target$chain_kids)) {
-    chain_names <- dependency_names(target$chain_kids)
+    chain_names <- vcapply(target$chain_kids, "[[", "name")
     for (t in chain_names) {
       remake_remove_target(obj, t, chain=FALSE)
     }

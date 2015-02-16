@@ -37,15 +37,15 @@ diagram_styles_default <- function() {
        object=c(shape="ellipse", color="green4"))
 }
 
-remake_diagram_command <- function(m, styles=NULL) {
+remake_diagram_command <- function(obj, styles=NULL) {
   if (is.null(styles)) {
     styles <- diagram_styles_default()
   }
 
-  g <- remake_dependency_graph(m)
+  g <- remake_dependency_graph(obj)
 
   ## Filter to exclude cleanup targets:
-  types <- dependency_types(m$targets)
+  types <- vcapply(obj$targets, "[[", "type")
   keep <- types != "cleanup"
   g <- g[keep[names(g)]]
   types <- types[keep]

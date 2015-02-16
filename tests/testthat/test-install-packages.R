@@ -51,7 +51,7 @@ test_that("install_packages (for reals)", {
   res <- install_packages("sowsear", package_sources=extras)
   expect_that(res, equals(character(0)))
 
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
   .libPaths(path)
 })
 
@@ -90,6 +90,6 @@ test_that("loading a remakefile with a missing package", {
   expect_that(m, is_a("remake"))
   expect_that("sowsear" %in% .packages(), is_true())
 
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
   .libPaths(path)
 })

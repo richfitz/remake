@@ -6,7 +6,7 @@ test_that("Plan", {
     if (is.null(target_name)) {
       target_name <- remake_default_target(m)
     }
-    status(target_name, remake_dependency_graph(m), m)
+    remake_status(m, target_name, remake_dependency_graph(m))
   }
 
   cleanup()
@@ -44,7 +44,7 @@ test_that("Plan", {
 
   ## Now, delete data.csv: Notice that the plot.pdf is not actually
   ## dirty, though it *is* dirty by descent.
-  file.remove("data.csv")
+  file_remove("data.csv")
   cmp_status[c("data.csv", "processed"), "dirty"] <- TRUE
   cmp_status[c("processed", "plot.pdf"), "dirty_by_descent"] <- TRUE
   expect_that(m_status(m, "plot.pdf"), equals(cmp_status))

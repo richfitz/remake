@@ -53,13 +53,13 @@ test_that("Inspect archive", {
 
   ## Missing the remake.rds file:
   unzip("remake.zip", exdir=tmp)
-  file.remove(file.path(tmp_path, "remake.rds"))
+  file_remove(file.path(tmp_path, "remake.rds"))
   zip_dir(tmp_path)
   expect_that(is_archive("remake.zip"),
               is_false())
   expect_that(assert_remake_archive("remake.zip"),
               throws_error("not a remake archive"))
-  unlink(tmp_path, recursive=TRUE)
+  file_remove(tmp_path, recursive=TRUE)
 
   ## Basically empty
   dir.create(tmp_path)
@@ -68,7 +68,7 @@ test_that("Inspect archive", {
               is_false())
   expect_that(assert_remake_archive("remake.zip"),
               throws_error("not a remake archive"))
-  unlink(tmp_path, recursive=TRUE)
+  file_remove(tmp_path, recursive=TRUE)
   cleanup()
 })
 

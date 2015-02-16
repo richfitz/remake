@@ -131,7 +131,7 @@
   }
 
   ## Associate all type information for targets (this is the slow part)
-  types <- dependency_types(obj_targets)
+  types <- vcapply(obj_targets, "[[", "type")
   check1 <- function(t) {
     if (length(t$depends_name) > 0L) {
       t$depends_type <- types[t$depends_name]

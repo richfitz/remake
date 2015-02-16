@@ -35,7 +35,7 @@ test_that("zip_dir", {
   contents <- unzip("test.zip", list=TRUE)
   expected <- c("test/code.R", "test/remake.yml")
   expect_that(all(expected %in% contents$Name), is_true())
-  file.remove("test.zip")
+  file_remove("test.zip")
 
   ## Then, out of place:
   path <- file.path(tempdir(), "test")
@@ -45,7 +45,7 @@ test_that("zip_dir", {
   dest <- zip_dir(path)
   expect_that(dest, equals("test.zip"))
   expect_that(all(expected %in% contents$Name), is_true())
-  file.remove("test.zip")
+  file_remove("test.zip")
 })
 
 test_that("git_exists", {

@@ -36,7 +36,7 @@ targets:
 '
   ## First the OK version:
   filename <- "tmp_quoting.yml"
-  on.exit(file.remove(filename))
+  on.exit(file_remove(filename))
 
   writeLines(sprintf(template, 'target_name', '"data.csv"', 'processed'),
              filename)

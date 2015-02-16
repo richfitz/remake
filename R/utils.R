@@ -144,6 +144,7 @@ isFALSE <- function(x) {
   identical(x, FALSE)
 }
 
+## NOTE: Does not handle vectors & throw warning at `if (exists)`
 file_remove <- function(path, recursive=FALSE) {
   exists <- file.exists(path)
   if (exists) {
@@ -213,7 +214,7 @@ zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
   zipfile_full <- file.path(cwd, zipfile)
   ## Should backup?
   if (overwrite && file.exists(zipfile)) {
-    file.remove(zipfile)
+    file_remove(zipfile)
   }
   if (at != ".") {
     owd <- setwd(at)
@@ -329,7 +330,7 @@ git_ignores <- function(files) {
     rep_along(FALSE, files)
   } else {
     tmp <- tempfile()
-    on.exit(file.remove(tmp))
+    on.exit(file_remove(tmp))
     writeLines(files, tmp)
 
     recover_git <- function(e) {

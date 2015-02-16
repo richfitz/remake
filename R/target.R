@@ -375,18 +375,6 @@ target_reserved_names <- function() {
   c("target_name", ".")
 }
 
-filter_targets_by_type <- function(targets, types) {
-  target_types <- dependency_types(targets)
-  targets[target_types %in% types]
-}
-
-dependency_names <- function(x) {
-  vcapply(x, "[[", "name")
-}
-dependency_types <- function(x) {
-  vcapply(x, "[[", "type")
-}
-
 ## TODO: There is an issue here for getting options for rules that
 ## terminate in knitr or plot rules: we can't pass along options to
 ## these!
@@ -666,7 +654,7 @@ filter_targets <- function(targets, type=NULL,
   ok <- rep_along(TRUE, targets)
 
   if (!is.null(type)) {
-    ok[!(dependency_types(targets) %in% type)] <- FALSE
+    ok[!(vcapply(targets, "[[", "type") %in% type)] <- FALSE
   }
 
   if (!include_implicit_files) {

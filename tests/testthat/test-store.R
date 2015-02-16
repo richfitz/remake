@@ -93,7 +93,7 @@ test_that("data store", {
 
   expect_that(st$ls(), equals("bar"))
 
-  unlink(path, recursive=TRUE)
+  file_remove(path, recursive=TRUE)
 })
 
 test_that("file store", {

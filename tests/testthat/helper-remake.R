@@ -1,5 +1,5 @@
 cleanup <- function() {
-  unlink(".remake", recursive=TRUE)
+  file_remove(".remake", recursive=TRUE)
   suppressWarnings(file.remove(c("data.csv", "plot.pdf",
                                  "code2.R", "remake_error.yml",
                                  "plot1.pdf", "plot2.pdf",
@@ -12,9 +12,9 @@ cleanup <- function() {
                                  "remake_active.R",
                                  "remake",
                                  "tmp_quoting.yml")))
-  unlink("figure", recursive=TRUE)
-  unlink("test", recursive=TRUE)
-  unlink("source_dir", recursive=TRUE)
+  file_remove("figure", recursive=TRUE)
+  file_remove("test", recursive=TRUE)
+  file_remove("source_dir", recursive=TRUE)
   remake:::cache$clear()
   remake:::global_active_bindings$clear()
   invisible(NULL)

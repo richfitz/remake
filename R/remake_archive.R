@@ -34,7 +34,7 @@ remake_archive_export <- function(obj, target_names, dependencies=TRUE,
   path <- file.path(tempfile(),
                     tools::file_path_sans_ext(basename(archive_file)))
   dir.create(path, recursive=TRUE)
-  on.exit(unlink(path, recursive=TRUE))
+  on.exit(file_remove(path, recursive=TRUE))
 
   store <- obj$store
   for (t in obj$targets[target_names]) {

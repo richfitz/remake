@@ -100,7 +100,7 @@ list_archive <- function(archive_file="remake.zip", detail=FALSE) {
   contents <- unzip(archive_file, list=TRUE)
   path <- tempfile()
   dir.create(path, recursive=TRUE)
-  on.exit(unlink(path, recursive=TRUE))
+  on.exit(file_remove(path, recursive=TRUE))
   re <- paste0("^", file.path(tld, "db"), ".*\\.rds")
   keep <- contents$Name[grepl(re, contents$Name)]
   res <- unzip(archive_file, exdir=path, files=keep)

@@ -46,8 +46,8 @@ make_script <- function(target_names=NULL,
                         verbose=FALSE,
                         filename=NULL,
                         remake_file="remake.yml") {
-  m <- remake(remake_file, verbose=verbose, load_sources=FALSE)
-  scr <- remake_script(m, target_names)
+  obj <- remake(remake_file, verbose=verbose, load_sources=FALSE)
+  scr <- remake_script(obj, target_names)
   if (is.null(filename)) {
     scr
   } else {
@@ -138,8 +138,8 @@ diagram <- function(..., remake_file="remake.yml") {
   ## TODO: Take a target name here so we can get the tree filtered to
   ## a set of targets.
   ## TODO: Colour differently based on up-to-date-ness.
-  m <- remake(remake_file, load_sources=FALSE)
-  str <- remake_diagram_command(m, ...)
+  obj <- remake(remake_file, load_sources=FALSE)
+  str <- remake_diagram_command(obj, ...)
   DiagrammeR::grViz(str)
 }
 
@@ -326,7 +326,7 @@ source_character <- function(str, envir=.GlobalEnv, rewrite_source=TRUE) {
   }
   dest <- tempfile()
   writeLines(str, dest)
-  on.exit(file.remove(dest))
+  on.exit(file_remove(dest))
   sys.source(dest, envir)
   invisible(envir)
 }

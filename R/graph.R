@@ -79,15 +79,15 @@ dependencies <- function(node, graph) {
 ## * Special care needed for things that are check: exists/check: code
 ##   though (i.e., not check_depends()).  There is no point moving
 ##   past the dependency there.
-status <- function(target_name, graph, m) {
+remake_status <- function(obj, target_name, graph) {
   candidates <- dependencies(target_name, graph)
 
   ## Now, work up the tree working out if these are dirty or dirty by
   ## descent (dbd):
   dirty <- dbd <- structure(logical(length(candidates)), names=candidates)
   for (t in candidates) {
-    x <- m$targets[[t]]
-    dirty[[t]] <- !target_is_current(x, m$store)
+    x <- obj$targets[[t]]
+    dirty[[t]] <- !target_is_current(x, obj$store)
     if (check_depends(x$check)) {
       d <- x$depends_name[x$depends_type %in% c("file", "object")]
       ## TODO: This conditional goes away if we have a dependency
