@@ -27,6 +27,8 @@ test_that("list_targets", {
               equals(character(0)))
 
   ## With implicit files:
+  fake_empty_file("data.csv")
+  on.exit(file_remove("data.csv"))
   expect_that(list_targets("remake2.yml"),
               equals(c("processed", "plot.pdf")))
   expect_that(list_targets("remake2.yml", include_implicit_files=TRUE),

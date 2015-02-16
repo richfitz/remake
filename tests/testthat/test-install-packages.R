@@ -1,8 +1,9 @@
-context("Package sources")
+context("Install packages")
 
 ## This will get fleshed out over time, but doing this without
 ## creating a horrible pile of dependencies is tricky.  I notice that
 ## devtools doesn't actually test installation.
+
 test_that("sources", {
   dat <- read_remake_packages("remake_sources.yml")
   expect_that(dat$sowsear$repo, equals("richfitz/sowsear"))
@@ -62,10 +63,11 @@ test_that("loading a remakefile with a missing package", {
   skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   with_options(list(remake.install.missing.packages=TRUE),
                expect_that(remake("remake_missing_package.yml"),
-                           throws_error("there is no package called")))
+                           throws_error("is not available")))
 })
 
 test_that("loading a remakefile with a missing package", {
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
   }
@@ -76,7 +78,6 @@ test_that("loading a remakefile with a missing package", {
   expect_that(m <- remake("remake_missing_sowsear.yml"),
               throws_error("devtools::install_github"))
 
-  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   oo <- options(remake.install.missing.packages=TRUE)
   on.exit(options(oo))
   expect_that(m <- remake("remake_missing_sowsear.yml"),
@@ -90,6 +91,7 @@ test_that("loading a remakefile with a missing package", {
 })
 
 test_that("loading a remakefile with a missing target-specific package", {
+  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   cleanup()
   if ("sowsear" %in% .packages(TRUE)) {
     remove.packages("sowsear", .libPaths())
@@ -112,7 +114,6 @@ test_that("loading a remakefile with a missing target-specific package", {
               throws_error("devtools::install_github"))
   expect_that(remake_is_current(m, "processed"), is_false())
 
-  skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   with_options(list(remake.install.missing.packages=TRUE),
                expect_that(remake_make(m, "processed"),
                            shows_message("Downloading github repo")))

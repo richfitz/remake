@@ -7,7 +7,7 @@
     obj$store$env$reload(TRUE)
     global_active_bindings$reload_bindings("source", obj)
 
-    missing_target_packages <- setdiff(target_packages(obj), .packages())
+    missing_target_packages <- missing_packages(target_packages(obj))
     if (length(missing_target_packages) > 0L &&
         getOption("remake.warn.missing.target.packages", TRUE)) {
       str <- missing_package_instructions(missing_target_packages,

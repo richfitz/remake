@@ -21,7 +21,12 @@ test_that("Build Rmd works", {
 test_that("Build Rnw works", {
   cleanup()
   m <- remake("knitr.yml")
-  remake_make(m, "knitr.tex")
+  ## TODO: This gives a warning because knitr is trying to look for
+  ## framed.sty and doing a pretty terrible job at it.  This also
+  ## produces the warning about
+  ##   sh: 1: kpsewhich: not found
+  ## which can't be suppressed.
+  suppressWarnings(remake_make(m, "knitr.tex"))
   expect_that(file.exists("knitr.tex"), is_true())
   expect_that(is_directory("figure"), is_true())
   expect_that(file.exists("figure/unnamed-chunk-2-1.pdf"),

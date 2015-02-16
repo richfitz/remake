@@ -23,7 +23,12 @@ unload_extra_packages <- function(packages) {
 }
 
 target_packages <- function(obj) {
-  sort(unique(unlist(lapply(obj$targets, "[[", "packages"))))
+  pkgs <- unlist(lapply(obj$targets, "[[", "packages"))
+  if (is.null(pkgs)) {
+    character(0)
+  } else {
+    sort(unique(pkgs))
+  }
 }
 
 missing_packages <- function(packages) {
@@ -175,7 +180,15 @@ missing_packages_recover <- function(packages, filename=NULL) {
                      instructions=FALSE,
                      package_sources=extra)
   } else {
-    stop(missing_package_instructions(packages, filename), call.=FALSE)
+    msg <- missing_package_instructions(packages, filename)
+    msg_libpaths <- paste0(".libPaths():\n",
+                           paste("\t - ", .libPaths(), collapse="\n"))
+    msg_packages1 <- paste0(".packages(): ", paste(.packages(), collapse=", "))
+    msg_packages2 <- paste0(".packages(TRUE): ",
+                            paste(.packages(TRUE), collapse=", "))
+    msg <- paste(c(msg, msg_libpaths, msg_packages1, msg_packages2),
+                 collapse="\n")
+    stop(msg, call.=FALSE)
   }
 }
 

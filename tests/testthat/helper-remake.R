@@ -4,6 +4,10 @@
 local({r <- getOption("repos");
        r["CRAN"] <- "http://cran.r-project.org"; options(repos=r)})
 
+fake_empty_file <- function(filename) {
+  writeLines(character(0), filename)
+}
+
 cleanup <- function() {
   file_remove(".remake", recursive=TRUE)
   suppressWarnings(file.remove(c("data.csv", "plot.pdf",
@@ -47,4 +51,20 @@ with_options <- function(new, code) {
   old <- options(new)
   on.exit(options(old))
   force(code)
+}
+
+## This is useful for debugging package installation problems that
+## still can't be tested on Travis.  The docker approach shows the
+## same errors so serves as an easier testbed.  Add this around calls
+## to libPaths.
+print_libpaths <- function(msg) {
+  msg_libpaths <- paste0(".libPaths():\n",
+                         paste("\t - ", .libPaths(), collapse="\n"))
+  msg_packages1 <- paste0(".packages(): ", paste(.packages(), collapse=", "))
+  msg_packages2 <- paste0(".packages(TRUE): ",
+                          paste(.packages(TRUE), collapse=", "))
+  msg <- "PACKAGE INSTALLATION START"
+  msg <- paste(c(msg, msg_libpaths, msg_packages1, msg_packages2),
+               collapse="\n")
+  message(msg)
 }
