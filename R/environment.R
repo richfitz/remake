@@ -56,10 +56,18 @@ managed_environment <- R6Class(
     },
 
     find_files=function() {
-      if (any(!file.exists(self$sources))) {
-        stop("Files not found:",
-             paste(self$sources[!file.exists(self$sources)],
-                   collapse=", "))
+      is_missing <- !file_exists(self$sources)
+      if (any(is_missing)) {
+        missing_files <- self$sources[is_missing]
+        wrong_case <- file.exists(missing_files)
+        if (any(wrong_case)) {
+          missing_files[wrong_case] <-
+            sprintf("%s (incorrect case => %s)",
+                    missing_files[wrong_case],
+                    file_real_case(missing_files[wrong_case]))
+        }
+        stop("Files not found:\n",
+             paste(sprintf("\t- %s", missing_files), collapse="\n"))
       }
       files <- as.list(self$sources)
       if (length(files) == 0L) {

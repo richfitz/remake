@@ -1,0 +1,20 @@
+# example configuration script for remake; using this to test out some
+# ideas.
+sources:
+  # Wrong case!
+  - code.r
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.csv:
+    command: download_data(target_name)
+    cleanup_level: purge
+
+  processed:
+    command: process_data("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true

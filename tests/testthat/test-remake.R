@@ -176,3 +176,10 @@ test_that("Missing targets", {
   expect_that(remake(filename, allow_cache=FALSE),
               not(gives_warning(str, fixed=TRUE)))
 })
+
+test_that("Source case sensitivity", {
+  expect_that(remake("remake_wrong_case.yml"),
+              throws_error("Files not found"))
+  expect_that(remake("remake_wrong_case.yml"),
+              throws_error("incorrect case => code.R"))
+})

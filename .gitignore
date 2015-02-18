@@ -1,2 +1,4 @@
 .remake
-doc
+doc/
+docker/
+TODO.md

@@ -376,3 +376,39 @@ did_you_mean <- function(name, pos, prefix="did you mean: ") {
   }
   unname(close)
 }
+
+## Like file.exists but cares about case.  May not be bulletproof.
+file_exists <- function(...) {
+  exists <- file.exists(...)
+
+  files_check <- c(...)[exists]
+  path_check <- dirname(normalizePath(files_check, mustWork=TRUE))
+  files_check <- basename(files_check)
+
+  path_uniq <- unique(path_check)
+  i <- match(path_check, path_uniq)
+
+  contents <- lapply(path_uniq, dir, all.files=TRUE)
+  ok <- vlapply(seq_along(files_check),
+                function(idx) files_check[[idx]] %in% contents[[i[idx]]])
+
+  exists[exists] <- ok
+  exists
+}
+
+## It would be nice to take a file and convert it to its real case.
+file_real_case <- function(files) {
+  ret <- rep_len(NA_character_, length(files))
+  exists_real <- file_exists(files)
+  exists_fake <- file.exists(files)
+  ret[exists_real] <- files[exists_real]
+
+  i <- exists_fake & !exists_real
+
+  fix <- files[i]
+  fix_full <- normalizePath(fix, "/", mustWork=TRUE)
+  ## Now, split the strings back to this point:
+  len <- nchar(fix_full)
+  ret[i] <- substr(fix_full, len - nchar(fix) + 1L, len)
+  ret
+}
