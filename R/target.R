@@ -539,7 +539,10 @@ target_run_fake <- function(target, for_script=FALSE) {
   if (is.null(target$rule) || target$type == "cleanup") {
     NULL
   } else {
-    res <- deparse(target$command)
+    ## TODO: Get a test on this - was a weird error because this
+    ## caused lines to break over multiple lines and therefore did not
+    ## print properly with remake_print_message().
+    res <- paste(deparse(target$command, width.cutoff=500L), collapse=" ")
     if (inherits(target, "target_plot")) {
       if (for_script) {
         open <- plot_call(target$name, target$plot$device, target$plot$args)
@@ -554,10 +557,10 @@ target_run_fake <- function(target, for_script=FALSE) {
       ## This is a trick to ensure correct printing of the LHS of the
       ## assigmnent; it will keep the backticks around the LHS
       ## variable names only when they're required syntactically
-      ## (they're already around the rhs).  This does mean that the
-      ## RHS gets parsed/deparsed several times though.
-      res <- sprintf("`%s` <- %s", target$name, res)
-      res <- deparse(parse(text=res, keep.source=FALSE)[[1]])
+      ## (they're already around the rhs).
+      target_name <- deparse(parse(text=sprintf("`%s`", target$name))[[1]],
+                             backtick=TRUE)
+      res <- sprintf("%s <- %s", target_name, res)
     }
 
     if (for_script && !is.null(target$packages)) {
