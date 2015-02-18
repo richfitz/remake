@@ -11,10 +11,7 @@ managed_environment <- R6Class(
     initialize=function(packages, sources) {
       assert_character(packages, "packages")
       assert_character(sources,  "sources")
-      if (!all(file.exists(sources))) {
-        msg <- paste(sources[!file.exists(sources)], collapse=", ")
-        stop("All files in 'sources' must exist.  Missing: ", msg)
-      }
+      managed_environment_assert_sources_exist(sources)
       self$packages <- packages
       self$sources <- sources
     },
@@ -56,19 +53,6 @@ managed_environment <- R6Class(
     },
 
     find_files=function() {
-      is_missing <- !file_exists(self$sources)
-      if (any(is_missing)) {
-        missing_files <- self$sources[is_missing]
-        wrong_case <- file.exists(missing_files)
-        if (any(wrong_case)) {
-          missing_files[wrong_case] <-
-            sprintf("%s (incorrect case => %s)",
-                    missing_files[wrong_case],
-                    file_real_case(missing_files[wrong_case]))
-        }
-        stop("Files not found:\n",
-             paste(sprintf("\t- %s", missing_files), collapse="\n"))
-      }
       files <- as.list(self$sources)
       if (length(files) == 0L) {
         character(0)
@@ -83,3 +67,19 @@ managed_environment <- R6Class(
       }
     }
     ))
+
+managed_environment_assert_sources_exist <- function(files) {
+  is_missing <- !file_exists(files)
+  if (any(is_missing)) {
+    missing_files <- files[is_missing]
+    wrong_case <- file.exists(missing_files)
+    if (any(wrong_case)) {
+      missing_files[wrong_case] <-
+        sprintf("%s (incorrect case => %s)",
+                missing_files[wrong_case],
+                file_real_case(missing_files[wrong_case]))
+    }
+    stop("Files not found:\n",
+         paste(sprintf("\t- %s", missing_files), collapse="\n"))
+  }
+}

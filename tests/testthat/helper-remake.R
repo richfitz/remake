@@ -8,6 +8,10 @@ fake_empty_file <- function(filename) {
   writeLines(character(0), filename)
 }
 
+is_case_insensitive <- function() {
+  Sys.info()[["sysname"]] %in% c("Darwin", "Windows")
+}
+
 cleanup <- function() {
   file_remove(".remake", recursive=TRUE)
   suppressWarnings(file.remove(c("data.csv", "plot.pdf",

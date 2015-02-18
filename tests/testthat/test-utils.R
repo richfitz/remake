@@ -64,8 +64,7 @@ test_that("file_exists", {
   expect_that(file.exists("test-target.R"), is_true())
   ## This will be true on Mac and Windows; Linux and unixes will not
   ## see the file.
-  is_case_insensitive <- Sys.info()[["sysname"]] %in% c("Darwin", "Windows")
-  expect_that(file.exists("test-target.r"), equals(is_case_insensitive))
+  expect_that(file.exists("test-target.r"), equals(is_case_insensitive()))
 
   expect_that(file_exists("test-target.r"), is_false())
 
@@ -78,9 +77,9 @@ test_that("file_exists", {
                         toupper(substr(files, len, len)))
   ## Case munging sees them all:
   expect_that(file.exists(files_lower),
-              equals(is_case_insensitive | files == files_lower))
+              equals(is_case_insensitive() | files == files_lower))
   expect_that(file.exists(files_upper),
-              equals(is_case_insensitive | files == files_upper))
+              equals(is_case_insensitive() | files == files_upper))
 
   expect_that(file_exists(files_lower),
               equals(files == files_lower))
@@ -103,7 +102,7 @@ test_that("file_exists", {
 
   expect_that(file_real_case(files),
               equals(files))
-  if (is_case_insensitive) {
+  if (is_case_insensitive()) {
     expect_that(file_real_case(files_upper),
                 equals(files))
     expect_that(file_real_case(files_lower),
@@ -113,7 +112,7 @@ test_that("file_exists", {
   files2_real <- ifelse(exists, files2, NA_character_)
   expect_that(file_real_case(files2),
               equals(files2_real))
-  if (is_case_insensitive) {
+  if (is_case_insensitive()) {
     expect_that(file_real_case(files2_upper),
                 equals(files2_real))
     expect_that(file_real_case(files2_lower),
