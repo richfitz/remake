@@ -101,7 +101,7 @@ binding_manager <- R6Class(
       ## 1. Check:
       normal <- filter_active_bindings(names, self$envir, normal=TRUE)
       if (length(normal) > 0L) {
-        stop("Bindngs would overwrite normal variables: ",
+        stop("Bindings would overwrite normal variables: ",
              paste(normal, collapse=", "))
       }
 
