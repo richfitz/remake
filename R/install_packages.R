@@ -65,6 +65,16 @@ install_packages <- function(packages,
       from_cran <- packages
     }
 
+    ## This is super annoying but means that we'll hopefully get
+    ## somewhere when CRAN is not set, avoiding the
+    ##   trying to use CRAN without setting a mirror
+    ## error.
+    r <- getOption("repos")
+    r["CRAN"] <- "http://cran.r-project.org"
+    oo <- options(repos=r)
+    on.exit(options(oo))
+
+    Sys.getenv("REPOS", unset="http://cran.rstudio.com")
     str_cran  <- install_packages_cran(from_cran, instructions)
     str_extra <- install_packages_extra(extras, instructions)
 

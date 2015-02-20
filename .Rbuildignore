@@ -3,3 +3,4 @@
 doc
 Makefile
 tests/testthat/.remake
+^docker$

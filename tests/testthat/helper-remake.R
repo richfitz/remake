@@ -1,9 +1,3 @@
-## Very cryptic way of setting CRAN mirrors apparently required,
-## presumably to make R CMD check even more fun:
-## http://stackoverflow.com/questions/16826933/installation-of-r-fpc-package
-local({r <- getOption("repos");
-       r["CRAN"] <- "http://cran.r-project.org"; options(repos=r)})
-
 fake_empty_file <- function(filename) {
   writeLines(character(0), filename)
 }

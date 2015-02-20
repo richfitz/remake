@@ -61,6 +61,13 @@ test_that("loading a remakefile with a missing package", {
               throws_error('install.packages("nosuchpackage")', fixed=TRUE))
 
   skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
+  ## TODO: There is some disagreement here about the error.  I see
+  ##   there is no package called ‘nosuchpackage’
+  ## sometimes and
+  ##   ‘nosuchpackage’ is not available
+  ## others.  One looks like a library error ('there is no package')
+  ## which means that the things that should have thrown didn't throw?
+  ## Or didn't catch.
   with_options(list(remake.install.missing.packages=TRUE),
                expect_that(remake("remake_missing_package.yml"),
                            throws_error("is not available")))
