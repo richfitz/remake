@@ -1,25 +1,16 @@
-diagram_nodes <- function(styles, classes) {
-  assert_named_list(styles)
-  assert_named_character(classes)
+diagram_nodes <- function(styles, base) {
   fmt <- function(x) {
-    sprintf("[ %s ]",
-            paste(names(x), x, sep=" = ", collapse=", "))
+    sprintf("[ %s ]", paste(names(x), x, sep=" = ", collapse=", "))
   }
-  node <- function(style, nodes) {
-    sprintf("node %s %s",
-            fmt(style),
-            paste(squote(nodes), collapse="; "))
-  }
-
-  classes_uniq <- unique(classes)
-  ## Also get the unstyled things *up* the list, perhaps?
-  styles[setdiff(classes_uniq, names(styles))] <- list()
-
-  nodes <- split(names(classes), classes)
-  ret <- c(node(styles$base, character(0)),
-           sapply(classes_uniq, function(x) node(styles[[x]], nodes[[x]]),
-                  USE.NAMES=FALSE))
-  paste(ret, collapse="\n")
+  styles_fmt <- unname(apply(styles, 1, fmt))
+  styles_i <- match(styles_fmt, unique(styles_fmt))
+  styles_uniq <- styles_fmt[!duplicated(styles_i)]
+  nodes <- unname(tapply(squote(rownames(styles)), styles_i, paste,
+                         collapse="; "))
+  dat <- sprintf("node %s %s",
+                 c(fmt(base), styles_uniq),
+                 c("", nodes))
+  paste(dat, collapse="\n")
 }
 
 diagram_edges <- function(mat) {
@@ -29,29 +20,60 @@ diagram_edges <- function(mat) {
         collapse="\n")
 }
 
-## TODO: knitr/plot style too
-diagram_styles_default <- function() {
-  list(base=c(fontname="Helvetica"),
-       fake=c(shape="box", color="blue"),
-       file=c(shape="box", color="red"),
-       object=c(shape="ellipse", color="green4"))
-}
-
-remake_diagram_command <- function(obj, styles=NULL) {
-  if (is.null(styles)) {
-    styles <- diagram_styles_default()
-  }
-
+remake_diagram_command <- function(obj) {
   g <- remake_dependency_graph(obj)
 
   ## Filter to exclude cleanup targets:
-  types <- vcapply(obj$targets, "[[", "type")
-  keep <- types != "cleanup"
-  g <- g[keep[names(g)]]
-  types <- types[keep]
+  ## Do this with list_targets:
+  keep <- remake_list_targets(obj, type=NULL,
+                              include_implicit_files=TRUE,
+                              include_cleanup_targets=FALSE,
+                              include_chain_intermediates=TRUE)
+
+  types <- vcapply(obj$targets[keep], "[[", "type")
+  g <- g[keep]
   mat <- dependencies_to_adjacency(g)
 
-  nodes <- diagram_nodes(styles, types)
+  ## Sort out the file subtypes:
+  i <- types == "file"
+  file_subtype <- vcapply(obj$targets[names(which(i))],
+                          function(x) class(x)[[1]])
+  types[i] <- sub("^target_", "", file_subtype)
+
+  ## Styles; all of this will move into some function that accepts
+  ## "palette" as an option and then we can use some tricks to fill
+  ## out the names sensibly.
+  colours <- c(fake="#34495e",     # wet asphalt
+               file="#d35400",     # pumkin
+               file_implicit="#1abc9c", # turqoise
+               knitr="#c0392b",    # pomegranate
+               plot="#f1c40f",     # orange
+               object="#3498db")   # peter river
+  shape <- c(fake="circle",
+             file="box",
+             file_implicit="box",
+             knitr="box",
+             plot="box",
+             object="ellipse")
+  current <- remake_is_current(obj, names(g))
+  font <- "courier"
+  fontsize <- 10
+  fill_fraction <- 1.0
+
+  fill <- mix_cols(colours, "white", fill_fraction)
+  names(fill) <- names(colours)
+
+  ## Then, from this make the styles:
+  t <- types[names(g)]
+  styles <- cbind(shape=shape[t],
+                  color=squote(colours[t]),
+                  fillcolor=squote(ifelse(current, fill[t], "white")),
+                  style="filled")
+  rownames(styles) <- names(g)
+
+  nodes <- diagram_nodes(styles, c(fontname=font, fontsize=fontsize))
+
+  ## TODO: function names on the arrows.
   edges <- diagram_edges(mat)
 
   sprintf("digraph remake { %s\n%s }", nodes, edges)

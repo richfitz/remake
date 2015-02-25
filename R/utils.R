@@ -412,3 +412,10 @@ file_real_case <- function(files) {
   ret[i] <- substr(fix_full, len - nchar(fix) + 1L, len)
   ret
 }
+
+mix_cols <- function(cols, col2, p) {
+  m <- col2rgb(cols)
+  m2 <- col2rgb(rep(col2, length.out=length(cols)))
+  m3 <- (m * p + m2 * (1-p))/255
+  rgb(m3[1, ], m3[2, ], m3[3, ])
+}

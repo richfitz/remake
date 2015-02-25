@@ -136,9 +136,8 @@ delete_bindings <- function(remake_file="remake.yml") {
 diagram <- function(..., remake_file="remake.yml") {
   ## TODO: Take a target name here so we can get the tree filtered to
   ## a set of targets.
-  ## TODO: Colour differently based on up-to-date-ness.
-  obj <- remake(remake_file, load_sources=FALSE)
-  str <- remake_diagram_command(obj, ...)
+  obj <- remake(remake_file)
+  str <- remake_diagram_command(obj)
   DiagrammeR::grViz(str)
 }
 
