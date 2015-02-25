@@ -638,9 +638,14 @@ target_run <- function(target, store, quiet=NULL) {
     on.exit(close(temp), add=TRUE)
   }
 
-  withCallingHandlers(
-    eval(target$command, envir),
-    message=function(e) if (quiet) invokeRestart("muffleMessage"))
+  ret <-
+    withCallingHandlers(
+      eval(target$command, envir),
+      message=function(e) if (quiet) invokeRestart("muffleMessage"))
+  if (inherits(target, "target_plot") && inherits(ret, "ggplot")) {
+    print(ret)
+  }
+  ret
 }
 
 ## TODO: This will eventually take the remake object instead, but that

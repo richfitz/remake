@@ -185,3 +185,15 @@ test_that("Source case sensitivity", {
                 throws_error("incorrect case => code.R"))
   }
 })
+
+test_that("ggplot targets", {
+  ## I don't want to depend on ggplot2 for this dependency, so it's
+  ## conditional:
+  if (suppressWarnings(require(ggplot2, quietly=TRUE))) {
+    make(remake_file="ggplot.yml")
+    expect_that(hash_files("plot_manual.png", FALSE),
+                equals(hash_files("plot_auto.png", FALSE)))
+    file.remove("plot_manual.png")
+    file.remove("plot_auto.png")
+  }
+})

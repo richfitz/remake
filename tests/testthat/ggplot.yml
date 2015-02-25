@@ -1,0 +1,22 @@
+# example configuration script for remake; using this to test out some
+# ideas.
+sources:
+  - code.R
+  - ggplot.R
+
+targets:
+  all:
+    depends: [plot_auto.png, plot_manual.png]
+
+  data.csv:
+    command: download_data(target_name)
+
+  processed:
+    command: process_data("data.csv")
+
+  plot_manual.png:
+    command: do_myggplot(processed, target_name)
+
+  plot_auto.png:
+    command: myggplot(processed)
+    plot: true
