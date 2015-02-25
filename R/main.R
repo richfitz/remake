@@ -58,6 +58,10 @@ remake_main_options <- function() {
                 help="Print R script to standard output"),
     make_option("--script-file", type="character", default=NULL,
                 dest="script_file"),
+    make_option("--install-missing-packages", type="logical",
+                default=FALSE, action="store_true",
+                dest="install_missing_packages",
+                help="Install missing packages"),
     make_option(c("-v", "--version"), type="logical", default=FALSE,
                 action="store_true", help="Version information"))
 }
@@ -92,6 +96,13 @@ remake_main_run <- function(args) {
   }
 
   targets <- args$args
+  if (opts$install_missing_packages) {
+    install_missing_packages(opts$remake_file)
+    if (length(targets) == 0L) {
+      return(invisible())
+    }
+  }
+
   if (length(targets) == 0L) {
     targets <- NULL
   }

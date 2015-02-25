@@ -487,3 +487,44 @@ make_environment <- function(target_names=character(0),
                      dependencies=dependencies,
                      copy_functions=copy_functions)
 }
+
+##' Fetch the last computed value from the remake database.
+##'
+##' The last computed value would be returned invisibly by
+##' \code{make}, but this function provides a way of accessing values
+##' without ever triggering a rebuild.  As such, it's possible that the
+##' target is not made, or is not current, so there are options for
+##' controlling what to do in this case.
+##'
+##' It is an error to use this function with file targets (but see
+##' \code{\link{is_current}} for checking currentness) and
+##' \code{fetch_archive} for extracting files from archives.
+##' @title Fetch last computed
+##' @param target_name The name of a single target to fetch the value
+##' of
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml})
+##' @return An R object.
+##' @export
+fetch <- function(target_name, require_current=FALSE,
+                  remake_file="remake.yml") {
+  assert_scalar_character(target_name)
+  obj <- remake(remake_file, load_sources=require_current)
+  assert_has_targets(target_name, obj)
+  if (obj$targets[[target_name]]$type != "object") {
+    stop("Can only fetch object targets")
+  }
+  if (require_current) {
+    if (!remake_is_current(obj, target_name)) {
+      stop("Object is out of date")
+    }
+  } else {
+    if (!remake_is_current(obj, target_name, "exists")) {
+      stop("Object has not been made")
+    }
+  }
+  ## NOTE: to get metadata instead, we'd return
+  ##   obj$store$db$get(target_name)
+  ## and allow files through in the type check.
+  obj$store$objects$get(target_name)
+}

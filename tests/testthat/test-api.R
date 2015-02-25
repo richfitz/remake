@@ -229,3 +229,41 @@ test_that("make_environment", {
               equals(sort(c("chained", "manual", "manual_pt1",
                             "manual_pt2"))))
 })
+
+test_that("fetch", {
+  cleanup()
+
+  expect_that(fetch("all"),
+              throws_error("Can only fetch object targets"))
+  expect_that(fetch("clean"),
+              throws_error("Can only fetch object targets"))
+  expect_that(fetch("data.csv"),
+              throws_error("Can only fetch object targets"))
+  expect_that(fetch("plot.pdf"),
+              throws_error("Can only fetch object targets"))
+  expect_that(fetch("nosuchtarget"),
+              throws_error("No such target"))
+  expect_that(fetch(c("a", "b")),
+              throws_error("must be a scalar"))
+  expect_that(fetch(NULL),
+              throws_error("must be a scalar"))
+  expect_that(fetch(1L),
+              throws_error("must be character"))
+
+  expect_that(fetch("processed"),
+              throws_error("has not been made"))
+  make()
+  d <- fetch("processed")
+  expect_that(d, is_a("data.frame"))
+  obj <- remake()
+  expect_that(d, is_identical_to(obj$store$objects$get("processed")))
+
+  ## Then, we'll invalidate data.csv so that things are out of date:
+  file.remove("data.csv")
+  expect_that(is_current("processed"), is_false())
+  d2 <- fetch("processed")
+  expect_that(d2, is_identical_to(d))
+
+  expect_that(fetch("processed", require_current=TRUE),
+              throws_error("Object is out of date"))
+})

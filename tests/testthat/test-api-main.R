@@ -10,11 +10,12 @@ test_that("Default arguments", {
   expect_that(opts$options$script_file, equals(NULL))
   expect_that(opts$options$version, equals(FALSE))
   expect_that(opts$options$help, equals(FALSE))
+  expect_that(opts$options$install_missing_packages, equals(FALSE))
   expect_that(opts$args, equals(character(0)))
 
   ## No unknown options:
-  known_opts <- c("help", "list_targets", "quiet", "remake_file", 
-                  "script", "version")  
+  known_opts <- c("help", "list_targets", "quiet", "remake_file",
+                  "script", "version", "install_missing_packages")
   expect_that(sort(names(opts$options)),
               equals(sort(known_opts)))
 })
@@ -124,3 +125,7 @@ test_that("Installation", {
   expect_that("library(methods)" %in% readLines("remake"),
               is_true())
 })
+
+## TODO: Test --install-missing-targets:
+##   1. Installs targets
+##   2. Runs no targets unless explicitly given
