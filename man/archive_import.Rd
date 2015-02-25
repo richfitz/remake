@@ -4,7 +4,7 @@
 \alias{archive_import}
 \title{Import a remake archive}
 \usage{
-archive_import(archive_file = "remake.zip", verbose = FALSE,
+archive_import(archive_file = "remake.zip", verbose = TRUE,
   remake_file = "remake.yml")
 }
 \arguments{

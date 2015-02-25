@@ -4,8 +4,9 @@
 \alias{archive_export}
 \title{Export remake contents}
 \usage{
-archive_export(target_names, dependencies = TRUE, verbose = FALSE,
-  archive_file = "remake.zip", remake_file = "remake.yml")
+archive_export(target_names = NULL, dependencies = TRUE, verbose = TRUE,
+  require_current = TRUE, archive_file = "remake.zip",
+  remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Names of targets to export.}

@@ -28,13 +28,16 @@
 ##' However, this function is primarily useful for its side effect,
 ##' which is generating the archive.
 ##' @export
-archive_export <- function(target_names, dependencies=TRUE,
-                           verbose=FALSE,
+archive_export <- function(target_names=NULL, dependencies=TRUE,
+                           verbose=TRUE, require_current=TRUE,
                            archive_file="remake.zip",
                            remake_file="remake.yml") {
-  obj <- remake(remake_file, verbose=verbose)
+  obj <- remake(remake_file, verbose=verbose,
+                load_sources=require_current)
   remake_archive_export(obj, target_names,
-                        dependencies=dependencies)
+                        dependencies=dependencies,
+                        require_current=require_current,
+                        archive_file=archive_file)
 }
 
 ##' Import a previously exported archive (see
@@ -47,7 +50,7 @@ archive_export <- function(target_names, dependencies=TRUE,
 ##' \code{remake.yml}.
 ##' @export
 archive_import <- function(archive_file="remake.zip",
-                           verbose=FALSE, remake_file="remake.yml") {
+                           verbose=TRUE, remake_file="remake.yml") {
   obj <- remake(remake_file, verbose=verbose)
   remake_archive_import(obj, archive_file)
 }
@@ -124,6 +127,57 @@ list_archive <- function(archive_file="remake.zip", detail=FALSE) {
     rownames(ret) <- db_names
   } else {
     ret <- db_names
+  }
+  ret
+}
+
+##' Fetch a file or object from an archive.  Throws an error if
+##' requesting a target that was not exported (see
+##' \code{\link{list_archive}} for archive contents).
+##' @title Fetch a file or object from an archive
+##' @param target_name Name of a single file or
+##' @param path_prefix Optional path prefix for exported files only
+##' (not for objects).  If given, a file \code{path/to/file} will be
+##' exported as \code{path_prefix/path/to/file}; this is useful to avoid
+##' overwriting existing data, as this will happen without warning.
+##' @param archive_file Name of the archive file to use, by
+##' default \code{remake.zip}.
+##' @return If \code{target_name} refers to an object, then the return
+##' value is the restored object.  If \code{target_name} refers to a
+##' file, then the return value is the path to the restored file
+##' (including \code{path_prefix} if given).
+##' @export
+##' @author Rich FitzJohn
+fetch_archive <- function(target_name,
+                          path_prefix=NULL,
+                          archive_file="remake.zip") {
+  assert_scalar_character(target_name)
+  contents <- list_archive(archive_file) # will check archive-ness.
+  if (!(target_name %in% contents)) {
+    stop(target_name, " not found in archive ", archive_file)
+  }
+  path <- tempfile()
+  dir.create(path, recursive=TRUE)
+  on.exit(file_remove(path, TRUE))
+
+  path_db <- file.path("db", paste0(hash_object(target_name), ".rds"))
+  db <- readRDS(archive_get_file(path_db, path, archive_file))
+
+  if (db$type == "file") {
+    v <- archive_get_file(file.path("files", target_name),
+                          path, archive_file)
+    if (is.null(path_prefix)) {
+      ret <- target_name
+    } else {
+      ret <- file.path(path_prefix, target_name)
+    }
+    dir.create(dirname(ret), FALSE, TRUE)
+    file.copy(v, ret, overwrite=TRUE)
+  } else if (db$type == "object") {
+    ret <- readRDS(archive_get_file(file.path("objects", target_name),
+                                    path, archive_file))
+  } else {
+    stop("Can't extract target of type ", db$type)
   }
   ret
 }

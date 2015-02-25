@@ -16,6 +16,7 @@ cleanup <- function() {
                                  "knitr.tex",
                                  "knitr_file_dep.md",
                                  "test.zip", "remake.zip",
+                                 "remake_archive.zip",
                                  "code_literal.R",
                                  "remake_active.R",
                                  "remake",

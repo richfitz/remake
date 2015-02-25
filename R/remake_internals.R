@@ -219,6 +219,8 @@ status_colour <- function(str) {
          KNIT="hotpink",
          MAKE="deepskyblue",
          ENV="deepskyblue",
+         ZIP="darkorchid3",
+         UNZIP="slateblue2",
          "-----"="grey60",
          NULL)
 }

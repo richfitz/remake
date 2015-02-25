@@ -1,10 +1,8 @@
-remake_archive_export <- function(obj, target_names, dependencies=TRUE,
+remake_archive_export <- function(obj, target_names=NULL,
+                                  dependencies=TRUE,
+                                  require_current=TRUE,
                                   archive_file="remake.zip") {
-  ## TODO: Need to check that things are current first.
-  ## TODO: Don't include implicit targets
-  ## TODO: Use filter targets to make sure that implicit things are
-  ## not included, but *do* include chain targets, but don't include
-  ## cleanup!
+  target_names <- remake_default_target(obj, target_names)
   if (dependencies) {
     ## Make sure that we *do* include chain intermediates, but make
     ## sure that we *don't* include fake targets, implicit files,
@@ -28,9 +26,13 @@ remake_archive_export <- function(obj, target_names, dependencies=TRUE,
            paste(setdiff(target_names, pos), collapse=", "))
     }
   }
+  if (require_current) {
+    assert_is_current(obj, target_names)
+  }
 
-  assert_is_current(obj, target_names)
-
+  remake_print_message(obj, "ZIP", archive_file,
+                       paste(target_names, collapse=", "),
+                       "curly")
   path <- file.path(tempfile(),
                     tools::file_path_sans_ext(basename(archive_file)))
   dir.create(path, recursive=TRUE)
@@ -61,10 +63,15 @@ remake_archive_import <- function(obj, archive_file) {
          paste(setdiff(contents, known_targets), collapse=", "))
   }
 
+  remake_print_message(obj, "UNZIP", archive_file,
+                       paste(contents, collapse=", "),
+                       "curly")
+
   tld <- remake_archive_tld(archive_file)
 
   path <- tempfile()
   dir.create(path, recursive=TRUE)
+  on.exit(file_remove(path, TRUE))
   unzip(archive_file, exdir=path)
   path <- file.path(path, tld)
   store <- obj$store
@@ -133,4 +140,9 @@ archive_metadata <- function() {
   ## incompletely committed files.  See richfitz/tree for an example.
   list(remake_version=packageVersion("remake"),
        session_info=devtools::session_info())
+}
+
+archive_get_file <- function(path, dest_dir, archive_file) {
+  tld <- remake_archive_tld(archive_file)
+  unzip(archive_file, file.path(tld, path), exdir=dest_dir)
 }

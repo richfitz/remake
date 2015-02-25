@@ -315,7 +315,7 @@ remake_db <- R6Class(
     },
 
     rdsname=function(key) {
-      paste0(digest::digest(key), ".rds")
+      paste0(hash_object(key), ".rds")
     }
     ))
 
