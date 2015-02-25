@@ -33,7 +33,7 @@ managed_environment <- R6Class(
         self$load_packages()
         self$load_sources()
         self$source_files_hash <- source_files_hash
-        self$deps <- code_deps$new(self$env)
+        self$deps <- code_deps(self$env)
       }
     },
 

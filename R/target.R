@@ -317,7 +317,7 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
   }
 
   if (check_code(check)) {
-    code <- store$env$deps$info(target$rule)
+    code <- store$env$deps(target$rule)
   }
 
   ## Here, missing_ok needs to be true I think, or we can't ask about

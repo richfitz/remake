@@ -16,9 +16,7 @@ test_that("simple run", {
               fixed=hash_object(list("data.csv")),
               code=list(
                 functions=list(download_data=hash_function(
-                                 m$store$env$env$download_data)),
-                packages=list(utils=as.character(
-                                packageVersion("utils")))))
+                                 m$store$env$env$download_data))))
   x <- dependency_status(m$targets[["data.csv"]], m$store, TRUE)
   expect_that(x[names(cmp)], equals(cmp))
   expect_that(sort(setdiff(names(x), names(cmp))),
@@ -31,9 +29,7 @@ test_that("simple run", {
               fixed=NULL,
               code=list(
                 functions=list(process_data=hash_function(
-                                 m$store$env$env$process_data)),
-                packages=list(utils=as.character(
-                                packageVersion("utils")))))
+                                 m$store$env$env$process_data))))
   x <- dependency_status(m$targets[["processed"]], m$store, TRUE)
   expect_that(x[names(cmp)], equals(cmp))
   expect_that(sort(setdiff(names(x), names(cmp))),
@@ -46,8 +42,6 @@ test_that("simple run", {
   ## identical_map() function within the package
   res <- dependency_status(m$targets[["plot.pdf"]], m$store, TRUE)
   pkgs <- c("grDevices", "graphics")
-  expect_that(sort(names(res$code$packages)), equals(sort(pkgs)))
-  res$code$packages <- res$code$packages[pkgs]
   cmp <- list(version=m$store$version,
               name="plot.pdf",
               type="file",
@@ -56,11 +50,7 @@ test_that("simple run", {
               code=list(
                 functions=list(
                   do_plot=hash_function(m$store$env$env$do_plot),
-                  myplot=hash_function(m$store$env$env$myplot)),
-                packages=list(
-                  grDevices=as.character(packageVersion("grDevices")),
-                  graphics=as.character(packageVersion("graphics"))
-                  )))
+                  myplot=hash_function(m$store$env$env$myplot))))
   expect_that(res[names(cmp)], equals(cmp))
   expect_that(sort(setdiff(names(res), names(cmp))),
               equals(sort(c("hash", "time"))))

@@ -16,7 +16,6 @@ test_that("literals", {
   expect_that(db$fixed, equals(hash_object(res)))
   expect_that(db$depends, equals(empty_named_list()))
   expect_that(db$code$functions, equals(empty_named_list()))
-  expect_that(db$code$packages, equals(list()))
 
   expect_that(remake_is_current(m, "data1"), is_true())
 
@@ -28,7 +27,6 @@ test_that("literals", {
   expect_that(db$fixed, equals(hash_object(res)))
   expect_that(db$depends, equals(empty_named_list()))
   expect_that(db$code$functions, equals(empty_named_list()))
-  expect_that(db$code$packages, equals(list()))
 
   res <- remake_make(m, "data3")
   expect_that(res, is_identical_to(list(pi)))
@@ -37,7 +35,6 @@ test_that("literals", {
   expect_that(db$fixed, equals(hash_object(res)))
   expect_that(db$depends, equals(empty_named_list()))
   expect_that(db$code$functions, equals(empty_named_list()))
-  expect_that(db$code$packages, equals(list()))
 
   ## Getting a bit more silly down here:
   res <- remake_make(m, "data4")
@@ -60,7 +57,6 @@ test_that("literals", {
   expect_that(db$fixed, equals(hash_object(res)))
   expect_that(db$depends, equals(empty_named_list()))
   expect_that(db$code$functions, equals(empty_named_list()))
-  expect_that(db$code$packages, equals(list()))
 
   expect_that(res <- make("data3", remake_file="remake_literal.yml"),
               not(shows_message("BUILD")))

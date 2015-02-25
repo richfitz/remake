@@ -38,33 +38,28 @@ test_that("Simple case", {
   e <- new.env()
   sys.source("deps.R", e)
 
-  deps <- code_deps$new(e)
+  deps <- code_deps(e)
+  deps_names <- function(x) {
+    names(deps(x)$functions)
+  }
 
   ## TODO: does not give error with unknown function
-  expect_that(deps$depends_functions("bottom"), equals("bottom"))
-  expect_that(deps$depends_functions("single"),
+  expect_that(deps_names("bottom"), equals("bottom"))
+  expect_that(deps_names("single"),
               equals(c("bottom", "single")))
-  expect_that(deps$depends_functions("double"),
+  expect_that(deps_names("double"),
               equals(c("bottom", "double", "single")))
-  expect_that(deps$depends_functions("self"), equals("self"))
-
-  expect_that(deps$depends_packages("bottom"), equals("base"))
-  expect_that(deps$depends_packages("single"), equals("base"))
-  expect_that(deps$depends_packages("double"), equals("base"))
-  expect_that(deps$depends_packages("self"),   equals(character(0)))
+  expect_that(deps_names("self"), equals("self"))
 
   cmp <- list(functions=list(
                 bottom=hash_function(e$bottom),
-                single=hash_function(e$single)),
-              packages=list(
-                base=as.character(packageVersion("base"))))
-  expect_that(deps$info("single"), equals(cmp))
+                single=hash_function(e$single)))
+  expect_that(deps("single"), equals(cmp))
 
-  expect_that(deps$depends_functions("nonexistant"),
+  expect_that(deps_names("nonexistant"),
               equals(character(0)))
-  empty <- structure(list(), names=character(0))
-  expect_that(deps$info("nonexistant"),
-              equals(list(functions=empty, packages=empty)))
+  expect_that(deps("nonexistant"),
+              equals(list(functions=empty_named_list())))
 })
 
 test_that("deparse scipen", {
