@@ -10,6 +10,10 @@ fetch(target_name, require_current = FALSE, remake_file = "remake.yml")
 \item{target_name}{The name of a single target to fetch the value
 of}
 
+\item{require_current}{Logical indicating if the targets must be
+up-to-date to be fetched.  If this is \code{TRUE} and the targets
+are not up-to-date, then an error will be thrown.}
+
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml})}
 }

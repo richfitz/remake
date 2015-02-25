@@ -20,6 +20,9 @@
 ##' \code{dependencies} is \code{FALSE}, all elements of
 ##' \code{target_names} must represent files or objects.
 ##' @param verbose Be verbose when reading the remake file?
+##' @param require_current Logical indicating if the targets must be
+##' up-to-date to be fetched.  If this is \code{TRUE} and the targets
+##' are not up-to-date, then an error will be thrown.
 ##' @param archive_file Name of the archive file to generate, by
 ##' default \code{remake.zip}.
 ##' @param remake_file Remake file to read, by default

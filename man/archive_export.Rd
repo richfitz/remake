@@ -20,6 +20,10 @@ everything that is a dependency of \code{all}.  If
 
 \item{verbose}{Be verbose when reading the remake file?}
 
+\item{require_current}{Logical indicating if the targets must be
+up-to-date to be fetched.  If this is \code{TRUE} and the targets
+are not up-to-date, then an error will be thrown.}
+
 \item{archive_file}{Name of the archive file to generate, by
 default \code{remake.zip}.}
 

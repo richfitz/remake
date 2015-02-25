@@ -502,6 +502,9 @@ make_environment <- function(target_names=character(0),
 ##' @title Fetch last computed
 ##' @param target_name The name of a single target to fetch the value
 ##' of
+##' @param require_current Logical indicating if the targets must be
+##' up-to-date to be fetched.  If this is \code{TRUE} and the targets
+##' are not up-to-date, then an error will be thrown.
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml})
 ##' @return An R object.
