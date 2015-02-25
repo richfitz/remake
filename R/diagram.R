@@ -13,11 +13,17 @@ diagram_nodes <- function(styles, base) {
   paste(dat, collapse="\n")
 }
 
-diagram_edges <- function(mat) {
+diagram_edges <- function(mat, include_tooltips=TRUE) {
   nms <- rownames(mat)
-  i <- which(mat, TRUE)
-  paste(sprintf("'%s' -> '%s';", nms[i[,2]], nms[i[,1]]),
-        collapse="\n")
+  i <- which(!is.na(mat), TRUE)
+  if (include_tooltips) {
+    str <- sprintf("'%s' -> '%s' [tooltip = '%s'];",
+                   nms[i[,2]], nms[i[,1]], mat[i])
+  } else {
+    str <- sprintf("'%s' -> '%s';",
+                   nms[i[,2]], nms[i[,1]])
+  }
+  paste(str, collapse="\n")
 }
 
 remake_diagram_command <- function(obj) {
@@ -32,7 +38,7 @@ remake_diagram_command <- function(obj) {
 
   types <- vcapply(obj$targets[keep], "[[", "type")
   g <- g[keep]
-  mat <- dependencies_to_adjacency(g)
+  mat <- dependencies_to_adjacency(g, obj)
 
   ## Sort out the file subtypes:
   i <- types == "file"

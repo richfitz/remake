@@ -35,14 +35,13 @@ topological_sort <- function(graph) {
   graph[topological_order(graph)]
 }
 
-dependencies_to_adjacency <- function(graph) {
+dependencies_to_adjacency <- function(graph, obj) {
   t <- names(graph)
-  mat <- matrix(FALSE, length(t), length(t), dimnames=list(t, t))
+  mat <- matrix(NA_character_, length(t), length(t), dimnames=list(t, t))
   for (i in t) {
-    ## TODO: empty dependency lists are list() not character(0)
     d <- graph[[i]]
-    if (length(d) > 0) {
-      mat[i,d] <- TRUE
+    if (length(d) > 0L) {
+      mat[i, d] <- with_default(obj$targets[[i]]$rule, "(dependency only)")
     }
   }
   mat
