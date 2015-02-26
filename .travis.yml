@@ -3,7 +3,7 @@ language: c
 env:
   - global:
       - WARNINGS_ARE_ERRORS=1
-      - REMAKE_TEST_INSTALL_PACKAGES=false
+      - REMAKE_TEST_INSTALL_PACKAGES=true
 
 before_install:
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh

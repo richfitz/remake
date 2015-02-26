@@ -24,5 +24,8 @@ check: build
 	@rm -f `ls -1tr ${PACKAGE}*gz | tail -n1`
 	@rm -rf ${PACKAGE}.Rcheck
 
+check_all:
+	REMAKE_TEST_INSTALL_PACKAGES=true make check
+
 # No real targets!
 .PHONY: all test document install
