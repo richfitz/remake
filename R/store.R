@@ -326,12 +326,14 @@ store <- R6Class(
     db=NULL,
     objects=NULL,
     files=NULL,
+    ## Becomes `sources` I think.
     env=NULL,
-    deps=NULL,
+    packages=NULL,
+    packages_loaded=FALSE,
     path=NULL,
     version=NULL,
 
-    initialize=function(path=".") {
+    initialize=function(path=".", packages=character(0), sources=character(0)) {
       dir.create(path, FALSE, TRUE)
       self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".remake")
       dir.create(self$path, FALSE, TRUE)
@@ -339,6 +341,8 @@ store <- R6Class(
       self$objects <- object_store$new(file.path(self$path, "objects"))
       self$files <- file_store$new()
       self$version <- packageVersion(.packageName)
+      self$packages <- packages
+      self$env <- managed_environment$new(sources)
     },
 
     destroy=function() {

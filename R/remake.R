@@ -48,11 +48,11 @@ remake_new <- function(remake_file="remake.yml", verbose=TRUE,
     packages <- obj$config$packages
     sources  <- obj$config$sources
   }
-  ## TODO: Push the environment creation into the constructor for store.
-  obj$store <- store$new(obj$path)
-  obj$store$env <- managed_environment$new(packages, sources)
+
+  obj$store <- store$new(obj$path, packages, sources)
 
   if (load_sources) {
+    obj <- .remake_initialize_packages(obj)
     obj <- .remake_initialize_sources(obj)
   }
   class(obj) <- "remake"

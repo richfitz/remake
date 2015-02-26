@@ -69,7 +69,7 @@ test_that("Error in source file", {
   m <- remake()
   ## Ugly, and might not work in future:
   m$store$env$sources <- "code2.R"
-  expect_that(m$store$env$reload(TRUE),
+  expect_that(m$store$env$reload(),
               throws_error("while sourcing 'code2.R'"))
   cleanup()
 })

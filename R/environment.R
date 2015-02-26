@@ -1,44 +1,33 @@
 managed_environment <- R6Class(
   "managed_environment",
   public=list(
-    packages=NULL,
     sources=NULL,
     source_files=NULL,
     source_files_hash=NULL,
     env=NULL,
     deps=NULL,
 
-    initialize=function(packages, sources) {
-      assert_character(packages, "packages")
+    initialize=function(sources) {
       assert_character(sources,  "sources")
       managed_environment_assert_sources_exist(sources)
-      self$packages <- packages
       self$sources <- sources
     },
 
     is_current=function(force=FALSE) {
-      !(force
-        || is.null(self$env)
-        || !identical_map(hash_files(self$find_files()), self$source_files_hash)
-        || !all(self$packages %in% .packages()))
+      !(force ||
+          is.null(self$env) ||
+            !identical_map(hash_files(self$find_files()),
+                           self$source_files_hash))
     },
 
-    reload=function(force=FALSE) {
-      if (force || self$is_current()) {
-        source_files <- self$find_files()
-        source_files_hash <- hash_files(source_files)
-
-        self$env <- new.env(parent=.GlobalEnv)
-        self$source_files <- source_files
-        self$load_packages()
-        self$load_sources()
-        self$source_files_hash <- source_files_hash
-        self$deps <- code_deps(self$env)
-      }
-    },
-
-    load_packages=function() {
-      load_packages(self$packages)
+    reload=function() {
+      source_files <- self$find_files()
+      source_files_hash <- hash_files(source_files)
+      self$env <- new.env(parent=.GlobalEnv)
+      self$source_files <- source_files
+      self$load_sources()
+      self$source_files_hash <- source_files_hash
+      self$deps <- code_deps(self$env)
     },
 
     load_sources=function() {

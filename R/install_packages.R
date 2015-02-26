@@ -196,8 +196,9 @@ missing_packages_recover <- function(packages, filename=NULL) {
     msg_packages1 <- paste0(".packages(): ", paste(.packages(), collapse=", "))
     msg_packages2 <- paste0(".packages(TRUE): ",
                             paste(.packages(TRUE), collapse=", "))
-    msg <- paste(c(msg, msg_libpaths, msg_packages1, msg_packages2),
-                 collapse="\n")
+    ## NOTE: Debugging information for travis:
+    ##msg <- paste(c(msg, msg_libpaths, msg_packages1, msg_packages2),
+    ##             collapse="\n")
     stop(msg, call.=FALSE)
   }
 }

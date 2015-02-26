@@ -1,12 +1,14 @@
 ## Internal support funtions used in remake creation.
-.remake_initialize_sources <- function(obj) {
-  ## NOTE: This one here is working entirely by reference.
-  if (!is.null(obj$store$env) && !obj$store$env$is_current()) {
-    remake_print_message(obj, "READ", "", "# loading sources")
+.remake_initialize_packages <- function(obj) {
+  ## NOTE: This one here is working entirely by reference, but still
+  ## must return the object
+  if (!obj$store$packages_loaded) {
+    remake_print_message(obj, "READ", "", "# loading packages")
     load_packages(obj$store$packages, obj$file)
-    obj$store$env$reload(TRUE)
-    global_active_bindings$reload_bindings("source", obj)
+    obj$store$packages_loaded <- TRUE
 
+    ## TODO: This might want to go earlier when the remake file is
+    ## loaded I think.
     missing_target_packages <- missing_packages(target_packages(obj))
     if (length(missing_target_packages) > 0L &&
         getOption("remake.warn.missing.target.packages", TRUE)) {
@@ -14,6 +16,17 @@
                                           obj$file, target_specific=TRUE)
       warning(str, call.=FALSE, immediate.=TRUE)
     }
+  }
+  obj
+}
+
+.remake_initialize_sources <- function(obj) {
+  ## NOTE: This one here is working entirely by reference, but still
+  ## must return the object
+  if (!is.null(obj$store$env) && !obj$store$env$is_current()) {
+    remake_print_message(obj, "READ", "", "# loading sources")
+    obj$store$env$reload()
+    global_active_bindings$reload_bindings("source", obj)
   }
   obj
 }
