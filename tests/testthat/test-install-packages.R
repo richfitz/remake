@@ -73,8 +73,7 @@ test_that("loading a remakefile with a missing package", {
   ##
   ## I don't see the cause here (nor do I care enough to seriously
   ## track it down - we're doing approximately the right thing).
-  msg <- (if (interactive()) "is not available"
-          else                "there is no package called")
+  msg <- "(is not available|there is no package called)"
   with_options(list(remake.install.missing.packages=TRUE),
                expect_that(.remake_initialize_packages(m),
                            throws_error(msg)))
