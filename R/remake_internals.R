@@ -24,6 +24,9 @@
   ## NOTE: This one here is working entirely by reference, but still
   ## must return the object
   if (!is.null(obj$store$env) && !obj$store$env$is_current()) {
+    ## TODO: target specific packages?  Perhaps with
+    ## remake.warn.missing.target.packages?
+    warn_missing_packages(obj$store$packages)
     remake_print_message(obj, "READ", "", "# loading sources")
     obj$store$env$reload()
     global_active_bindings$reload_bindings("source", obj)

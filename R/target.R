@@ -245,6 +245,9 @@ target_new_fake <- function(name, command, opts, extra=NULL) {
   if (!is.null(command$rule)) {
     stop("fake targets must have a NULL rule (how did you do this?)")
   }
+  if (!is.null(opts$packages)) {
+    stop("fake targets may not load packages")
+  }
   ret <- target_new_base(name, command, opts, extra, "fake")
   ret$status_string <- "-----"
   class(ret) <- c("target_fake", class(ret))

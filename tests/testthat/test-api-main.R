@@ -56,10 +56,10 @@ test_that("Multiple targets", {
   ## somewhere.
   expected <- c(
     "[  LOAD ]",
-    "[  READ ]", # packages
     "[  READ ]", # sources
     "<  MAKE > processed",
     "[ BUILD ] data.csv",
+    "[  READ ]", # packages
     "[ BUILD ] processed",
     "<  MAKE > data.csv",
     "[    OK ] data.csv")

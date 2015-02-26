@@ -34,6 +34,11 @@ test_that("Fake targets", {
   t <- make_target("a_fake_target", list(depends=deps))
   expect_that(t$type, equals("fake"))
   expect_that(t$depends_name, equals(deps))
+
+  ## Same as above, but with packages:
+  expect_that(make_target("a_fake_target",
+                          list(depends=deps, packages="pkg")),
+              throws_error("fake targets may not load packages"))
 })
 
 test_that("Can't do much with fake targets", {

@@ -35,6 +35,16 @@ missing_packages <- function(packages) {
   setdiff(packages, .packages(TRUE))
 }
 
+warn_missing_packages <- function(packages) {
+  ## TODO: decide if we want to get the same message as recover?  It's
+  ## a bit long.
+  msg <- missing_packages(packages)
+  if (length(msg) > 0L) {
+    warning("Some packages are missing: ", paste(msg, collapse=", "),
+            call.=FALSE, immediate.=TRUE)
+  }
+}
+
 ## Installation bits below here...
 install_packages <- function(packages,
                              instructions=FALSE,
@@ -65,16 +75,6 @@ install_packages <- function(packages,
       from_cran <- packages
     }
 
-    ## This is super annoying but means that we'll hopefully get
-    ## somewhere when CRAN is not set, avoiding the
-    ##   trying to use CRAN without setting a mirror
-    ## error.
-    r <- getOption("repos")
-    r["CRAN"] <- "http://cran.r-project.org"
-    oo <- options(repos=r)
-    on.exit(options(oo))
-
-    Sys.getenv("REPOS", unset="http://cran.rstudio.com")
     str_cran  <- install_packages_cran(from_cran, instructions)
     str_extra <- install_packages_extra(extras, instructions)
 
@@ -92,6 +92,20 @@ install_packages_cran <- function(packages, instructions=FALSE) {
     sprintf("install.packages(%s)",
             paste(dquote(packages), collapse=", "))
   } else {
+    ## This is super annoying but means that we'll hopefully get
+    ## somewhere when CRAN is not set, avoiding the
+    ##   trying to use CRAN without setting a mirror
+    ## error.
+    ##
+    ## TODO: getting this "right" is really tricky: everything works
+    ## great in interactive mode, but the R CMD check environment is
+    ## different.  I suspect it's documented on one page of the PDF,
+    ## but for the meantime this should do.
+    r <- getOption("repos")
+    r["CRAN"] <- "http://cran.rstudio.org"
+    oo <- options(repos=r, warn=2)
+    on.exit(options(oo))
+
     install.packages(packages)
     packages
   }
@@ -184,8 +198,6 @@ install_function <- function(src) {
 missing_packages_recover <- function(packages, filename=NULL) {
   if (getOption("remake.install.missing.packages", FALSE)) {
     extra <- read_remake_packages("remake_sources.yml")
-    oo <- options(warn=2)
-    on.exit(options(oo))
     install_packages(packages,
                      instructions=FALSE,
                      package_sources=extra)

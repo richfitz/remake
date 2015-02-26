@@ -52,7 +52,6 @@ remake_new <- function(remake_file="remake.yml", verbose=TRUE,
   obj$store <- store$new(obj$path, packages, sources)
 
   if (load_sources) {
-    obj <- .remake_initialize_packages(obj)
     obj <- .remake_initialize_sources(obj)
   }
   class(obj) <- "remake"
@@ -226,7 +225,13 @@ remake_update <- function(obj, target_name, check=NULL,
     remake_print_message(obj, status, target_name, cmd, style)
   }
 
-  if (!current) {
+  if (target$type == "fake") {
+    ## Just weed these out for now
+  } else if (!current) {
+    ## We'll load packages here because we might actually build
+    ## something -- this can take a while on some projects (e.g.,
+    ## richfitz/modeladequacy).
+    .remake_initialize_packages(obj)
     ## See #12 - targets can specify conditional packages, and
     ## we load them, but also unload them afterwards (including
     ## dependencies).  This does not leave packages loaded for
