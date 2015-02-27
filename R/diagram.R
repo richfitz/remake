@@ -64,7 +64,7 @@ remake_diagram_command <- function(obj) {
   current <- remake_is_current(obj, names(g))
   font <- "courier"
   fontsize <- 10
-  fill_fraction <- 1.0
+  fill_fraction <- 0.2
 
   fill <- mix_cols(colours, "white", fill_fraction)
   names(fill) <- names(colours)
@@ -73,7 +73,7 @@ remake_diagram_command <- function(obj) {
   t <- types[names(g)]
   styles <- cbind(shape=shape[t],
                   color=squote(colours[t]),
-                  fillcolor=squote(ifelse(current, fill[t], "white")),
+                  fillcolor=squote(ifelse(current, colours[t], fill[t])),
                   style="filled")
   rownames(styles) <- names(g)
 
