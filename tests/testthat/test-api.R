@@ -267,3 +267,30 @@ test_that("fetch", {
   expect_that(fetch("processed", require_current=TRUE),
               throws_error("Object is out of date"))
 })
+
+test_that("delete", {
+  cleanup()
+  make()
+
+  expect_that(delete("all"),
+              throws_error("Not something that can be deleted"))
+  expect_that(delete("all", dependencies=TRUE),
+              shows_message("DEL"))
+  expect_that(file.exists("data.csv"), is_false())
+
+  make("data.csv")
+  expect_that(delete("data.csv"), shows_message("DEL"))
+  expect_that(delete("data.csv"), not(shows_message("DEL")))
+
+  make("data.csv")
+  expect_that(delete("data.csv", verbose=FALSE),
+              not(shows_message()))
+  expect_that(file.exists("data.csv"), is_false())
+
+  ## Different remake file
+  cleanup()
+  make(remake_file="knitr.yml")
+  expect_that(file.exists("knitr.md"), is_true())
+  delete("knitr.md", remake_file="knitr.yml")
+  expect_that(file.exists("knitr.md"), is_false())
+})

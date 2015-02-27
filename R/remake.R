@@ -12,9 +12,11 @@ remake <- function(remake_file="remake.yml", verbose=TRUE,
   if (is.null(ret)) {
     ret <- remake_new(remake_file, verbose, load_sources)
     cache$add(ret)
-  } else if (load_sources) {
+  } else {
     ret$verbose <- remake_verbose(verbose)
-    ret <- .remake_initialize_sources(ret)
+    if (load_sources) {
+      ret <- .remake_initialize_sources(ret)
+    }
   }
   ret
 }
@@ -227,7 +229,7 @@ remake_update <- function(obj, target_name, check=NULL,
 
   if (target$type == "fake") {
     ## Just weed these out for now
-  } else if (!current) {
+  } else if (!current && target$type != "fake") {
     ## We'll load packages here because we might actually build
     ## something -- this can take a while on some projects (e.g.,
     ## richfitz/modeladequacy).

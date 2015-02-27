@@ -110,6 +110,9 @@ create_bindings <- function(remake_file="remake.yml") {
   ##
   ## TODO: Are these really the best names?  They're explicit, but
   ## they're not very pleasant.
+  ##
+  ## TODO: Option to just set up the source ones so that things can be
+  ## run easily.
   global_active_bindings$create_bindings(remake_file)
 }
 ##' @export
@@ -529,4 +532,48 @@ fetch <- function(target_name, require_current=FALSE,
   ##   obj$store$db$get(target_name)
   ## and allow files through in the type check.
   obj$store$objects$get(target_name)
+}
+
+##' Delete targets.  Deletes both file and object targets, and removes
+##' their entries from the remake database.  Using
+##' \code{make("clean")} should probably be the general way to clean
+##' up, but this might be useful if you have specific objects to
+##' delete.  While files can be deleted in this way, deleting in the
+##' file system is also fine.
+##'
+##' This function ignores \code{cleanup_level} and will quite happily
+##' delete things that have been flagged as \code{cleanup_level:
+##' purge} - be careful using \code{dependencies=TRUE} as this will
+##' delete all dependencies.  See \code{\link{list_dependencies}} to
+##' see what would be deleted.
+##'
+##' It is an error to try to delete a fake target (i.e., a target with
+##' no rule but that exists to group other dependencies).  It is
+##' \emph{not} an error to delete the \emph{dependencies} of such a
+##' target.
+##'
+##' If run with \code{verbose=TRUE} \code{delete} will print
+##' information about targets that are deleted with a \code{DEL} for
+##' each deleted target and an empty string if the target is already
+##' nonexistant.
+##' @title Delete targets
+##' @param target_names Names of targets to delete
+##' @param dependencies Delete dependencies of the target too?  Use
+##' with caution.
+##' @param verbose Be verbose when loading the remake file and when
+##' deleting targets.
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml})
+##' @export
+delete <- function(target_names, dependencies=FALSE,
+                   verbose=TRUE, remake_file="remake.yml") {
+  assert_character(target_names)
+  obj <- remake(remake_file, verbose=verbose, load_sources=FALSE)
+  if (dependencies) {
+    target_names <- remake_list_dependencies(obj, target_names,
+                                             type=c("file", "object"))
+  }
+  for (t in target_names) {
+    remake_remove_target(obj, t, chain=TRUE)
+  }
 }
