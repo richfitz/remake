@@ -23,7 +23,7 @@ within their target entry in the remakefile (at the same level as `rule` and `de
 target_name:
   depends: <list of target names>
   rule: function_name
-  cleanup: <cleanup level>
+  cleanup_level: <cleanup level>
 ```
 
 # Hooks
