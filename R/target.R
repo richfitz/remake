@@ -14,6 +14,7 @@ make_target <- function(name, dat, extra=NULL) {
                        file=target_new_file,
                        plot=target_new_plot,
                        knitr=target_new_knitr,
+                       download=target_new_download,
                        fake=target_new_fake,
                        cleanup=target_new_cleanup)
     type <- match_value(dat$type, names(generators))
@@ -223,6 +224,7 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
   command$rule <- ".__knitr__"
   ret <- target_new_file(name, command, opts, extra, "knitr")
 
+  ret$status_string <- "KNIT"
   class(ret) <- c("target_knitr", class(ret))
   ret$knitr <- knitr
   ## TODO: This isolates some ugliness for now, but should be done via
@@ -231,6 +233,26 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
     ret$depends_rename <- command$depends
   }
   
+  ret
+}
+
+target_new_download <- function(name, command, opts, extra=NULL) {
+  if (!is.null(command$rule)) {
+    stop(sprintf("%s: download targets must have a NULL rule",
+                 name))
+  }
+  opts$check <- with_default(opts$check, "exists")
+  opts$cleanup_level <- with_default(opts$cleanup_level, "purge")
+  download <- opts$download
+  ## TODO: Support file:// urls
+  ## TODO: Support git@github.com:richfitz/remake.git uris
+  assert_is_url(download)
+  ## see knitr:
+  command$rule <- ".__download__"
+  ret <- target_new_file(name, command, opts, extra, "download")
+  ret$status_string <- "DLOAD"
+  class(ret) <- c("target_download", class(ret))
+  ret$download <- opts$download
   ret
 }
 
@@ -556,6 +578,10 @@ target_run_fake <- function(target, for_script=FALSE) {
     } else if (inherits(target, "target_knitr")) {
       res <- sprintf('knitr::knit("%s", "%s")',
                      target$knitr$input, target$name)
+    } else if (inherits(target, "target_download")) {
+      ## This is a lie:
+      res <- sprintf('downloader::download("%s", "%s")',
+                     target$download, target$name)
     } else if (target$type == "object") {
       ## This is a trick to ensure correct printing of the LHS of the
       ## assigmnent; it will keep the backticks around the LHS
@@ -610,6 +636,8 @@ target_run <- function(target, store, quiet=NULL) {
     return()
   } else if (inherits(target, "target_knitr")) {
     return(knitr_from_remake_target(target, store, quiet))
+  } else if (inherits(target, "target_download")) {
+    return(download_from_remake_target(target, store, quiet))
   }
 
   if (inherits(target, "target_plot")) {

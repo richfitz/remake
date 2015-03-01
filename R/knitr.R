@@ -2,6 +2,8 @@ knitr_default_fig_path <- function(filename) {
   sprintf("figure/%s__", tools::file_path_sans_ext(basename(filename)))
 }
 
+## TODO: When this gets tidied up, tidy up name of
+## download.R:download_from_remake_target, too.
 knitr_from_remake_target <- function(target, store, quiet=NULL) {
   object_names <- target$depends_name[target$depends_type == "object"]
   if (!is.null(target$depends_rename)) {

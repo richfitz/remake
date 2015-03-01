@@ -221,7 +221,9 @@ cleanup_target_names <- function() {
   c("tidy", "clean", "purge")
 }
 
-## Not sure I have a full list of these yet:
+## TODO: KNIT was hotpink, but that's broken on OSX
+## TODO: I get quite different colours on different platforms at the
+## moment.
 status_colour <- function(str) {
   switch(str,
          BUILD="steelblue4",
@@ -232,7 +234,8 @@ status_colour <- function(str) {
          LOAD="yellow1",
          READ="yellow1",
          PLOT="dodgerblue2",
-         KNIT="hotpink",
+         KNIT="dodgerblue4",
+         DLOAD="dodgerblue2",
          MAKE="deepskyblue",
          ENV="deepskyblue",
          ZIP="darkorchid3",

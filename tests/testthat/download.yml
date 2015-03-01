@@ -1,0 +1,21 @@
+sources:
+  - code.R
+  - download.R
+
+targets:
+  all:
+    depends: plot.pdf
+
+  # This is silly.  But it's also nice and lightweight
+  mtcars.R:
+    download: https://raw.githubusercontent.com/wch/r-source/master/src/library/datasets/data/mtcars.R
+
+  data.csv:
+    command: read_data("mtcars.R", target_name)
+
+  processed:
+    command: process_data("data.csv")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true

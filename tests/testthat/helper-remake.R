@@ -18,6 +18,7 @@ cleanup <- function() {
                                  "test.zip", "remake.zip",
                                  "remake_archive.zip",
                                  "code_literal.R",
+                                 "mtcars.R",
                                  "remake_active.R",
                                  "remake",
                                  "tmp_quoting.yml")))
@@ -40,6 +41,13 @@ skip_unless_set <- function(name) {
     return()
   }
   skip("Skipping install package tests")
+}
+
+skip_unless_internet <- function() {
+  if (has_internet()) {
+    return()
+  }
+  skip("No internet :(")
 }
 
 skip_unless_travis <- function() {
@@ -66,4 +74,8 @@ print_libpaths <- function(msg) {
   msg <- paste(c(msg, msg_libpaths, msg_packages1, msg_packages2),
                collapse="\n")
   message(msg)
+}
+
+has_internet <- function() {
+  !is.null(suppressWarnings(nsl("www.google.com")))
 }

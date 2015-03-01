@@ -293,6 +293,35 @@ test_that("knitr (invalid)", {
               gives_warning("Ignoring 'auto_figure_prefix'"))
 })
 
+test_that("download", {
+  url <- "http://whatever"
+  t <- make_target("file", list(download=url))
+  expect_that(class(t),
+              equals(c("target_download", "target_file", "target_base")))
+  expect_that(t$download, equals(url))
+  expect_that(t$check, equals("exists"))
+  expect_that(t$cleanup_level, equals("purge"))
+  expect_that(t$type, equals("file"))
+})
+
+test_that("download (invalid)", {
+  expect_that(make_target("file", list(download=NULL)),
+              throws_error("download must be a scalar"))
+  expect_that(make_target("file", list(download=character(0))),
+              throws_error("download must be a scalar"))
+  expect_that(make_target("file", list(download=c("a", "b"))),
+              throws_error("download must be a scalar"))
+  expect_that(make_target("file", list(download=TRUE)),
+              throws_error("download must be character"))
+
+  expect_that(make_target("file", list(download="www.whatever")),
+              throws_error("does not look like a"))
+  expect_that(make_target("file", list(download="ftp://www.whatever")),
+              throws_error("does not look like a"))
+  expect_that(make_target("file", list(download="file://www.whatever")),
+              throws_error("does not look like a"))
+})
+
 ## This section is weird and pretty much just a regression test.  I
 ## hope that this sort of functionality is not actually that useful.
 test_that("cleanup", {

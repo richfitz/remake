@@ -188,3 +188,10 @@ assert_is_current <- function(obj, target_names, check=NULL) {
     stop("Target not current: ", paste(target_names[!ok], collapse=", "))
   }
 }
+
+assert_is_url <- function(x, name=deparse(substitute(x))) {
+  assert_scalar_character(x, name)
+  if (!grepl("^https?://", x)) {
+    stop(sprintf("%s does not look like a http/https URL", name))
+  }
+}

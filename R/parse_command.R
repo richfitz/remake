@@ -223,6 +223,8 @@ target_infer_type <- function(name, dat) {
     type <- if (target_is_file(name)) "file" else  "object"
     if ("knitr" %in% names(dat)) {
       type <- "knitr"
+    } else if ("download" %in% names(dat)) {
+      type <- "download"
     } else if ("plot" %in% names(dat)) {
       type <- "plot"
     } else if (type == "object" && is.null(dat$command)) {

@@ -20,5 +20,6 @@ Suggests:
     testthat,
     DiagrammeR,
     knitr,
+    downloader,
     devtools,
     pryr
