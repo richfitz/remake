@@ -1,3 +1,7 @@
+## TODO: According to JJ, there is support for doing this sort of
+## thing in a DTL package - possibly called 'codedeps'.  Probably
+## worth finding out how that works and seeing if I can make this
+## faster and more reliable.
 code_dependencies <- function(f, hide_errors=TRUE) {
   env <- environment(f)
   ## Exclude these:
@@ -8,20 +12,26 @@ code_dependencies <- function(f, hide_errors=TRUE) {
       return()
     }
     e_name <- deparse(e)
-    ## TODO: Can possibly exclude based on the global active binding set?
-    ##
-    ## TODO: I think this is excluding too much: if the variable
-    ## exists in env without inheriting then we should use it, even if
-    ## it would be masked at a higher level by the active binding.
-    if (!exists(e_name, env)       || # local variable, probably
-        e_name %in% args           || # shadowed by function argument
-        is_active_binding(e_name)) {  # using remake active bindings
+
+    ## Shadowed by argument:
+    ## TODO: Nested function definitions will not work correctly
+    ## here; we'd need to switch the "active" function.  Getting this
+    ## wrong is most likely to cause false positives.
+    if (e_name %in% args) {
+      return()
+    }
+
+    ## TODO: Things like get() will totally confuse this.
+    if (!exists(e_name, env, inherits=FALSE) &&
+        ((!exists(e_name, env)       || # local variable, probably
+          is_active_binding(e_name)))) {  # using remake active bindings
       return()
     }
     r <- try(eval(e, env), silent=hide_errors)
     if (!is.null(r) && is.function(r) && !is.primitive(r)) {
       if (identical(environment(r), env)) {
         if (!identical(r, f)) {
+          ## TODO: Why not e_name here?
           ret$functions <<- c(ret$functions, as.character(e))
         }
       } else {

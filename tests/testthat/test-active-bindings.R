@@ -6,14 +6,30 @@ test_that("code_dependencies skips active bindings", {
   on.exit(rm(list="foo", envir=.GlobalEnv))
   expect_that(foo, throws_error("I am lava"))
   expect_that(foo <<- 1, throws_error("I am lava"))
-  f <- function(foo) foo + 1
+  e <- new.env(parent=.GlobalEnv)
+  e$f <- function(foo) foo + 1
+  environment(e$f) <- e
+
   nodeps <- list(functions=character(0), packages=character(0))
-  expect_that(code_dependencies(f, FALSE), equals(nodeps))
+  expect_that(code_dependencies(e$f, FALSE), equals(nodeps))
 
   ## Arguments skip through:
-  bar <- function() 1
-  g <- function(bar) bar + 1
-  expect_that(code_dependencies(g, FALSE), equals(nodeps))
+  e$bar <- function() 1
+  environment(e$bar) <- e
+  e$g <- function(bar) bar + 1
+  environment(e$g) <- e
+  expect_that(code_dependencies(e$g, FALSE), equals(nodeps))
+})
+
+test_that("code_dependencies regression test", {
+  e <- new.env(parent=.GlobalEnv)
+  sys.source("bindings.R", e)
+  expect_that(code_dependencies(e$f)$functions, equals("g"))
+
+  lava <- function(...) stop("I am lava, don't touch", call.=FALSE)
+  makeActiveBinding("g", lava, .GlobalEnv)
+  on.exit(rm(list="g", envir=.GlobalEnv))
+  expect_that(code_dependencies(e$f)$functions, equals("g"))
 })
 
 test_that("global binding manager", {
