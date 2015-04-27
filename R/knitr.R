@@ -25,7 +25,7 @@ knitr_from_remake <- function(input, output, store, export,
                               auto_figure_prefix=FALSE, ...) {
   ## TODO: We have this worked out better now.  Add to the API?
   e <- new.env(parent=if (export_source) store$env$env else .GlobalEnv)
-  store$objects$export(export, e)
+  store$objects$export(e, export)
 
   if (isTRUE(auto_figure_prefix) && is.null(knitr_options$fig.path)) {
     knitr_options$fig.path <- knitr_default_fig_path(output)

@@ -358,10 +358,11 @@ test_that("get/set/archive object targets", {
   archive_export_target(t, m$store, path)
 
   expect_that(dir(file.path(path, "objects")),
-              equals(c("processed", "processed__hash")))
-  expect_that(readRDS(file.path(path, "objects", "processed")),
-               equals(target_get(t, m$store)))
-  expect_that(readLines(file.path(path, "objects", "processed__hash")),
+              equals(c("data", "keys", "list")))
+  expect_that(dir(file.path(path, "objects", "keys", "objects")),
+              equals(c("processed")))
+  expect_that(readLines(file.path(path, "objects", "keys", "objects",
+                                  "processed")),
                equals(digest::digest(target_get(t, m$store))))
 
   name <- paste0(digest::digest(t$name), ".rds")

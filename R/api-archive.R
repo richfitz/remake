@@ -177,8 +177,19 @@ fetch_archive <- function(target_name,
     dir.create(dirname(ret), FALSE, TRUE)
     file.copy(v, ret, overwrite=TRUE)
   } else if (db$type == "object") {
-    ret <- readRDS(archive_get_file(file.path("objects", target_name),
-                                    path, archive_file))
+    ## TODO: with storr objects this is going to require a little more
+    ## finesse.  I should add some work here to allow access like this
+    ## within storr when the archive is zipped.  As it currently is,
+    ## this relies on implementation details that don't seem sensible
+    ## to rely on.
+    tmp <-
+      archive_get_file(file.path("objects", "keys", "objects", target_name),
+                       path, archive_file)
+    hash <- paste0(readLines(tmp), ".rds")
+    tmp <-
+      archive_get_file(file.path("objects", "data", hash),
+                       path, archive_file)
+    ret <- readRDS(tmp)
   } else {
     stop("Can't extract target of type ", db$type)
   }

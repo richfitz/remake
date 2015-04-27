@@ -1,146 +1,3 @@
-## This one has the potential issue that if the hash and the file get
-## out of sync we have problems.  However, this is controlled within
-## the .remake/objects directory so we can kind of assume that is not
-## going to happen.
-##
-## Storing hashes as <name>__hash means that an object with that
-## pattern really can't be stored.
-##
-## We also can't store objects that have names that aren't filename
-## OK.  Most of those also aren't R OK, but I should decide if we'll
-## hash object names coming in.  A good idea could be to hash the
-## name, then have
-##   <digest>       -- actual data
-##   <digest>__hash -- hash of the data
-##   <digest>__name -- name of the data
-##' @importFrom R6 R6Class
-object_store <- R6Class(
-  "object_store",
-  public=list(
-    path=NULL,
-    initialize=function(path) {
-      self$path <- path
-      dir.create(self$path, FALSE)
-    },
-
-    contains=function(key) {
-      file.exists(self$fullname(key))
-    },
-
-    get=function(key) {
-      exists <- self$contains(key)
-      if (!exists) {
-        stop(sprintf("key %s not found in object store", key))
-      }
-      path <- self$fullname(key)
-      readRDS(self$fullname(key))
-    },
-
-    set=function(key, value) {
-      hash <- self$hash(value)
-      saveRDS(value, self$fullname(key))
-      writeLines(hash, self$hashname(key))
-    },
-
-    del=function(key, missing_ok=FALSE) {
-      exists <- self$contains(key)
-      file_remove(self$fullname(key), recursive=TRUE)
-      file_remove(self$hashname(key))
-      if (!exists && !missing_ok) {
-        stop(sprintf("key %s not found in object store", key))
-      }
-      invisible(exists)
-    },
-
-    hash=function(value) {
-      hash_object(value)
-    },
-
-    archive_export=function(key, path, missing_ok=FALSE) {
-      dir.create(path, FALSE, TRUE)
-      assert_directory(path)
-      exists <- self$contains(key)
-      if (!exists && !missing_ok) {
-        stop(sprintf("key %s not found in object store", key))
-      }
-      file_copy(self$fullname(key), path, warn=!missing_ok)
-      file_copy(self$hashname(key), path, warn=!missing_ok)
-      invisible(exists)
-    },
-
-    archive_import=function(key, path) {
-      assert_directory(path)
-      file_in <- file.path(path, key)
-      hash_in <- paste0(file_in, "__hash") # TODO: avoid
-      assert_file_exists(file_in)
-      assert_file_exists(hash_in)
-      dir.create(self$path, FALSE) # should not be needed?
-      file_copy(file_in, self$path)
-      file_copy(hash_in, self$path)
-    },
-
-    get_hash=function(key, missing_ok=FALSE) {
-      exists <- self$contains(key)
-      if (exists) {
-        readLines(self$hashname(key))
-      } else if (missing_ok) {
-        NA_character_
-      } else {
-        stop(sprintf("key %s not found in object store", key))
-      }
-    },
-
-    ## This is not really used that often.
-    ls=function() {
-      c(grep("__hash$", dir(self$path), invert=TRUE, value=TRUE),
-        basename(list.dirs(self$path, recursive=FALSE)))
-    },
-
-    ## This is a *one way* function; changes won't be automatically
-    ## propagated.
-    ##
-    ## TODO: need to assert that everything is here before running
-    ## export, otherwise we get weird errors.
-    export=function(list=NULL, envir=.GlobalEnv, delayed=FALSE) {
-      if (is.null(list)) {
-        list <- self$ls()
-      }
-      assert_character(list)
-
-      if (is.null(names(list))) {
-        names_out <- list
-      } else {
-        names_out <- names(list)
-        names_out[names_out == ""] <- list[names_out == ""]
-      }
-
-      do_assign <- function(name_out, name_in) {
-        if (delayed) {
-          force(name_out)
-          force(name_in)
-          delayedAssign(name_out, self$get(name_in), assign.env=envir)
-        } else {
-          assign(name_out, self$get(name_in), envir=envir)
-        }
-      }
-      ## msg <- !self$contains(list)
-      ## if (any(msg)) {
-      ##   stop("Missing objects: ", paste(msg, collapse=", "))
-      ## }
-      for (i in seq_along(list)) {
-        do_assign(names_out[i], list[i])
-      }
-    },
-
-    fullname=function(key) {
-      file.path(self$path, key)
-    },
-
-    hashname=function(key) {
-      paste0(self$fullname(key), "__hash")
-    }
-    ))
-
 ## This one is quite different.  It also does not try to do anything
 ## clever with caching this information.  The files on disk are
 ## allowed to change independently of R.
@@ -164,14 +21,14 @@ object_store <- R6Class(
 file_store <- R6Class(
   "file_store",
   public=list(
-    contains=function(filename) {
+    exists=function(filename) {
       file.exists(self$fullname(filename))
     },
 
     ## Deal with directories here?  Probably not.
     del=function(filename, missing_ok=FALSE) {
       ## TODO: Generalise this pattern (see also get_hash)
-      exists <- self$contains(filename)
+      exists <- self$exists(filename)
       if (exists) {
         file_remove(self$fullname(filename))
       } else if (!missing_ok) {
@@ -183,7 +40,7 @@ file_store <- R6Class(
     archive_export=function(filename, path, missing_ok=FALSE) {
       dir.create(path, FALSE, TRUE)
       assert_directory(path)
-      exists <- self$contains(filename)
+      exists <- self$exists(filename)
       if (exists) {
         full <- self$fullname(filename)
         dest <- file.path(path, dirname(full))
@@ -205,7 +62,7 @@ file_store <- R6Class(
     },
 
     get_hash=function(filename, missing_ok=FALSE) {
-      exists <- self$contains(filename)
+      exists <- self$exists(filename)
       if (exists) {
         hash_files(filename, named=FALSE)
       } else if (missing_ok) {
@@ -242,7 +99,7 @@ remake_db <- R6Class(
     },
 
     del=function(key, missing_ok=FALSE) {
-      exists <- self$contains(key)
+      exists <- self$exists(key)
       if (exists) {
         file_remove(self$fullname(key))
       } else if (!missing_ok) {
@@ -254,7 +111,7 @@ remake_db <- R6Class(
     archive_export=function(key, path, missing_ok=FALSE) {
       dir.create(path, FALSE, TRUE)
       assert_directory(path)
-      exists <- self$contains(key)
+      exists <- self$exists(key)
       if (exists) {
         file_copy(self$fullname(key), path, warn=!missing_ok)
       } else if (!missing_ok) {
@@ -274,7 +131,7 @@ remake_db <- R6Class(
       file_copy(file_in, self$path)
     },
 
-    contains=function(key) {
+    exists=function(key) {
       file.exists(self$fullname(key))
     },
 
@@ -298,6 +155,7 @@ remake_db <- R6Class(
     ))
 
 ##' @importFrom R6 R6Class
+##' @importFrom storr storr_rds
 store <- R6Class(
   "store",
   public=list(
@@ -316,27 +174,19 @@ store <- R6Class(
       self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".remake")
       dir.create(self$path, FALSE, TRUE)
       self$db <- remake_db$new(file.path(self$path, "db"))
-      self$objects <- object_store$new(file.path(self$path, "objects"))
+      self$objects <- storr_rds(file.path(self$path, "objects"))
       self$files <- file_store$new()
       self$version <- packageVersion(.packageName)
       self$packages <- packages
       self$env <- managed_environment$new(sources)
     },
 
-    destroy=function() {
-      file_remove(self$path, recursive=TRUE)
-      self$path <- NULL
-      self$db <- NULL
-      self$objects <- NULL
-      self$files <- NULL
-    },
-
-    contains=function(name, type) {
-      private$right_store(type)$contains(name)
+    exists=function(name, type) {
+      private$right_store(type)$exists(name)
     },
 
     get_hash=function(name, type, missing_ok) {
-      if (missing_ok && !self$contains(name, type)) {
+      if (missing_ok && !self$exists(name, type)) {
         NA_character_
       } else {
         private$right_store(type)$get_hash(name)

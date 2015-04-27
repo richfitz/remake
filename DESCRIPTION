@@ -15,7 +15,8 @@ Imports:
     yaml,
     codetools,
     crayon,
-    optparse
+    optparse,
+    storr
 Suggests:
     testthat,
     DiagrammeR,

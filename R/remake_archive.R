@@ -107,7 +107,11 @@ archive_export_target <- function(target, store, path) {
     store$files$archive_export(target$name, path_files, missing_ok)
   } else if (target$type == "object") {
     path_objects <- file.path(path, "objects")
-    store$objects$archive_export(target$name, path_objects, missing_ok)
+    if (store$objects$exists(target$name)) {
+      store$objects$archive_export(path_objects, target$name)
+    } else if (!missing_ok) {
+      stop(sprintf("key %s not found in object store", target$name))
+    }
   }
 
   path_db <- file.path(path, "db")
@@ -118,7 +122,8 @@ archive_import_target <- function(target, store, path) {
   if (target$type == "file") {
     store$files$archive_import(target$name, file.path(path, "files"))
   } else {
-    store$objects$archive_import(target$name, file.path(path, "objects"))
+    store$objects$archive_import(file.path(path, "objects"),
+                                 target$name)
   }
 
   path_db <- file.path(path, "db")

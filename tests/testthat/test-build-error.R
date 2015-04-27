@@ -12,7 +12,7 @@ test_that("Check mocking works", {
   expect_that(file.info("data.csv")$size, is_more_than(0))
 
   ## No entry in the database:
-  expect_that(m$store$db$contains("data.csv"),
+  expect_that(m$store$db$exists("data.csv"),
               is_false())
 
   ## Manually run the broken case:
@@ -38,7 +38,7 @@ test_that("Errored builds restore files", {
   expect_that(tools::md5sum("data.csv"), equals(hash))
 
   ## Still no entry in the database:
-  expect_that(m$store$db$contains("data.csv"),
+  expect_that(m$store$db$exists("data.csv"),
               is_false())
 
   .GlobalEnv$.run_download_data_works <- TRUE
@@ -47,5 +47,5 @@ test_that("Errored builds restore files", {
   remake_make(m, "data.csv")
   expect_that(file.exists("data.csv"), is_true())
 
-  expect_that(m$store$db$contains("data.csv"), is_true())
+  expect_that(m$store$db$exists("data.csv"), is_true())
 })

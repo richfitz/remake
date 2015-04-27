@@ -2,21 +2,13 @@
 ##   * check_current
 ##   * skip_missing
 remake_environment <- function(obj, target_names, dependencies=FALSE,
-                               copy_functions=FALSE,
-                               delayed_assign=FALSE) {
+                               copy_functions=FALSE) {
   if (dependencies) {
     target_names <- remake_list_dependencies(obj, target_names,
                                              type="object")
   }
-  e <- remake_environment_sources(obj, copy_functions)
-  remake_environment_objects(obj, target_names, e, delayed_assign)
-}
-
-## This is the dumb one; it just copies things over.
-remake_environment_objects <- function(obj, target_names, envir,
-                                delayed_assign=FALSE) {
-  object_store <- obj$store$objects
-  object_store$export(target_names, envir, delayed_assign)
+  envir <- remake_environment_sources(obj, copy_functions)
+  obj$store$objects$export(envir, target_names)
   invisible(envir)
 }
 

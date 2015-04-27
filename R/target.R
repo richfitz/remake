@@ -291,11 +291,11 @@ target_is_current <- function(target, store, check=NULL) {
 
   if (target$type %in% c("cleanup", "fake")) {
     return(FALSE)
-  } else if (!store$contains(target$name, target$type)) {
+  } else if (!store$exists(target$name, target$type)) {
     return(FALSE)
   } else if (is.null(target$rule)) {
     return(TRUE)
-  } else if (!store$db$contains(target$name)) {
+  } else if (!store$db$exists(target$name)) {
     ## This happens when a file target exists, but there is no record
     ## of it being created (such as when the .remake directory is
     ## deleted or if it comes from elsewhere).  In which case we can't

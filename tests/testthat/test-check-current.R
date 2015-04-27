@@ -104,10 +104,10 @@ test_that("In target", {
   expect_that(target_is_current(t, store, "all"), is_false())
   expect_that(remake_is_current(m, "data.csv"), is_true())
 
-  expect_that(m$store$db$contains("data.csv"), is_false())
+  expect_that(m$store$db$exists("data.csv"), is_false())
   remake_make(m, "data.csv")
   ## Didn't make it: still not in the db!:
-  expect_that(m$store$db$contains("data.csv"), is_false())
+  expect_that(m$store$db$exists("data.csv"), is_false())
 
   cleanup()
 })
@@ -144,7 +144,7 @@ test_that("In remake", {
 
   expect_that(remake_is_current(m, "data.csv"),           is_true())
   expect_that(remake_is_current(m, "data.csv", "exists"), is_true())
-  expect_that(m$store$db$contains("data.csv"),     is_true())
+  expect_that(m$store$db$exists("data.csv"),     is_true())
 
   expect_that(remake_is_current(m, "processed"),           is_true())
   expect_that(remake_is_current(m, "processed", "exists"), is_true())

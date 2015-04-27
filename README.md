@@ -156,3 +156,9 @@ remake depends on several R packages, all of which can be installed from CRAN.  
 ```r
 install.packages(c("R6", "yaml", "digest", "crayon", "optparse"))
 ```
+
+We also depend on `storr` for object storage:
+
+```r
+devtools::install_github("richfitz/storr")
+```

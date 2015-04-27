@@ -36,28 +36,28 @@ test_that("Chained rules", {
   res <- remake_make(m, "chained")
   expect_that(res, equals(6))
 
-  expect_that(m$store$objects$contains("chained"),    is_true())
-  expect_that(m$store$objects$contains("chained{1}"), is_true())
-  expect_that(m$store$objects$contains("chained{2}"), is_true())
+  expect_that(m$store$objects$exists("chained"),    is_true())
+  expect_that(m$store$objects$exists("chained{1}"), is_true())
+  expect_that(m$store$objects$exists("chained{2}"), is_true())
 
   ## Cleaning removes them all:
   remake_make(m, "clean")
-  expect_that(m$store$objects$contains("chained"), is_false())
-  expect_that(m$store$objects$contains("chained{1}"), is_false())
-  expect_that(m$store$objects$contains("chained{2}"), is_false())
+  expect_that(m$store$objects$exists("chained"), is_false())
+  expect_that(m$store$objects$exists("chained{1}"), is_false())
+  expect_that(m$store$objects$exists("chained{2}"), is_false())
 
   ## By default, so does remove_target:
   res <- remake_make(m, "chained")
   remake_remove_target(m, "chained")
-  expect_that(m$store$objects$contains("chained"), is_false())
-  expect_that(m$store$objects$contains("chained{1}"), is_false())
-  expect_that(m$store$objects$contains("chained{2}"), is_false())
+  expect_that(m$store$objects$exists("chained"), is_false())
+  expect_that(m$store$objects$exists("chained{1}"), is_false())
+  expect_that(m$store$objects$exists("chained{2}"), is_false())
 
   res <- remake_make(m, "chained")
   remake_remove_target(m, "chained", FALSE)
-  expect_that(m$store$objects$contains("chained"), is_false())
-  expect_that(m$store$objects$contains("chained{1}"), is_true())
-  expect_that(m$store$objects$contains("chained{2}"), is_true())
+  expect_that(m$store$objects$exists("chained"), is_false())
+  expect_that(m$store$objects$exists("chained{1}"), is_true())
+  expect_that(m$store$objects$exists("chained{2}"), is_true())
 })
 
 test_that("Chained rules -> file", {
@@ -67,7 +67,7 @@ test_that("Chained rules -> file", {
   remake_make(m, "plot.pdf")
 
   expect_that(file.exists("plot.pdf"), is_true())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_true())
 
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
@@ -76,14 +76,14 @@ test_that("Chained rules -> file", {
 
   remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_false())
 
   remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_true())
   remake_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_false())
 })
 
 test_that("Chained rules -> plot", {
@@ -93,7 +93,7 @@ test_that("Chained rules -> plot", {
   remake_make(m, "plot.pdf")
 
   expect_that(file.exists("plot.pdf"), is_true())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_true())
 
   ## This can't currently be tested, but the intermediate object won't
   ## be rebuilt.
@@ -102,14 +102,14 @@ test_that("Chained rules -> plot", {
 
   remake_make(m, "clean")
   expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_false())
 
   remake_make(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_true())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_true())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_true())
   remake_remove_target(m, "plot.pdf")
   expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(m$store$objects$contains("plot.pdf{1}"), is_false())
+  expect_that(m$store$objects$exists("plot.pdf{1}"), is_false())
 })
 
 test_that("Printing chain rules", {

@@ -24,10 +24,11 @@ test_that("Build archive", {
   remake_archive_export(m, "plot.pdf")
   expect_that(file.exists("remake.zip"), is_true())
 
-  contents <- unzip("remake.zip", list=TRUE)
+  contents <- unzip("remake.zip", list=TRUE)$Name
+  expect_that("remake/objects/keys/objects/processed" %in% contents,
+              is_true())
   expect_that(all(c("remake/files/data.csv",
-                    "remake/files/data.csv",
-                    "remake/objects/processed") %in% contents$Name),
+                    "remake/files/data.csv") %in% contents),
               is_true())
   cleanup()
 })

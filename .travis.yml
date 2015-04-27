@@ -1,5 +1,7 @@
 language: c
 
+sudo: required
+
 env:
   - global:
       - WARNINGS_ARE_ERRORS=1
@@ -13,7 +15,8 @@ before_install:
 install:
   - ./travis-tool.sh install_aptget libv8-dev
   - ./travis-tool.sh install_deps
-  - ./travis-tool.sh github_package jimhester/covr  
+  - ./travis-tool.sh github_package richfitz/storr
+  - ./travis-tool.sh github_package jimhester/covr
 
 script: ./travis-tool.sh run_tests
 
