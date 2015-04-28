@@ -275,7 +275,7 @@ remake_remove_target <- function(obj, target_name, chain=TRUE) {
   store <- obj$store
 
   if (target$type == "file") {
-    did_remove_obj <- store$files$del(target$name, TRUE)
+    did_remove_obj <- store$files$del(target$name)
     did_remove_db  <- store$db$del(target$name)
     did_remove <- did_remove_obj || did_remove_db
   } else if (target$type == "object") {

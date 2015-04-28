@@ -13,8 +13,8 @@ test_that("file store", {
 
   expect_that(st$get_hash("not/in/store"),
               throws_error("not found in file store"))
-  expect_that(st$get_hash("not/in/store", TRUE),
-              is_identical_to(NA_character_))
+  expect_that(st$exists("not/in/store"),
+              is_false())
 
   st$del(file)
   expect_that(st$exists(file), is_false())

@@ -101,10 +101,8 @@ remake_archive_tld <- function(archive_file, error=TRUE) {
 ## manifest of what was generated while running the target.  Might pay
 ## to ask about this, as it seems generally useful.
 archive_export_target <- function(target, store, path) {
-  missing_ok <- FALSE
   if (target$type == "file") {
-    store$files$archive_export(target$name, file.path(path, "files"),
-                               missing_ok)
+    store$files$archive_export(target$name, file.path(path, "files"))
   } else if (target$type == "object") {
     if (store$objects$exists(target$name)) {
       store$objects$archive_export(file.path(path, "objects"), target$name)

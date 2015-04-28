@@ -22,31 +22,35 @@ file_store <- R6Class(
   "file_store",
   public=list(
     exists=function(filename) {
-      file.exists(self$fullname(filename))
+      file.exists(filename)
     },
 
     ## Deal with directories here?  Probably not.
-    del=function(filename, missing_ok=FALSE) {
-      ## TODO: Generalise this pattern (see also get_hash)
+    del=function(filename) {
       exists <- self$exists(filename)
       if (exists) {
-        file_remove(self$fullname(filename))
-      } else if (!missing_ok) {
-        stop(sprintf("file %s not found in file store", filename))
+        file_remove(filename)
       }
       invisible(exists)
     },
 
-    archive_export=function(filename, path, missing_ok=FALSE) {
+    get_hash=function(filename) {
+      if (self$exists(filename)) {
+        hash_files(filename, named=FALSE)
+      } else {
+        stop(sprintf("file %s not found in file store", filename))
+      }
+    },
+
+    archive_export=function(filename, path) {
       dir.create(path, FALSE, TRUE)
       assert_directory(path)
       exists <- self$exists(filename)
       if (exists) {
-        full <- self$fullname(filename)
-        dest <- file.path(path, dirname(full))
+        dest <- file.path(path, dirname(filename))
         dir.create(dest, FALSE, TRUE)
-        file_copy(full, dest, warn=!missing_ok)
-      } else if (!missing_ok) {
+        file_copy(filename, dest)
+      } else {
         stop(sprintf("file %s not found in file store", filename))
       }
       invisible(exists)
@@ -59,21 +63,6 @@ file_store <- R6Class(
       path_out <- dirname(filename)
       dir.create(path_out, showWarnings=FALSE, recursive=TRUE)
       file_copy(file_in, path_out)
-    },
-
-    get_hash=function(filename, missing_ok=FALSE) {
-      exists <- self$exists(filename)
-      if (exists) {
-        hash_files(filename, named=FALSE)
-      } else if (missing_ok) {
-        NA_character_
-      } else {
-        stop(sprintf("file %s not found in file store", filename))
-      }
-    },
-
-    fullname=function(filename) {
-      filename
     }
     ))
 
@@ -107,17 +96,17 @@ store <- R6Class(
     },
 
     exists=function(name, type) {
-      private$right_store(type)$exists(name)
+      self$right_store(type)$exists(name)
     },
 
     get_hash=function(name, type, missing_ok) {
       if (missing_ok && !self$exists(name, type)) {
         NA_character_
       } else {
-        private$right_store(type)$get_hash(name)
+        self$right_store(type)$get_hash(name)
       }
-    }),
-  private=list(
+    },
+
     right_store=function(type) {
       if (is.null(type)) {
         stop("type must be specified")
