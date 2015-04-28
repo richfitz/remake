@@ -15,7 +15,9 @@ when it works, is wonderful.  Being able to change part of a complicated system 
 
 The idea here is to re-imagine a set of ideas from make but built for R.  Rather than having a series of calls to different instances of R (as happens if you run make on R scripts), the idea is to define pieces of a pipeline within an R session.  Rather than being language agnostic (like make must be), `remake` is unapologetically R focussed.
 
-**Note**: This package is under heavy development (as of October 2014), so things may change under you if you start using this now.  However, the core format seems to be working on some nontrivial cases that we are using in our own work.  At the same time, if you're willing to have things change around a bit feel free to start using this and post [issues](https://github.com/richfitz/remake/issues) with problems/friction/ideas etc and the package will reflect your workflow more.
+**Note**: This package is under heavy development (as of May 2015), so things may change under you if you start using this now.  However, the core format seems to be working on some nontrivial cases that we are using in our own work.  At the same time, if you're willing to have things change around a bit feel free to start using this and post [issues](https://github.com/richfitz/remake/issues) with problems/friction/ideas etc and the package will reflect your workflow more.
+
+**Note**: Between versions `0.1` and `0.2.0` the database format has changed.  This will require rebuilding your project.  This corresponds to adding the dependency on [`storr`](https://github.com/richfitz/storr).  Everything else should remain unchanged though.
 
 ## What remake does
 

@@ -1,6 +1,6 @@
 Package: remake
 Title: Make-like build management
-Version: 0.1
+Version: 0.2.0
 Authors@R: "Rich FitzJohn <rich.fitzjohn@gmail.com> [aut, cre]"
 Description: Make-like build management in R.  The idea is to have
     some sort of declarative programming to build analysis pipelines,
