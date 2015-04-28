@@ -89,6 +89,8 @@ is_archive <- function(archive_file="remake.zip") {
 }
 
 ##' List contents of a remake archive
+##'
+##' NOTE: At present this unzips the entire archive.
 ##' @title List contents of a remake archive
 ##' @param archive_file Name of the zip file to read from, by default
 ##' "remake.zip".
@@ -107,11 +109,16 @@ list_archive <- function(archive_file="remake.zip", detail=FALSE) {
   path <- tempfile()
   dir.create(path, recursive=TRUE)
   on.exit(file_remove(path, recursive=TRUE))
-  re <- paste0("^", file.path(tld, "db"), ".*\\.rds")
-  keep <- contents$Name[grepl(re, contents$Name)]
-  res <- unzip(archive_file, exdir=path, files=keep)
 
-  db <- lapply(res, readRDS)
+  unzip(archive_file, exdir=path)
+
+  ## TODO: factor this bit out:
+  st <- storr::storr_rds(file.path(path, tld, "objects"),
+                         default_namespace="remake_db",
+                         mangle_key=TRUE)
+  keys <- st$list()
+
+  db <- lapply(keys, function(x) st$storr$get(x))
   db_names <- vcapply(db, function(x) x$name, USE.NAMES=FALSE)
 
   if (detail) {
@@ -155,18 +162,25 @@ fetch_archive <- function(target_name,
                           path_prefix=NULL,
                           archive_file="remake.zip") {
   assert_scalar_character(target_name)
-  contents <- list_archive(archive_file) # will check archive-ness.
-  if (!(target_name %in% contents)) {
-    stop(target_name, " not found in archive ", archive_file)
-  }
+  assert_remake_archive(archive_file)
+
   path <- tempfile()
   dir.create(path, recursive=TRUE)
-  on.exit(file_remove(path, TRUE))
+  on.exit(file_remove(path, recursive=TRUE))
 
-  path_db <- file.path("db", paste0(hash_object(target_name), ".rds"))
-  db <- readRDS(archive_get_file(path_db, path, archive_file))
+  unzip(archive_file, exdir=path)
+  tld <- remake_archive_tld(archive_file)
 
-  if (db$type == "file") {
+  st_db <- storr::storr_rds(file.path(path, tld, "objects"),
+                            default_namespace="remake_db",
+                            mangle_key=TRUE)
+  if (!st_db$exists(target_name)) {
+    stop(target_name, " not found in archive ", archive_file)
+  }
+
+  type <- st_db$get(target_name)$type
+
+  if (type == "file") {
     v <- archive_get_file(file.path("files", target_name),
                           path, archive_file)
     if (is.null(path_prefix)) {
@@ -176,22 +190,11 @@ fetch_archive <- function(target_name,
     }
     dir.create(dirname(ret), FALSE, TRUE)
     file.copy(v, ret, overwrite=TRUE)
-  } else if (db$type == "object") {
-    ## TODO: with storr objects this is going to require a little more
-    ## finesse.  I should add some work here to allow access like this
-    ## within storr when the archive is zipped.  As it currently is,
-    ## this relies on implementation details that don't seem sensible
-    ## to rely on.
-    tmp <-
-      archive_get_file(file.path("objects", "keys", "objects", target_name),
-                       path, archive_file)
-    hash <- paste0(readLines(tmp), ".rds")
-    tmp <-
-      archive_get_file(file.path("objects", "data", hash),
-                       path, archive_file)
-    ret <- readRDS(tmp)
+  } else if (type == "object") {
+    st <- storr::storr_rds(file.path(path, tld, "objects"))
+    ret <- st$get(target_name)
   } else {
-    stop("Can't extract target of type ", db$type)
+    stop("Can't extract target of type ", type)
   }
   ret
 }

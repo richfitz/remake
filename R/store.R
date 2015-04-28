@@ -77,83 +77,6 @@ file_store <- R6Class(
     }
     ))
 
-## This one holds the database information.
-remake_db <- R6Class(
-  "remake_db",
-  public=list(
-    path=NULL,
-
-    initialize=function(path) {
-      self$path <- path
-      dir.create(self$path, FALSE)
-    },
-
-    get=function(key) {
-      readRDS(file=self$fullname(key))
-    },
-
-    ## TODO: Possibly useful to check for a 'name' key here or we'll
-    ## corrupt the database.
-    set=function(key, value) {
-      saveRDS(value, self$fullname(key))
-    },
-
-    del=function(key, missing_ok=FALSE) {
-      exists <- self$exists(key)
-      if (exists) {
-        file_remove(self$fullname(key))
-      } else if (!missing_ok) {
-        stop(sprintf("key %s not found in remake database", key))
-      }
-      invisible(exists)
-    },
-
-    archive_export=function(key, path, missing_ok=FALSE) {
-      dir.create(path, FALSE, TRUE)
-      assert_directory(path)
-      exists <- self$exists(key)
-      if (exists) {
-        file_copy(self$fullname(key), path, warn=!missing_ok)
-      } else if (!missing_ok) {
-        stop(sprintf("key %s not found in remake database", key))
-      }
-      invisible(exists)
-    },
-
-    archive_import=function(key, path) {
-      assert_directory(path)
-      file_in <- file.path(path, self$rdsname(key))
-      assert_file_exists(file_in)
-      ## This should never fail:
-      if (readRDS(file_in)$name != key) {
-        stop("Corrupt database detected")
-      }
-      file_copy(file_in, self$path)
-    },
-
-    exists=function(key) {
-      file.exists(self$fullname(key))
-    },
-
-    ls=function() {
-      files <- dir(self$path, pattern="\\.rds$", full.names=TRUE)
-      vcapply(files, function(x) readRDS(x)$name)
-    },
-
-    ## We hash keys here so that things like file paths (with slashes,
-    ## etc) are OK to use.  It's not super important to hash the
-    ## *objects*, but at the same time the less we care about the
-    ## better.  People should never directly interact with the files
-    ## in the directory, so it's OK.
-    fullname=function(key) {
-      file.path(self$path, self$rdsname(key))
-    },
-
-    rdsname=function(key) {
-      paste0(hash_object(key), ".rds")
-    }
-    ))
-
 ##' @importFrom R6 R6Class
 ##' @importFrom storr storr_rds
 store <- R6Class(
@@ -173,7 +96,9 @@ store <- R6Class(
       dir.create(path, FALSE, TRUE)
       self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".remake")
       dir.create(self$path, FALSE, TRUE)
-      self$db <- remake_db$new(file.path(self$path, "db"))
+      self$db <- storr_rds(file.path(self$path, "objects"),
+                           default_namespace="remake_db",
+                           mangle_key=TRUE)
       self$objects <- storr_rds(file.path(self$path, "objects"))
       self$files <- file_store$new()
       self$version <- packageVersion(.packageName)

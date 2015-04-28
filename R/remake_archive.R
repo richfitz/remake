@@ -103,19 +103,16 @@ remake_archive_tld <- function(archive_file, error=TRUE) {
 archive_export_target <- function(target, store, path) {
   missing_ok <- FALSE
   if (target$type == "file") {
-    path_files <- file.path(path, "files")
-    store$files$archive_export(target$name, path_files, missing_ok)
+    store$files$archive_export(target$name, file.path(path, "files"),
+                               missing_ok)
   } else if (target$type == "object") {
-    path_objects <- file.path(path, "objects")
     if (store$objects$exists(target$name)) {
-      store$objects$archive_export(path_objects, target$name)
-    } else if (!missing_ok) {
+      store$objects$archive_export(file.path(path, "objects"), target$name)
+    } else {
       stop(sprintf("key %s not found in object store", target$name))
     }
   }
-
-  path_db <- file.path(path, "db")
-  store$db$archive_export(target$name, path_db, missing_ok)
+  store$db$archive_export(file.path(path, "objects"), target$name)
 }
 
 archive_import_target <- function(target, store, path) {
@@ -125,9 +122,7 @@ archive_import_target <- function(target, store, path) {
     store$objects$archive_import(file.path(path, "objects"),
                                  target$name)
   }
-
-  path_db <- file.path(path, "db")
-  store$db$archive_import(target$name, path_db)
+  store$db$archive_import(file.path(path, "objects"), target$name)
 }
 
 ## TODO: Copy in some general remake metadata, including:

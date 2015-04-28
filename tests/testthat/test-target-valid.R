@@ -365,9 +365,13 @@ test_that("get/set/archive object targets", {
                                   "processed")),
                equals(digest::digest(target_get(t, m$store))))
 
-  name <- paste0(digest::digest(t$name), ".rds")
-  expect_that(dir(file.path(path, "db")), equals(name))
-  res <- readRDS(file.path(path, "db", name))
+  st_db <- storr::storr_rds(file.path(path, "objects"),
+                            default_namespace="remake_db",
+                            mangle_key=TRUE)
+
+  expect_that(st_db$list(),
+              equals(storr:::hash_string(t$name)))
+  res <- st_db$get(t$name)
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))
   expect_that(dep$time, is_more_than(res$time))
@@ -405,9 +409,13 @@ test_that("get/set/archive file targets", {
   expect_that(md5(file.path(path, "files", "plot.pdf")),
               equals(md5("plot.pdf")))
 
-  name <- paste0(digest::digest(t$name), ".rds")
-  expect_that(dir(file.path(path, "db")), equals(name))
-  res <- readRDS(file.path(path, "db", name))
+  st_db <- storr::storr_rds(file.path(path, "objects"),
+                            default_namespace="remake_db",
+                            mangle_key=TRUE)
+
+  expect_that(st_db$list(),
+              equals(storr:::hash_string(t$name)))
+  res <- st_db$get(t$name)
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))
   expect_that(dep$time, is_more_than(res$time))
