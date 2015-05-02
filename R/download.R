@@ -47,5 +47,11 @@ download_file <- function(url, dest, quiet, ...) {
   if (status != 0) {
     stop("Download failed with code ", status)
   }
-  file.rename(tmp, dest)
+  ok <- file.rename(tmp, dest)
+  if (!ok) {
+    # Linux
+    ok <- file.copy(tmp, dest)
+    file.remove(tmp)
+  }
+  ok
 }
