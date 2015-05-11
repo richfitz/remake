@@ -54,12 +54,14 @@ remake_diagram_command <- function(obj) {
                file_implicit="#1abc9c", # turqoise
                knitr="#c0392b",    # pomegranate
                plot="#f1c40f",     # orange
+               download="#f1c40f", # sunflower
                object="#3498db")   # peter river
   shape <- c(fake="circle",
              file="box",
              file_implicit="box",
              knitr="box",
              plot="box",
+             download="box",
              object="ellipse")
   current <- remake_is_current(obj, names(g))
   font <- "courier"
