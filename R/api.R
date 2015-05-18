@@ -577,3 +577,20 @@ delete <- function(target_names, dependencies=FALSE,
     remake_remove_target(obj, t, chain=TRUE)
   }
 }
+
+##' Dump the contents of remake into an environment; by default the
+##' global environment.  This is similar in effect to
+##' \code{\link{create_bindings}} but does not create links; instead a
+##' copy of everything that remake has built, plus all functions
+##' sources into remake, are \emph{copied} into the environment.
+##' @title Dump remake contents to environment
+##' @param envir Environment to copy into; by default the global environment.
+##' @param verbose Be verbose when loading the remakefile
+##' @param remake_file Name of the remakefile (by default
+##' \code{remake.yml})
+##' @export
+dump_environment <- function(envir=.GlobalEnv, verbose=TRUE,
+                             remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=verbose, load_sources=TRUE)
+  remake_dump_environment(obj, envir)
+}

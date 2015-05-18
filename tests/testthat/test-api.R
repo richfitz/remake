@@ -294,3 +294,17 @@ test_that("delete", {
   delete("knitr.md", remake_file="knitr.yml")
   expect_that(file.exists("knitr.md"), is_false())
 })
+
+test_that("dump_environment", {
+  cleanup()
+  env <- new.env(parent=.GlobalEnv)
+  dump_environment(env)
+  expect_that("do_plot" %in% ls(env), is_true())
+  expect_that("processed" %in% ls(env), is_false())
+  make()
+  expect_that("processed" %in% ls(env), is_false())
+  dump_environment(env)
+  expect_that("processed" %in% ls(env), is_true())
+  make("clean")
+  expect_that("processed" %in% ls(env), is_true())
+})

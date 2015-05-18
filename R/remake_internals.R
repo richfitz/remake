@@ -240,6 +240,7 @@ status_colour <- function(str) {
          ENV="deepskyblue",
          ZIP="darkorchid3",
          UNZIP="slateblue2",
+         DUMP="darkorchid3",
          "-----"="grey60",
          NULL)
 }

@@ -356,3 +356,17 @@ remake_who_refers_to <- function(obj, target_names) {
     vlapply(deps, function(x) e %in% x), logical(length(deps)))
   unname(apply(mat, 2, function(x) paste(names(deps)[x], collapse=", ")))
 }
+
+remake_dump_environment <- function(obj, envir) {
+  assert_environment(envir)
+  remake_print_message(obj, "DUMP", "")
+  ## TODO: This will change once ported over to callr's source
+  ## functions.
+  ## NOTE: error checking not needed because we've already
+  ## successfully loaded source once.
+  load_packages(obj$store$packages)
+  for (f in obj$store$env$source_files) {
+    sys.source(f, envir, chdir=TRUE)
+  }
+  obj$store$objects$export(envir)
+}
