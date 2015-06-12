@@ -35,7 +35,7 @@ targets:
     plot: true
 
   ## Like plot targets, there are also special knitr targets.  This
-  ## will arrange for "processed to be available within the knit
+  ## will arrange for "processed" to be available within the knit
   ## function, along with all functions defined in "code.R".  This
   ## automatically depends on the file report.Rmd, and will be updated
   ## when that file changes or when "processed" changes.
