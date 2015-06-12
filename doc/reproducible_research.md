@@ -12,7 +12,7 @@ R provides a relatively homogenous interface across platforms, so much of this h
 
 ### Simplicity
 
-Makefiles are "[Turing complete](http://en.wikipedia.org/wiki/Turing_complete)" (see [here](http://stackoverflow.com/questions/3480950/are-makefiles-turing-complete)), which means they can become extremely difficult to understand without a full knowledge of them.  Because they contain an program you have to imagine the flow of the program to work out what might happen.  That's not how most makefiles are written in practice, but there's often a lot of complexity because there *can* be.
+Makefiles are "[Turing complete](http://en.wikipedia.org/wiki/Turing_complete)" (see [here](http://stackoverflow.com/questions/3480950/are-makefiles-turing-complete)), which means they can become extremely difficult to understand without a full knowledge of them.  Because they contain a program you have to imagine the flow of the program to work out what might happen.  That's not how most makefiles are written in practice, but there's often a lot of complexity because there *can* be.
 
 Here, we're taking the same approach as [mustache](http://mustache.github.io/) - as little logic as possible.  Describe what is going on and delegate the logic to the actual programming language.
 
