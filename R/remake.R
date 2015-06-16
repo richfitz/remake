@@ -218,7 +218,12 @@ remake_dependency_graph <- function(obj) {
 remake_update <- function(obj, target_name, check=NULL,
                           return_target=TRUE) {
   target <- obj$targets[[target_name]]
-  current <- remake_is_current(obj, target_name)
+  ## TODO: why is check being passed in here and then ignored?
+  ## TODO: why is remake_is_current a thing?
+  current <- target_is_current(obj$targets[[target_name]], obj$store)
+  ## NOTE: This is for the benefit of list targets, and might change.
+  ## Not tested, and makes future testing potentially a bit harder.
+  target$current <- current
 
   if (!isTRUE(target$implicit)) {
     status <- if (current) "OK" else target$status_string

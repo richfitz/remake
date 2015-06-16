@@ -7,7 +7,7 @@ test_that("literals", {
 
   m <- remake("remake_literal.yml")
 
-  expect_that(m$targets$data1$depends,
+  expect_that(m$targets$data1$depends_name,
               is_identical_to(character(0)))
   res <- remake_make(m, "data1")
   expect_that(res, is_identical_to(list(TRUE)))

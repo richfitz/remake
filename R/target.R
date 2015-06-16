@@ -86,9 +86,20 @@ target_new_object <- function(name, command, opts, extra=NULL,
     stop("Must not have a NULL rule")
   }
   opts$cleanup_level <- with_default(opts$cleanup_level, "tidy")
-  valid_options <- c("cleanup_level", valid_options)
+  valid_options <- c("cleanup_level",
+                     "list", "elementwise",
+                     valid_options)
   ret <- target_new_base(name, command, opts, extra, "object", valid_options)
   ret$status_string <- "BUILD"
+  ret$each <- command$each
+  if (is.null(ret$each)) {
+    ret$list <- with_default(opts$list, FALSE)
+  } else if (isFALSE(opts$list)) {
+    stop("list must be TRUE (or missing) if using each")
+  } else {
+    ret$list <- TRUE
+  }
+  assert_scalar_logical(ret$list)
   class(ret) <- c("target_object", class(ret))
   ret
 }
@@ -232,7 +243,7 @@ target_new_knitr <- function(name, command, opts, extra=NULL) {
   if (!is.null(names(command$depends))) {
     ret$depends_rename <- command$depends
   }
-  
+
   ret
 }
 
@@ -332,6 +343,16 @@ dependency_status <- function(target, store, missing_ok=FALSE, check=NULL) {
                                      depends_type[[i]], missing_ok))
     names(depends) <- depends_name[keep]
 
+    if (!is.null(target$each)) {
+      ## NOTE: This all works on the assumption that there is a single
+      ## each target.  Changes to that assumption will be fairly
+      ## widespread though.
+      each_name <- target$each
+      each_type <- target$depends_type[[each_name]]
+      attr(depends, "each") <-
+        store$right_store(each_type)$get_list_hash(each_name)
+    }
+
     ## Then, get the non-target dependencies, too.  We don't do this
     ## as a map list because order is guaranteed.
     is_fixed <- !target$arg_is_target
@@ -376,13 +397,22 @@ compare_dependency_status <- function(prev, curr, check) {
   check <- match_value(check, check_levels())
   ok <- TRUE
 
-  if (check_depends(check)) {
-    ok <- ok && identical_map(prev$depends, curr$depends)
-    ok <- ok && identical(prev$fixed, curr$fixed)
-  }
   if (check_code(check)) {
     ## TODO: I've dropped checking *packages* here: see #13
     ok <- ok && identical_map(prev$code$functions, curr$code$functions)
+  }
+
+  if (check_depends(check)) {
+    ok <- ok && identical(prev$fixed, curr$fixed)
+    ok_deps <- identical_map(prev$depends, curr$depends)
+    if (ok && !ok_deps) {
+      ok <- FALSE
+      each_prev <- attr(prev$depends, "each")
+      each_curr <- attr(curr$depends, "each")
+      if (length(each_prev) == length(each_curr)) {
+        attr(ok, "each") <- each_prev == each_curr
+      }
+    }
   }
 
   ok
@@ -390,8 +420,11 @@ compare_dependency_status <- function(prev, curr, check) {
 
 ## Not recursive:
 identical_map <- function(x, y) {
+  ## TODO: this does not actively drop attributes, but they are shed
+  ## by [nms] -- that is an issue for the list checking.  This seems
+  ## fragile so might want to change at some point.
   nms <- names(x)
-  length(x) == length(y) && all(nms %in% names(y)) && identical(y[nms], x)
+  length(x) == length(y) && all(nms %in% names(y)) && identical(y[nms], x[nms])
 }
 
 ## There aren't many of these yet; might end up with more over time
@@ -515,7 +548,11 @@ target_set <- function(target, store, value) {
     store$db$set(target$name,
                  dependency_status(target, store, check="all"))
   } else if (target$type == "object") {
-    store$objects$set(target$name, value)
+    if (isTRUE(target$list)) {
+      store$objects$set_list(target$name, value)
+    } else {
+      store$objects$set(target$name, value)
+    }
     ## NOTE: Must do *after* setting the object, because we'll look up
     ## the hash in a during dependency_status
     store$db$set(target$name,
@@ -561,6 +598,9 @@ target_check_quoted <- function(target) {
 ## Might compute these things at startup, given they are constants
 ## over the life of the object.
 target_run_fake <- function(target, for_script=FALSE) {
+  if (for_script && !is.null(target$each)) {
+    stop("Not yet supported")
+  }
   if (is.null(target$rule) || target$type == "cleanup") {
     NULL
   } else {
@@ -600,6 +640,7 @@ target_run_fake <- function(target, for_script=FALSE) {
   }
 }
 
+## TODO: Why the distinction between build and run?
 target_build <- function(target, store, quiet=NULL) {
   if (target$type == "file") {
     if (is.null(target$rule)) {
@@ -657,7 +698,7 @@ target_run <- function(target, store, quiet=NULL) {
   ##   temp <- file()
   ##   on.exit(close(temp))
   ##   result <- with_sink(temp,
-  ##     withCallingHandlers(withVisible(code), 
+  ##     withCallingHandlers(withVisible(code),
   ##       message=mHandler))
   ## which would allow capturing of messages for debugging later,
   ## especially if an error is thrown.  However, it will not be
@@ -669,10 +710,18 @@ target_run <- function(target, store, quiet=NULL) {
     on.exit(close(temp), add=TRUE)
   }
 
-  ret <-
-    withCallingHandlers(
-      eval(target$command, envir),
-      message=function(e) if (quiet) invokeRestart("muffleMessage"))
+  ## TODO: We might want to control this from remake for
+  ## parallelisation down the track (i.e., get this into DAG.
+  ## However, it would require that the DAG is rebuildable at runtime
+  ## (because width here is unknown) so is a nontrivial change.  For
+  ## now, we'll take over all responsibility here (unlike chained
+  ## targets) to establish behaviour and then work out what needs
+  ## doing later.
+  if (!is.null(target$each)) {
+    ret <- target_run_each(target, store, envir, quiet)
+  } else {
+    ret <- target_eval(target$command, envir, quiet)
+  }
   if (inherits(target, "target_plot") && inherits(ret, "ggplot")) {
     print(ret)
   }
@@ -710,4 +759,60 @@ filter_targets <- function(targets, type=NULL,
   }
 
   names(targets[ok])
+}
+target_run_each <- function(target, store, envir, quiet) {
+  each <- envir[[target$each]]
+  len <- length(each)
+
+  loop <- function(each) {
+    f <- function(el) {
+      envir[[target$each]] <- el
+      target_eval(target$command, envir, quiet)
+    }
+    lapply(each, f)
+  }
+
+  each_status <- attr(target$current, "each")
+  if (is.null(each_status)) {
+    ## rebuild the whole thing (this *does* set names)
+    message(sprintf("Building all %d elements", length(each)))
+    loop(each)
+  } else {
+    ## NOTE: two possible weirdnesses here:
+    ##
+    ## 1. we pull the entire previous data structure out of the storr:
+    ## this is because we'll need the whole thing to compute the final
+    ## hash anyway.
+    ##
+    ## 2. we set the names to the names of the upstream data type:
+    ## that means that changes there will be reflected whenever the
+    ## names changes.
+    ##
+    ## TODO: What will happen when we move to a parallel system is
+    ## that this will take care of queuing jobs - via rrqueue or via a
+    ## system based on parallel (mcq), or one based on doPar or one of
+    ## the more complete parallel support packages. I've set a common
+    ## entry point of target_eval here; this would then set
+    ## information about what queue to push to, and what to write to
+    ## about completeness.
+    ##
+    ## TODO: In the *meantime*, it might be worth allowing parallel to
+    ## be used here as an option.
+    ret <- store$right_store(target$type)$get(target$name)
+    each_rerun <- !each_status
+    message(sprintf("Building %d / %d elements",
+                    sum(each_rerun), length(each)))
+    ret[each_rerun] <- loop(each[each_rerun])
+    names(ret) <- names(each)
+    ret
+  }
+}
+
+## Simple wrapper function for actually running the commands; this is
+## just to provide a common entry point for everything to route
+## through.
+target_eval <- function(command, envir, quiet) {
+  withCallingHandlers(
+    eval(command, envir),
+    message=function(e) if (quiet) invokeRestart("muffleMessage"))
 }

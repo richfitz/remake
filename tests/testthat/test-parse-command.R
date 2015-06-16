@@ -130,13 +130,16 @@ test_that("target_argument detection", {
                           args=list(),
                           depends=character(0),
                           is_target=logical(0),
-                          command=quote(foo()))))
+                          command=quote(foo()),
+                          each=NULL)))
 
   cmp_pos <- list(rule="foo",
                   args=list("a"),
                   depends=character(0),
                   is_target=FALSE,
-                  command=quote(foo("a")))
+                  command=quote(foo("a")),
+                  each=NULL)
+
   expect_that(parse_target_command("a", "foo('a')"), equals(cmp_pos))
   expect_that(parse_target_command("a", "foo(target_name)"),
               equals(cmp_pos))
@@ -145,7 +148,8 @@ test_that("target_argument detection", {
                    args=list(arg="a"),
                    depends=empty_named_character(),
                    is_target=FALSE,
-                   command=quote(foo(arg="a")))
+                   command=quote(foo(arg="a")),
+                   each=NULL)
   expect_that(parse_target_command("a", "foo(arg='a')"), equals(cmp_name))
   expect_that(parse_target_command("a", "foo(arg=target_name)"),
               equals(cmp_name))
@@ -161,7 +165,6 @@ test_that("target_argument detection", {
               throws_error("target_name must not be quoted"))
 
   f <- function(a, x) parse_target_command(a, x)$depends
-
 
   named_b <- structure("b", names="")
   expect_that(f("a", "foo('a', b)"),     equals("b"))
@@ -232,4 +235,26 @@ test_that("Literal arguments", {
               is_identical_to(1.0))
   expect_that(parse_command("foo(target_arg, 1i)")$args[[2]],
               is_identical_to(1i))
+  expect_that(parse_command("foo(I(x, y))"),
+              throws_error("Expected exactly one argument to I"))
+  expect_that(parse_command("foo(I())"),
+              throws_error("Expected exactly one argument to I"))
+})
+
+test_that("List (each) arguments", {
+  obj <- parse_command("foo(x)")
+  expect_that(obj$each, is_null())
+
+  obj <- parse_command("foo(each(x))")
+  expect_that(obj$each, equals("x"))
+
+  expect_that(parse_command("foo(each(x), each(y))"),
+              throws_error("only one each() target allowed: given x, y",
+                           fixed=TRUE))
+  expect_that(parse_command("foo(each(x, y))"),
+              throws_error("Expected exactly one argument to each",
+                           fixed=TRUE))
+  expect_that(parse_command("foo(each())"),
+              throws_error("Expected exactly one argument to each",
+                           fixed=TRUE))
 })

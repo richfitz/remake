@@ -1,0 +1,22 @@
+sources:
+  - code-list.R
+
+targets:
+  mylist:
+    command: make_list()
+    list: true
+
+  # will automatically be saved as a list object
+  mylist2:
+    command: length(each(mylist))
+
+  # will _not_ be saved as a list object, as there is no way of
+  # knowing _in general_ that this is a list.
+  notlist:
+    command: length(mylist)
+
+  # will be saved as a list object, even though this makes basically
+  # no sense.
+  kindalist:
+    command: length(mylist)
+    list: true

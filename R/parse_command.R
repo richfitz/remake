@@ -3,7 +3,8 @@
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("command", "rule", "args", "depends", "is_target", "chain")
+  core <- c("command", "rule", "args", "depends", "is_target",
+            "each", "chain")
 
   ## Quick check that may disappear later:
   invalid <- c("rule", "target_argument", "quoted")
@@ -151,19 +152,34 @@ parse_command <- function(str) {
   ## First, test for target-like-ness.  That will be things that are
   ## names or character only.  Numbers, etc will drop through here:
   is_target <- unname(vlapply(command[-1], is_target_like))
+  each <- NULL
 
   ## ...and we check them and I() arguments here:
   if (any(!is_target)) {
-    i <- c(FALSE, !is_target)
-    command[i] <- lapply(command[i], check_literal_arg)
+    for (j in which(!is_target)) {
+      tmp <- check_special_arg(command[[j + 1L]])
+      if (tmp$type == "I") {
+        command[[j + 1L]] <- tmp$value
+      } else if (tmp$type == "each") {
+        command[[j + 1L]] <- tmp$value
+        is_target[[j]] <- TRUE
+        each <- c(each, tmp$value)
+      }
+    }
+
+    if (length(each) == 1L) {
+      each <- as.character(each[[1]])
+    } else if (length(each) > 1L) {
+      stop("only one each() target allowed: given ",
+           paste(unlist(each), collapse=", "))
+    }
   }
 
-  ## TODO: DEPENDS: Who actually uses args, given it's defined so simply?
   args <- as.list(command[-1])
   depends <- vcapply(args[is_target], as.character)
 
   list(rule=rule, args=args, depends=depends, is_target=is_target,
-       command=command)
+       command=command, each=each)
 }
 
 check_command <- function(str) {
@@ -197,12 +213,20 @@ check_command_rule <- function(x) {
 
 ## The trick here is going to be working out which of these need later
 ## looking up, if we allow this.
-check_literal_arg <- function(x) {
+check_special_arg <- function(x) {
   if (is.atomic(x)) { # logical, integer, complex types
-    x
+    list(type="I", value=x)
   } else if (is.call(x)) {
     if (identical(x[[1]], quote(I))) {
-      x[[2]]
+      if (length(x) != 2L) {
+        stop("Expected exactly one argument to I()")
+      }
+      list(type="I", value=x[[2]])
+    } else if (identical(x[[1]], quote(each))) {
+      if (length(x) != 2L) {
+        stop("Expected exactly one argument to each()")
+      }
+      list(type="each", value=x[[2]])
     } else {
       ## This error message is not going to be useful:
       stop("Unknown special function ", as.character(x[[1]]))
@@ -215,7 +239,6 @@ check_literal_arg <- function(x) {
 is_target_like <- function(x) {
   is.character(x) || is.name(x)
 }
-
 
 target_infer_type <- function(name, dat) {
   type <- dat$type

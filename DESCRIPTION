@@ -16,7 +16,7 @@ Imports:
     codetools,
     crayon,
     optparse,
-    storr
+    storr (>= 0.1.2)
 Suggests:
     testthat,
     DiagrammeR,

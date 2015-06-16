@@ -81,6 +81,7 @@
                             make_target_cleanup, obj)
   obj$targets <- .remake_add_targets(obj, cleanup_targets, force=TRUE)
   obj$targets <- .remake_add_targets_implied(obj)
+  .remake_check_list_targets(obj)
 
   ## Widths might have changed:
   obj$fmt <- .remake_initialize_message_format(obj)
@@ -118,6 +119,27 @@
 
   global_active_bindings$reload_bindings("target", obj)
   obj
+}
+
+.remake_check_list_targets <- function(obj) {
+  ## These are dependencies that are lists:
+  is_list <- vlapply(obj$targets, function(x) isTRUE(x$list))
+
+  ## Now, check that all arguments that were referred to as lists
+  ## *are* lists.  At the moment this must be explicit -- later we can
+  ## make it implicit.
+  targets_each <- lapply(obj$targets, function(x) x$each)
+  uses_each <- !vlapply(targets_each, is.null)
+
+  ## Would be nice to come up with nice error messages here; that
+  ## means finding non-list arguments for everything...
+  tmp <- unlist(targets_each[uses_each])
+  nok <- !(tmp %in% names(is_list)[is_list])
+  if (any(nok)) {
+    err <- sprintf("  - %s (used by %s)", unname(tmp[nok]), names(tmp[nok]))
+    stop("Targets used by each() that are not list targets:\n",
+         paste(sort(err), collapse="\n"))
+  }
 }
 
 ## This is only used in initialize targets, but it's sufficiently ugly

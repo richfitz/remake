@@ -441,3 +441,29 @@ test_that("Targets from calls", {
   t2 <- make_target("a", list(command=quote(foo(b))))
   expect_that(t1, is_identical_to(t2))
 })
+
+test_that("list", {
+  t <- make_target("a", list(command="foo()", list=TRUE))
+  expect_that(t$list, is_true())
+  t <- make_target("a", list(command="foo()", list=FALSE))
+  expect_that(t$list, is_false())
+  t <- make_target("a", list(command="foo()"))
+  expect_that(t$list, is_false())
+
+  ## For now, list files are not supported; they are going to take
+  ## more work anyway...
+  expect_that(make_target("a.csv", list(command="foo()", list=TRUE)),
+              throws_error("Unknown fields in a.csv: list"))
+
+  t <- make_target("a", list(command="foo(each(b))"))
+  expect_that(t$list, is_true())
+  expect_that(t$each, equals("b"))
+
+  t2 <- make_target("a", list(command="foo(each(b))", list=TRUE))
+  expect_that(t2, equals(t))
+
+  expect_that(make_target("a", list(command="foo(each(b))", list=FALSE)),
+              throws_error("list must be TRUE"))
+  expect_that(make_target("a", list(command="foo(each(b), each(x))")),
+              throws_error("only one each"))
+})
