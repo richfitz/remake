@@ -110,9 +110,6 @@ install_missing_packages <- function(remake_file="remake.yml",
 ##' \code{"remake.yml"}.
 ##' @export
 create_bindings <- function(remake_file="remake.yml") {
-  ## TODO: Perhaps filter through to export only some names?
-  ## Definitely filter through and do not export chain targets!
-  ##
   ## TODO: Are these really the best names?  They're explicit, but
   ## they're not very pleasant.
   ##
@@ -353,22 +350,17 @@ source_character <- function(str, envir=.GlobalEnv, rewrite_source=TRUE) {
 ##' implicit targets should be included.
 ##' @param include_cleanup_targets Logical scalar indicating if cleanup
 ##' targets (which are automatically generated) should be included.
-##' @param include_chain_intermediates Logical scalar indicating if
-##' chain intermediates (automatically generated with mangled names)
-##' should be included.
 ##' @return A character vector containing names of targets.
 ##' @export
 list_targets <- function(remake_file="remake.yml",
                          type=NULL,
                          include_implicit_files=FALSE,
-                         include_cleanup_targets=FALSE,
-                         include_chain_intermediates=FALSE) {
+                         include_cleanup_targets=FALSE) {
   obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
   remake_list_targets(obj,
                       type,
                       include_implicit_files,
-                      include_cleanup_targets,
-                      include_chain_intermediates)
+                      include_cleanup_targets)
 }
 ##' @rdname list_targets
 ##' @param target_names Names of targets to list dependencies of (for
@@ -381,14 +373,12 @@ list_dependencies <- function(target_names,
                               type=NULL,
                               include_implicit_files=FALSE,
                               include_cleanup_targets=FALSE,
-                              include_chain_intermediates=FALSE,
                               remake_file="remake.yml") {
   obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
   remake_list_dependencies(obj, target_names,
                            type,
                            include_implicit_files,
-                           include_cleanup_targets,
-                           include_chain_intermediates)
+                           include_cleanup_targets)
 }
 
 ##' Determine if one or more targets are "current" or not.  A target
@@ -597,7 +587,7 @@ delete <- function(target_names, dependencies=FALSE,
                                              type=c("file", "object"))
   }
   for (t in target_names) {
-    remake_remove_target(obj, t, chain=TRUE)
+    remake_remove_target(obj, t)
   }
 }
 

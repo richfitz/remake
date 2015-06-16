@@ -4,23 +4,20 @@ remake_archive_export <- function(obj, target_names=NULL,
                                   archive_file="remake.zip") {
   target_names <- remake_default_target(obj, target_names)
   if (dependencies) {
-    ## Make sure that we *do* include chain intermediates, but make
-    ## sure that we *don't* include fake targets, implicit files,
+    ## Make sure that we *don't* include fake targets, implicit files,
     ## etc.
     ## NOTE: These options match those in remake_archive_import
     target_names <-
       remake_list_dependencies(obj, target_names,
                                type=c("file", "object"),
                                include_implicit_files=FALSE,
-                               include_cleanup_targets=FALSE,
-                               include_chain_intermediates=TRUE)
+                               include_cleanup_targets=FALSE)
   } else {
     pos <-
         remake_list_targets(obj,
                             type=c("file", "object"),
                             include_implicit_files=FALSE,
-                            include_cleanup_targets=FALSE,
-                            include_chain_intermediates=TRUE)
+                            include_cleanup_targets=FALSE)
     if (!all(target_names %in% pos)) {
       stop("Non-archivable target specified: ",
            paste(setdiff(target_names, pos), collapse=", "))
@@ -55,8 +52,7 @@ remake_archive_import <- function(obj, archive_file) {
     remake_list_targets(obj,
                         type=c("file", "object"),
                         include_implicit_files=FALSE,
-                        include_cleanup_targets=FALSE,
-                        include_chain_intermediates=TRUE)
+                        include_cleanup_targets=FALSE)
 
   if (!all(contents %in% known_targets)) {
     stop("Objects in archive not known to remake: ",

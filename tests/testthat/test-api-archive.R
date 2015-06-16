@@ -32,25 +32,6 @@ test_that("Archive export", {
               not(shows_message("BUILD")))
 })
 
-test_that("archive with chain targets", {
-  cleanup()
-  ## Archive with chained targets:
-  make(c("manual", "chained"), remake_file="chain.yml")
-  archive_export(c("manual", "chained"), remake_file="chain.yml")
-
-  expected <- list_targets(remake_file="chain.yml",
-                           type="object",
-                           include_chain_intermediates=TRUE)
-  expect_that(sort(list_archive()),
-              equals(sort(expected)))
-
-  ## TODO: This will be easier when we have current checks in the api.
-  make("clean", remake_file="chain.yml")
-  archive_import(remake_file="chain.yml")
-  expect_that(d <- make("chained", remake_file="chain.yml"),
-              not(shows_message("BUILD")))
-})
-
 test_that("fetch_archive", {
   cleanup()
 

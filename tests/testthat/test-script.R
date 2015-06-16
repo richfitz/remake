@@ -95,21 +95,3 @@ test_that("Load extra packages", {
   expect_that(sum(str == 'library("devtools")'), equals(1))
   expect_that(which(str == 'library("devtools")') != 1, is_true())
 })
-
-if (FALSE) { ## TODO -- looks like this might be failing?
-test_that("Chained targets", {
-  cleanup()
-  m <- remake("chain.yml")
-
-  src <- remake_script(m, "chained")
-  e <- source_from_text(src)
-  expect_that(ls(e), equals("chained"))
-  expect_that(e$chained, equals(6))
-
-  src <- remake_script(m, "manual")
-  e <- source_character(src, envir=new.env(parent=.GlobalEnv))
-  expect_that(ls(e), equals(c("manual", "manual_pt1", "manual_pt2")))
-  expect_that(e$manual, equals(6))
-  cleanup()
-})
-}

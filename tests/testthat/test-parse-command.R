@@ -191,35 +191,6 @@ test_that("target_argument detection", {
 ## TODO: Add things that have non-symbol objects within them.  Things
 ## like list(a, b), for example.
 
-test_that("chain", {
-  cmd <- parse_target_command("a", c("foo(x)", "bar(.)"))
-  expect_that(cmd$rule,    equals("bar")) # last element of chain
-  expect_that(cmd$args,    equals(list(quote(.))))
-  expect_that(cmd$depends, equals("."))
-  expect_that(length(cmd$chain), equals(1L))
-  expect_that(cmd$chain[[1]]$rule,    equals("foo"))
-  expect_that(cmd$chain[[1]]$args,    equals(list(quote(x))))
-  expect_that(cmd$chain[[1]]$depends, equals("x"))
-
-  cmd <- parse_target_command("x", c("foo(a, b)", "bar(c, .)"))
-  expect_that(cmd$chain[[1]]$args, equals(list(quote(a), quote(b))))
-  expect_that(cmd$args, equals(list(quote(c), quote(.))))
-
-  cmd <- parse_target_command("x", c("foo(a, b)", "bar(arg1=c, arg2=.)"))
-  expect_that(cmd$args, equals(list(arg1=quote(c), arg2=quote(.))))
-
-  expect_that(parse_target_command("a", c("foo()", "bar('.')")),
-              throws_error("Dot argument must not be quoted"))
-
-  expect_that(parse_target_command("a", c("foo(.)", "bar(.)")),
-              throws_error("The first element in a chain cannot contain a dot"))
-  expect_that(parse_target_command("a", c("foo()", "bar(x)")),
-              throws_error("All chain elements except the first need a dot"))
-
-  expect_that(parse_target_command("a", c("foo()", "bar(., .)")),
-              throws_error("Only a single dot argument allowed"))
-})
-
 test_that("Literal arguments", {
   obj <- parse_command("foo(target_arg, I(literal_arg))")
   expect_that(obj$args[[2]], equals(quote(literal_arg)))

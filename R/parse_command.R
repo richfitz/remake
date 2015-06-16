@@ -3,7 +3,7 @@
 ##
 ## TODO: Need some tests here, throughout
 process_target_command <- function(name, dat) {
-  core <- c("command", "rule", "args", "depends", "is_target", "chain")
+  core <- c("command", "rule", "args", "depends", "is_target")
 
   ## Quick check that may disappear later:
   invalid <- c("rule", "target_argument", "quoted")
@@ -30,11 +30,7 @@ process_target_command <- function(name, dat) {
     cmd <- parse_target_command(name, dat$command)
 
     if (length(dat$depends > 0)) {
-      if (is.null(cmd$chain)) {
-        cmd$depends <- c(cmd$depends, dat$depends)
-      } else {
-        cmd$chain[[1]]$depends <- c(cmd$chain[[1]]$depends, dat$depends)
-      }
+      cmd$depends <- c(cmd$depends, dat$depends)
     }
 
     rewrite <- intersect(names(cmd), core)
@@ -54,9 +50,8 @@ process_target_command <- function(name, dat) {
 ##    becomes a restricted name in target_reserved_names.
 parse_target_command <- function(target_name, command) {
   if (is.character(command) && length(command) > 1L) {
-    ## This is an early exit, which is slightly evil but avoids this
-    ## whole function being a big if/else statement.
-    return(parse_target_chain(target_name, command))
+    ## TODO: this might be better off being assert_scalar_character?
+    stop("commands must be scalar")
   }
 
   dat <- parse_command(command)
@@ -107,34 +102,6 @@ parse_target_command <- function(target_name, command) {
     }
   }
   dat
-}
-
-parse_target_chain <- function(target_name, chain) {
-  chain <- lapply(chain, parse_target_command, target_name=target_name)
-
-  ## TODO: Check >1 dot
-  ## TODO: Drop "%in%"
-  has_dot <- vlapply(chain, function(x) "." %in% x$depends)
-
-  if (has_dot[[1]]) {
-    stop("The first element in a chain cannot contain a dot ('.')")
-  }
-  if (any(!has_dot[-1])) {
-    stop("All chain elements except the first need a dot")
-  }
-
-  calls_target <- function(x) {
-    any(vlapply(unname(x$args), identical, target_name))
-  }
-  len <- length(chain)
-  has_target_argument <- vlapply(chain, calls_target)
-  if (any(has_target_argument & seq_len(len) < len)) {
-    stop("Can only refer to target in the final element of a chain")
-  }
-
-  ret <- chain[[len]]
-  ret$chain <- chain[-len]
-  ret
 }
 
 ## I think this is where I need to intervene -- rebuild this from the

@@ -33,16 +33,6 @@ test_that("list_targets", {
               equals(c("processed", "plot.pdf")))
   expect_that(list_targets("remake2.yml", include_implicit_files=TRUE),
               equals(c("processed", "plot.pdf", "data.csv")))
-
-  ## Chain rules
-  cmp <- c("manual_pt1", "manual_pt2", "manual", "chained")
-  expect_that(list_targets("chain.yml"), equals(cmp))
-  expect_that(list_targets("chain.yml", include_chain_intermediates=TRUE),
-              equals(c(cmp, "chained{1}", "chained{2}")))
-
-  cleanup()
-  expect_that(list_targets("remake_missing_package.yml"),
-              not(gives_warning()))
 })
 
 test_that("list_dependencies", {
@@ -58,14 +48,6 @@ test_that("list_dependencies", {
               equals(character(0)))
   expect_that(list_dependencies("purge", include_cleanup_targets=TRUE),
               equals(c("tidy", "clean", "purge")))
-
-  ## Chains:
-  expect_that(list_dependencies("chained", remake_file="chain.yml"),
-              equals("chained"))
-  expect_that(list_dependencies("chained",
-                                include_chain_intermediates=TRUE,
-                                remake_file="chain.yml"),
-              equals(c("chained{1}", "chained{2}", "chained")))
 
   ## Implicit targets:
   expect_that(list_dependencies("plot.pdf", remake_file="remake2.yml"),
@@ -232,20 +214,6 @@ test_that("make_environment", {
   make()
   expect_that("processed" %in% ls(make_environment("processed")),
               is_true())
-
-  make(c("manual", "chained"), remake_file="chain.yml")
-  ## This *should* throw an error!  But because we share an object
-  ## store it works just fine.  This is more reason for different
-  ## stores to have different prefixes.
-  ## e <- make_environment(c("manual", "chained"))
-  e <- make_environment(c("manual", "chained"),
-                        dependencies=TRUE,
-                        copy_functions=FALSE,
-                        remake_file="chain.yml")
-
-  expect_that(sort(ls(e)),
-              equals(sort(c("chained", "manual", "manual_pt1",
-                            "manual_pt2"))))
 })
 
 test_that("fetch", {

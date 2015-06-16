@@ -232,7 +232,7 @@ remake_update <- function(obj, target_name, check=NULL,
   if (!isTRUE(target$implicit)) {
     status <- if (current) "OK" else target$status_string
     cmd <- if (current) NULL else target_run_fake(target)
-    style <- if (is.null(target$chain_parent)) "square" else "curly"
+    style <- "square"
     remake_print_message(obj, status, target_name, cmd, style)
   }
 
@@ -253,7 +253,7 @@ remake_update <- function(obj, target_name, check=NULL,
       ## remake_remove_target), which is not available in
       ## target_build.
       for (t in target$targets_to_remove) {
-        remake_remove_target(obj, t, chain=TRUE)
+        remake_remove_target(obj, t)
       }
       target_run(target, obj$store, obj$verbose$quiet_target)
       ret <- NULL
@@ -271,16 +271,9 @@ remake_update <- function(obj, target_name, check=NULL,
 ## probably wants changing though, because it's confusing with "add"
 ## that *creates* a target.  What this does is remove the target
 ## *product*.
-remake_remove_target <- function(obj, target_name, chain=TRUE) {
+remake_remove_target <- function(obj, target_name) {
   assert_has_targets(target_name, obj)
   target <- obj$targets[[target_name]]
-  if (chain && !is.null(target$chain_kids)) {
-    chain_names <- vcapply(target$chain_kids, "[[", "name")
-    for (t in chain_names) {
-      remake_remove_target(obj, t, chain=FALSE)
-    }
-  }
-
   store <- obj$store
 
   if (target$type == "file") {
@@ -326,19 +319,16 @@ remake_make1 <- function(obj, target_name, check=NULL) {
 
 remake_list_targets <- function(obj, type=NULL,
                                 include_implicit_files=FALSE,
-                                include_cleanup_targets=FALSE,
-                                include_chain_intermediates=FALSE) {
+                                include_cleanup_targets=FALSE) {
   filter_targets(obj$targets,
                  type,
                  include_implicit_files,
-                 include_cleanup_targets,
-                 include_chain_intermediates)
+                 include_cleanup_targets)
 }
 
 remake_list_dependencies <- function(obj, target_names, type=NULL,
                                      include_implicit_files=FALSE,
-                                     include_cleanup_targets=FALSE,
-                                     include_chain_intermediates=FALSE) {
+                                     include_cleanup_targets=FALSE) {
   ## TODO: Perhaps this should  be done by dependencies?
   if (!all(target_names %in% names(obj$targets))) {
     stop("Unknown target: ",
@@ -349,8 +339,7 @@ remake_list_dependencies <- function(obj, target_names, type=NULL,
   filter_targets(obj$targets[target_names],
                  type,
                  include_implicit_files,
-                 include_cleanup_targets,
-                 include_chain_intermediates)
+                 include_cleanup_targets)
 }
 
 remake_is_current <- function(obj, target_names, check=NULL) {

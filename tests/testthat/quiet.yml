@@ -23,14 +23,3 @@ targets:
   quiet_error:
     command: run_noisy_error()
     quiet: true
-
-  # noisy_chain:
-  #   command:
-  #     - run_noisy_message()
-  #     - run_noisy_message2()
-
-  # quiet_chain:
-  #   command:
-  #     - run_noisy_message()
-  #     - run_noisy_message2()
-  #   quiet: true
