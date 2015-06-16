@@ -70,12 +70,6 @@ target_new_base <- function(name, command, opts, extra=NULL,
     assert_character(opts$packages)
   }
 
-  if ("chain" %in% names(command)) {
-    chain <- target_chain(command$chain, ret, opts)
-    ret <- chain$parent
-    ret$chain_kids <- chain$kids
-  }
-
   class(ret) <- "target_base"
   ret
 }
@@ -433,56 +427,6 @@ target_reserved_names <- function() {
   c("target_name", ".")
 }
 
-## TODO: There is an issue here for getting options for rules that
-## terminate in knitr or plot rules: we can't pass along options to
-## these!
-##
-##   Always accept quiet, check, packages (base)
-##     cleanup_level (file and object)
-##   never plot, knitr, auto_figure_prefix
-##
-## Special testing will be required to get that right.  Basically only
-## the terminating bit of rule here will accept nonstandard options.
-target_chain <- function(chain, parent, opts) {
-  if (!(parent$type %in% c("file", "object"))) {
-    stop("Can't use chained rules on targets of type ", parent)
-  }
-  len <- length(chain)
-  chain_names <- chained_rule_name(parent$name, seq_len(len))
-  parent <- target_chain_match_dot(parent, len + 1L, chain_names)
-
-  ## TODO: Duplication of object valid options here.
-  opts_chain <- opts[names(opts) %in%
-                     c("quiet", "check", "packages", "cleanup_level")]
-  f <- function(i) {
-    x <- target_new_object(chain_names[[i]], chain[[i]], opts_chain)
-    x$chain_parent <- parent
-    target_chain_match_dot(x, i, chain_names)
-  }
-
-  kids <- lapply(seq_len(len), f)
-  list(parent=parent, kids=kids)
-}
-
-target_chain_match_dot <- function(target, pos, chain_names) {
-  j <- which(as.character(target$depends_name) == ".")
-  if (length(j) == 1L) {
-    if (j > length(chain_names)) {
-      stop("Attempt to select impossible chain element") # defensive only
-    }
-    dot_name <- chain_names[[pos - 1L]]
-    target$depends_name[[j]] <- dot_name
-    target$command[[j + 1L]] <- as.name(dot_name)
-  } else { # defensive - should be safe here.
-    if (length(j) > 1L) {
-      stop("never ok")
-    } else if (pos > 1L) {
-      stop("missing")
-    }
-  }
-  target
-}
-
 make_target_cleanup <- function(name, remake) {
   levels <- cleanup_target_names()
   name <- match_value(name, levels)
@@ -492,9 +436,6 @@ make_target_cleanup <- function(name, remake) {
     t <- remake$targets[[name]]
 
     ## These aren't tested:
-    if (!is.null(t$chain_kids)) {
-      stop("Cleanup target cannot contain a chain")
-    }
     if (length(t$command) > 1L) {
       stop("Cleanup target commands must have no arguments")
     }
@@ -516,10 +457,6 @@ make_target_cleanup <- function(name, remake) {
   ret$targets_to_remove <-
     setdiff(names(remake$targets)[target_level == name], levels)
   ret
-}
-
-chained_rule_name <- function(name, i) {
-  sprintf("%s{%d}", name, i)
 }
 
 check_levels <- function() {
@@ -714,9 +651,8 @@ target_run <- function(target, store, quiet=NULL) {
   ## parallelisation down the track (i.e., get this into DAG.
   ## However, it would require that the DAG is rebuildable at runtime
   ## (because width here is unknown) so is a nontrivial change.  For
-  ## now, we'll take over all responsibility here (unlike chained
-  ## targets) to establish behaviour and then work out what needs
-  ## doing later.
+  ## now, we'll take over all responsibility here to establish
+  ## behaviour and then work out what needs doing later.
   if (!is.null(target$each)) {
     ret <- target_run_each(target, store, envir, quiet)
   } else {
@@ -737,8 +673,7 @@ target_environment <- function(target, store) {
 
 filter_targets <- function(targets, type=NULL,
                            include_implicit_files=FALSE,
-                           include_cleanup_targets=FALSE,
-                           include_chain_intermediates=FALSE) {
+                           include_cleanup_targets=FALSE) {
   ok <- rep_along(TRUE, targets)
 
   if (!is.null(type)) {
@@ -754,13 +689,24 @@ filter_targets <- function(targets, type=NULL,
     }
     ok[names(targets) %in% cleanup_target_names()] <- FALSE
   }
-  if (!include_chain_intermediates) {
-    ok[!vlapply(targets, function(x) is.null(x$chain_parent))] <- FALSE
-  }
 
   names(targets[ok])
 }
 target_run_each <- function(target, store, envir, quiet) {
+  ## I wonder if it'd be better not to load all of `each` here; if
+  ## each is large, perhaps we should delay loading it and just get it
+  ## piece by piece?  That would hold for both ways around, I think.
+  ##
+  ## We're in control of how the environment is set up because we use
+  ## `target_environment` to build it; so it'd be possible just to
+  ## *not* load the each targets, and have the `loop` function pull it
+  ## in.
+  ##
+  ## At the same time, that could cost more overhead because we do
+  ## many more small reads on the rds files that things are stored in;
+  ## storr saves us most of that with the caching, but *that* means
+  ## that the memory savings are zero.  Probably only a real issue as
+  ## we move to parallel computation so leave it out for now.
   each <- envir[[target$each]]
   len <- length(each)
 

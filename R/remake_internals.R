@@ -88,7 +88,6 @@
   
   ## Check that no rules and target names clash: this will cause a
   ## problem for export of variables.
-  ## TODO: Special effort needed for chained rules.
   ## TODO: Filter by realness?
   ## TODO: Also possible that function names and targets will clash
   ## when using global variables, but that will get taken care of
@@ -144,16 +143,10 @@
 
 ## This is only used in initialize targets, but it's sufficiently ugly
 ## that I've pulled it out on its own.  The job here is to identify
-## and add all *implied* targets; these are steps in chains and
-## implicit file targets.
+## and add all *implied* targets; these are steps in implicit file
+## targets.
 .remake_add_targets_implied <- function(obj) {
   obj_targets <- obj$targets
-  ## Add all targets that exist only as part of a chain.
-  chain_kids <- unlist(lapply(obj_targets, "[[", "chain_kids"),
-                       FALSE)
-  if (length(chain_kids) > 0L) {
-    obj_targets <- .remake_add_targets(obj, chain_kids)
-  }
 
   ## Identify and verify all "implicit" file targets
   deps <- lapply(obj_targets, "[[", "depends_name")

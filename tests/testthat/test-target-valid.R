@@ -273,7 +273,7 @@ test_that("knitr (invalid)", {
   ## Chains fail because commands fail:
   expect_that(make_target("file.md",
                           list(command=c("foo()", "bar(.)"), knitr=TRUE)),
-              throws_error("knitr targets must have a NULL rule"))
+              throws_error("commands must be scalar"))
 
   expect_that(make_target("file.md", list(quiet="yes please",
                                           type="knitr"))$quiet,

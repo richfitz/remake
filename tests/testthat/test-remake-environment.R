@@ -21,18 +21,4 @@ test_that("remake_environment", {
   ## In this case, depenencies has no effect:
   e <- remake_environment(m, "processed", dependencies=TRUE)
   expect_that(ls(e), equals("processed"))
-
-  m <- remake("chain.yml")
-  ## TODO: This is not good enough:
-  expect_that(remake_environment(m, "manual", dependencies=TRUE),
-              throws_error("key 'manual_pt1' not found"))
-  remake_make(m, "manual")
-  remake_make(m, "chained")
-  e <- remake_environment(m, "manual", dependencies=TRUE)
-  expect_that(sort(ls(e)),
-              equals(sort(c("manual", "manual_pt1", "manual_pt2"))))
-  e <- remake_environment(m, c("chained", "manual"), dependencies=TRUE)
-  expect_that(sort(ls(e)),
-              equals(sort(c("chained",
-                            "manual", "manual_pt1", "manual_pt2"))))
 })

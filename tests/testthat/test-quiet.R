@@ -87,39 +87,3 @@ test_that("Quiet remake", {
   expect_that(remake_make(m, "quiet_message"), not(shows_message(msg)))
   expect_that(remake_make(m, "quiet_cat"),     not(prints_text(msg)))
 })
-
-test_that("Quiet chain", {
-  skip("Pending rewrite, apparently")
-  cleanup()
-  m <- remake("quiet.yml", verbose=FALSE)
-
-  msg <- "make some noise"
-  msg2 <- "make some more noise"
-  msg_chain <- paste(msg, msg2, sep="\n")
-  msg_chain <- c(msg, msg2)
-
-  ## Shows both messages:
-  remake_remove_target(m, "noisy_chain")
-  expect_that(remake_make(m, "noisy_chain"), shows_message(msg))
-  remake_remove_target(m, "noisy_chain")
-  expect_that(remake_make(m, "noisy_chain"), shows_message(msg2))
-  remake_remove_target(m, "noisy_chain")
-  expect_that(remake_make(m, "noisy_chain", quiet_target=TRUE),
-              not(shows_message()))
-  remake_remove_target(m, "noisy_chain")
-  expect_that(remake_make(m, "noisy_chain", quiet_target=FALSE),
-              shows_message(msg))
-  remake_remove_target(m, "noisy_chain")
-  expect_that(remake_make(m, "noisy_chain", quiet_target=FALSE),
-              shows_message(msg2))
-
-  ## Shows no message
-  remake_remove_target(m, "quiet_chain")
-  expect_that(remake_make(m, "quiet_chain"), not(shows_message()))
-  remake_remove_target(m, "quiet_chain")
-  expect_that(remake_make(m, "quiet_chain", quiet_target=FALSE),
-              not(shows_message()))
-  remake_remove_target(m, "quiet_chain")
-  expect_that(remake_make(m, "quiet_chain", quiet_target=TRUE),
-              not(shows_message()))
-})

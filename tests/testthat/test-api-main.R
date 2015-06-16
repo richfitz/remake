@@ -69,15 +69,15 @@ test_that("Multiple targets", {
 })
 
 test_that("Different remake file", {
-  cmp <- list_targets("chain.yml")
-  expect_that(main(c("--list-targets", "-f", "chain.yml")),
+  cmp <- list_targets("modular.yml")
+  expect_that(main(c("--list-targets", "-f", "modular.yml")),
               shows_message(paste(cmp, collapse="\n")))
   ## This style of option parsing does not work:
-  ## expect_that(main(c("--list-targets", "-fchain.yml")),
+  ## expect_that(main(c("--list-targets", "-fmodular.yml")),
   ##             shows_message(paste(cmp, collapse="\n")))
-  expect_that(main(c("--list-targets", "--file=chain.yml")),
+  expect_that(main(c("--list-targets", "--file=modular.yml")),
               shows_message(paste(cmp, collapse="\n")))
-  expect_that(main(c("--list-targets", "--file", "chain.yml")),
+  expect_that(main(c("--list-targets", "--file", "modular.yml")),
               shows_message(paste(cmp, collapse="\n")))
 })
 
