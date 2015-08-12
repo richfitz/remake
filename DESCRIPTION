@@ -22,5 +22,4 @@ Suggests:
     DiagrammeR,
     knitr,
     downloader,
-    devtools,
-    pryr
+    devtools
