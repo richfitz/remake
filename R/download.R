@@ -13,7 +13,12 @@ download_from_remake_target <- function(target, store, quiet=NULL) {
   res <- try(download_file(url, dest, quiet), silent=TRUE)
 
   if (inherits(res, "try-error")) {
-    msg <- sprintf("Downloading %s failed (from %s)", dest, url)
+    ## Should really try and capture the error message here, because
+    ## otherwise it's not very clear _why_ things fail; that's the
+    ## root cause of #57.
+    err_msg <- attr(res, "condition")$message
+    msg <- sprintf("Downloading %s failed (from %s) with message:\n%s",
+                   dest, url, err_msg)
     if (no_error) {
       ## TODO: At the moment this will never trigger because we'll
       ## never try to download a file directly...
@@ -41,6 +46,14 @@ download_from_remake_target <- function(target, store, quiet=NULL) {
 ##
 ## It's possible (probable) that a failed download will overwrite the
 ## destination file; this will download elsewhere and move into place.
+##
+## More trouble; as documented in a recent issue, this really requires
+## that downloader is installed.  However, that might no longer really
+## be required if libcurl support is enabled.  I'm going to guess that
+## is enabled on all offical distributions (so, OS/X, Windows, perhaps
+## Debian/Ubuntu installations, too).  So in that case we can ignore
+## downloader *unless* capabilities("libcurl") is FALSE _and_ the URL
+## is an https:// url.
 download_file <- function(url, dest, quiet, ...) {
   tmp <- tempfile()
   status <- downloader::download(url, tmp, quiet=quiet)
