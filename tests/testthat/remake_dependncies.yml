@@ -1,0 +1,6 @@
+sources:
+  - dependencies.R
+
+targets:
+  all:
+    command: bar()

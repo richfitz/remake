@@ -197,3 +197,25 @@ test_that("ggplot targets", {
     file.remove("plot_auto.png")
   }
 })
+
+## Courtesy of Andrew:
+test_that("Function dependencies", {
+  code <- c('foo <- function() "A"',
+            'bar <- function() foo()')
+  filename <- "dependencies.R"
+  writeLines(code, filename)
+  on.exit(file.remove(filename))
+
+  res <- make("all", remake_file="remake_dependncies.yml")
+  expect_that(res, equals("A"))
+  expect_that(is_current("all", remake_file="remake_dependncies.yml"),
+              is_true())
+
+  code[[1]] <- sub("A", "B", code[[1]])
+  writeLines(code, filename)
+
+  expect_that(is_current("all", remake_file="remake_dependncies.yml"),
+              is_false())
+  res <- make("all", remake_file="remake_dependncies.yml")
+  expect_that(res, equals("B"))
+})
