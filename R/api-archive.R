@@ -23,6 +23,8 @@
 ##' @param require_current Logical indicating if the targets must be
 ##' up-to-date to be fetched.  If this is \code{TRUE} and the targets
 ##' are not up-to-date, then an error will be thrown.
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param archive_file Name of the archive file to generate, by
 ##' default \code{remake.zip}.
 ##' @param remake_file Remake file to read, by default
@@ -33,10 +35,12 @@
 ##' @export
 archive_export <- function(target_names=NULL, dependencies=TRUE,
                            verbose=TRUE, require_current=TRUE,
+                           allow_missing_packages=FALSE,
                            archive_file="remake.zip",
                            remake_file="remake.yml") {
   obj <- remake(remake_file, verbose=verbose,
-                load_sources=require_current)
+                load_sources=require_current,
+                allow_missing_packages=allow_missing_packages)
   remake_archive_export(obj, target_names,
                         dependencies=dependencies,
                         require_current=require_current,
@@ -49,12 +53,16 @@ archive_export <- function(target_names=NULL, dependencies=TRUE,
 ##' @title Import a remake archive
 ##' @param archive_file Name of the zip file to import from
 ##' @param verbose Be verbose when reading the remake file?
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Remake file to read, by default
 ##' \code{remake.yml}.
 ##' @export
 archive_import <- function(archive_file="remake.zip",
-                           verbose=TRUE, remake_file="remake.yml") {
-  obj <- remake(remake_file, verbose=verbose)
+                           verbose=TRUE, allow_missing_packages=FALSE,
+                           remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=verbose,
+                allow_missing_packages=allow_missing_packages)
   remake_archive_import(obj, archive_file)
 }
 

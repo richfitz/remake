@@ -5,7 +5,7 @@
 \title{Determine if targets are current}
 \usage{
 is_current(target_names, check = NULL, verbose = FALSE,
-  remake_file = "remake.yml")
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Names of one or more targets to check}
@@ -20,6 +20,9 @@ dependencies and code unchanged).}
 
 \item{verbose}{Be verbose when loading remake file?  Default is
 \code{FALSE}.}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).}

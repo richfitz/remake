@@ -5,8 +5,8 @@
 \title{Export remake contents}
 \usage{
 archive_export(target_names = NULL, dependencies = TRUE, verbose = TRUE,
-  require_current = TRUE, archive_file = "remake.zip",
-  remake_file = "remake.yml")
+  require_current = TRUE, allow_missing_packages = FALSE,
+  archive_file = "remake.zip", remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Names of targets to export.}
@@ -23,6 +23,9 @@ everything that is a dependency of \code{all}.  If
 \item{require_current}{Logical indicating if the targets must be
 up-to-date to be fetched.  If this is \code{TRUE} and the targets
 are not up-to-date, then an error will be thrown.}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{archive_file}{Name of the archive file to generate, by
 default \code{remake.zip}.}

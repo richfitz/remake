@@ -1,16 +1,23 @@
 remake <- function(remake_file="remake.yml", verbose=TRUE,
-                   allow_cache=TRUE, load_sources=TRUE) {
+                   allow_cache=TRUE, load_sources=TRUE,
+                   allow_missing_packages=FALSE) {
   if (is.null(remake_file)) {
     return(.R6_remake_interactive$new(verbose=verbose))
   }
 
-  if (!allow_cache) {
-    return(remake_new(remake_file, verbose, load_sources))
+  ## Dealing with caching here is tricky; we don't want to cache the
+  ## allow_missing_packages bit.  So to do this nicely I'm just going
+  ## to prevent adding it to the cache.  Not ideal, but it's an
+  ## emergency option.
+  if (allow_missing_packages || !allow_cache) {
+    return(remake_new(remake_file, verbose,
+                      load_sources, allow_missing_packages))
   }
 
   ret <- cache$fetch(remake_file)
   if (is.null(ret)) {
-    ret <- remake_new(remake_file, verbose, load_sources)
+    ret <- remake_new(remake_file, verbose,
+                      load_sources, allow_missing_packages)
     cache$add(ret)
   } else {
     ret$verbose <- remake_verbose(verbose)
@@ -22,9 +29,11 @@ remake <- function(remake_file="remake.yml", verbose=TRUE,
 }
 
 remake_new <- function(remake_file="remake.yml", verbose=TRUE,
-                       load_sources=TRUE, config=NULL) {
+                       load_sources=TRUE, allow_missing_packages=FALSE,
+                       config=NULL) {
   obj <- list(file=remake_file, path=".",
               verbose=remake_verbose(verbose),
+              allow_missing_packages=allow_missing_packages,
               ##
               fmt=.remake_initialize_message_format(NULL),
               store=NULL, targets=NULL, config=NULL,
@@ -361,10 +370,13 @@ remake_dump_environment <- function(obj, envir) {
   assert_environment(envir)
   remake_print_message(obj, "DUMP", "")
   ## TODO: This will change once ported over to callr's source
-  ## functions.
-  ## NOTE: error checking not needed because we've already
-  ## successfully loaded source once.
-  load_packages(obj$store$packages)
+  ## functions.  Note that there is unwanted duplication from
+  ## .remake_initialize_packages.
+  packages <- obj$store$packages
+  if (obj$allow_missing_packages) {
+    packages <- intersect(packages, .packages(TRUE))
+  }
+  load_packages(packages)
   for (f in obj$store$env$source_files) {
     sys.source(f, envir, chdir=TRUE)
   }

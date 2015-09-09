@@ -18,13 +18,18 @@
 ##' \code{\link{remake_verbose}}; valid options are \code{TRUE},
 ##' \code{FALSE} and also the result of calling
 ##' \code{\link{remake_verbose}}.
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml}).
 ##' @export
 make <- function(target_names=NULL, ...,
                  verbose=TRUE,
+                 allow_missing_packages=FALSE,
                  remake_file="remake.yml") {
-  remake_make(remake(remake_file, verbose), target_names)
+  obj <- remake(remake_file, verbose,
+                allow_missing_packages=allow_missing_packages)
+  remake_make(obj, target_names)
 }
 
 ##' @title Write standalone script to make targets
@@ -139,6 +144,8 @@ delete_bindings <- function(remake_file="remake.yml") {
 diagram <- function(..., remake_file="remake.yml") {
   ## TODO: Take a target name here so we can get the tree filtered to
   ## a set of targets.
+  ##
+  ## TODO: Why is this not taking verbose, and using load_sources=FALSE?
   obj <- remake(remake_file)
   str <- remake_diagram_command(obj)
   DiagrammeR::grViz(str)
@@ -405,13 +412,17 @@ list_dependencies <- function(target_names,
 ##' dependencies and code unchanged).
 ##' @param verbose Be verbose when loading remake file?  Default is
 ##' \code{FALSE}.
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml}).
 ##' @return A logical vector the same length as \code{target_names}.
 ##' @export
 is_current <- function(target_names, check=NULL,
-                       verbose=FALSE, remake_file="remake.yml") {
-  obj <- remake(remake_file, verbose=verbose)
+                       verbose=FALSE, allow_missing_packages=FALSE,
+                       remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose=verbose,
+                allow_missing_packages=allow_missing_packages)
   remake_is_current(obj, target_names, check)
 }
 
@@ -476,6 +487,8 @@ auto_gitignore <- function(remake_file="remake.yml", check_git=TRUE,
 ##' \code{remake} so don't assign anything in here!  (This may change
 ##' if it ends up being a point of fragility.)
 ##' @param verbose Be verbose?
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Remake file to use, by default
 ##' \code{remake.yml}.
 ##' @export
@@ -483,8 +496,10 @@ make_environment <- function(target_names=character(0),
                              dependencies=FALSE,
                              copy_functions=TRUE,
                              verbose=TRUE,
+                             allow_missing_packages=FALSE,
                              remake_file="remake.yml") {
-  obj <- remake(remake_file, verbose=verbose)
+  obj <- remake(remake_file, verbose=verbose,
+                allow_missing_packages=allow_missing_packages)
   remake_environment(obj, target_names,
                      dependencies=dependencies,
                      copy_functions=copy_functions)
@@ -507,14 +522,22 @@ make_environment <- function(target_names=character(0),
 ##' @param require_current Logical indicating if the targets must be
 ##' up-to-date to be fetched.  If this is \code{TRUE} and the targets
 ##' are not up-to-date, then an error will be thrown.
+##' @param verbose Be verbose when loading remake file?  Default is
+##' \code{TRUE}.
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml})
 ##' @return An R object.
 ##' @export
 fetch <- function(target_name, require_current=FALSE,
+                  verbose=TRUE,
+                  allow_missing_packages=FALSE,
                   remake_file="remake.yml") {
   assert_scalar_character(target_name)
-  obj <- remake(remake_file, load_sources=require_current)
+  obj <- remake(remake_file, verbose=verbose,
+                load_sources=require_current,
+                allow_missing_packages=allow_missing_packages)
   assert_has_targets(target_name, obj)
   if (obj$targets[[target_name]]$type != "object") {
     stop("Can only fetch object targets")
@@ -586,11 +609,15 @@ delete <- function(target_names, dependencies=FALSE,
 ##' @title Dump remake contents to environment
 ##' @param envir Environment to copy into; by default the global environment.
 ##' @param verbose Be verbose when loading the remakefile
+##' @param allow_missing_packages Allow missing packages when loading
+##' remake file?
 ##' @param remake_file Name of the remakefile (by default
 ##' \code{remake.yml})
 ##' @export
 dump_environment <- function(envir=.GlobalEnv, verbose=TRUE,
+                             allow_missing_packages=FALSE,
                              remake_file="remake.yml") {
-  obj <- remake(remake_file, verbose=verbose, load_sources=TRUE)
+  obj <- remake(remake_file, verbose=verbose, load_sources=TRUE,
+                allow_missing_packages=allow_missing_packages)
   remake_dump_environment(obj, envir)
 }

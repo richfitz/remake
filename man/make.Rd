@@ -4,7 +4,8 @@
 \alias{make}
 \title{Make one or more targets}
 \usage{
-make(target_names = NULL, ..., verbose = TRUE, remake_file = "remake.yml")
+make(target_names = NULL, ..., verbose = TRUE,
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Character vector of names of targets to build,
@@ -21,6 +22,9 @@ target as it is built/checked.  This argument is passed to
 \code{\link{remake_verbose}}; valid options are \code{TRUE},
 \code{FALSE} and also the result of calling
 \code{\link{remake_verbose}}.}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).}

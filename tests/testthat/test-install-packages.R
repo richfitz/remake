@@ -79,6 +79,38 @@ test_that("loading a remakefile with a missing package", {
                            throws_error(msg)))
 })
 
+test_that("Allow missing package on load", {
+  cleanup()
+  expect_that(obj <- remake("remake_missing_package.yml",
+                            allow_missing_packages=TRUE),
+              not(gives_warning()))
+  expect_that(.remake_initialize_packages(obj),
+              not(throws_error()))
+  ## Not cached; so we still get warning/errors here:
+  expect_that(obj2 <- remake("remake_missing_package.yml"),
+              gives_warning("Some packages are missing: nosuchpackage"))
+  expect_that(.remake_initialize_packages(obj2),
+              throws_error("Some packages are missing"))
+  expect_that(obj3 <- remake("remake_missing_package.yml",
+                             allow_missing_packages=TRUE),
+              not(gives_warning()))
+  ## Caching has left these in the correct position:
+  expect_that(obj2$allow_missing_packages, is_false())
+  expect_that(obj3$allow_missing_packages, is_true())
+
+  ## Not tested: how the missing packages thing deals with
+  ## installation.  Just consider it to be undefined behaviour for
+  ## now.
+
+  ## Then we can build the target
+  expect_that(remake_make(obj, "processed"),
+              is_a("data.frame"))
+  ## And of course the version that does require the package to load
+  ## will see that the database contains the built object already.
+  expect_that(remake_make(obj2, "processed"),
+              is_a("data.frame"))
+})
+
 test_that("loading a remakefile with a missing package", {
   skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
   if ("sowsear" %in% .packages(TRUE)) {

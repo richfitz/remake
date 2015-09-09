@@ -39,6 +39,10 @@ test_that("list_targets", {
   expect_that(list_targets("chain.yml"), equals(cmp))
   expect_that(list_targets("chain.yml", include_chain_intermediates=TRUE),
               equals(c(cmp, "chained{1}", "chained{2}")))
+
+  cleanup()
+  expect_that(list_targets("remake_missing_package.yml"),
+              not(gives_warning()))
 })
 
 test_that("list_dependencies", {
@@ -94,6 +98,11 @@ test_that("list_dependencies", {
   ## Invalid targets:
   expect_that(list_dependencies("no_such_target"),
               throws_error("Unknown target"))
+
+  cleanup()
+  expect_that(list_dependencies("processed",
+                                remake_file="remake_missing_package.yml"),
+              not(gives_warning()))
 })
 
 test_that("is_current", {
@@ -160,6 +169,14 @@ test_that("is_current", {
               is_true())
   expect_that(is_current("plot.pdf", "exists", remake_file="remake_check.yml"),
               is_true())
+
+  cleanup()
+  expect_that(is_current("processed",
+                         remake_file="remake_missing_package.yml"),
+              gives_warning())
+  expect_that(is_current("processed", allow_missing_packages=TRUE,
+                         remake_file="remake_missing_package.yml"),
+              not(gives_warning()))
 })
 
 test_that("auto_gitignore", {
@@ -307,4 +324,16 @@ test_that("dump_environment", {
   expect_that("processed" %in% ls(env), is_true())
   make("clean")
   expect_that("processed" %in% ls(env), is_true())
+
+  cleanup()
+  expect_that(dump_environment(env, remake_file="remake_missing_package.yml"),
+              throws_error("Some packages are missing"))
+  expect_that(dump_environment(env,
+                               allow_missing_packages=TRUE,
+                               remake_file="remake_missing_package.yml"),
+              not(throws_error()))
+  expect_that(dump_environment(env,
+                               allow_missing_packages=TRUE,
+                               remake_file="remake_missing_package.yml"),
+              not(throws_error()))
 })

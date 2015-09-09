@@ -5,7 +5,8 @@
 \title{Construct environment}
 \usage{
 make_environment(target_names = character(0), dependencies = FALSE,
-  copy_functions = TRUE, verbose = TRUE, remake_file = "remake.yml")
+  copy_functions = TRUE, verbose = TRUE, allow_missing_packages = FALSE,
+  remake_file = "remake.yml")
 }
 \arguments{
 \item{target_names}{Vector of target names to export.  If omitted,
@@ -24,6 +25,9 @@ environment has an environment with functions as its
 if it ends up being a point of fragility.)}
 
 \item{verbose}{Be verbose?}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Remake file to use, by default
 \code{remake.yml}.}

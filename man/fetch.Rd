@@ -4,7 +4,8 @@
 \alias{fetch}
 \title{Fetch last computed}
 \usage{
-fetch(target_name, require_current = FALSE, remake_file = "remake.yml")
+fetch(target_name, require_current = FALSE, verbose = TRUE,
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{target_name}{The name of a single target to fetch the value
@@ -13,6 +14,12 @@ of}
 \item{require_current}{Logical indicating if the targets must be
 up-to-date to be fetched.  If this is \code{TRUE} and the targets
 are not up-to-date, then an error will be thrown.}
+
+\item{verbose}{Be verbose when loading remake file?  Default is
+\code{TRUE}.}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml})}

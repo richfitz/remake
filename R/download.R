@@ -5,6 +5,9 @@ download_from_remake_target <- function(target, store, quiet=NULL) {
   quiet <- with_default(quiet, target$quiet)
   quiet <- with_default(quiet, FALSE)
   ## TODO: Deal with file:// urls, unless curl already does this?
+  ## -- see ?url: only _absolute_ paths can be given, and that's not
+  ## going to fly on Windows because the form looks like:
+  ## `file://d:/path/to/file`
   url <- target$download
 
   dest <- target$name

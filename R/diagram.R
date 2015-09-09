@@ -81,7 +81,6 @@ remake_diagram_command <- function(obj) {
 
   nodes <- diagram_nodes(styles, c(fontname=font, fontsize=fontsize))
 
-  ## TODO: function names on the arrows.
   edges <- diagram_edges(mat)
 
   sprintf("digraph remake { %s\n%s }", nodes, edges)

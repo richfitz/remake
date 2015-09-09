@@ -5,12 +5,15 @@
 \title{Import a remake archive}
 \usage{
 archive_import(archive_file = "remake.zip", verbose = TRUE,
-  remake_file = "remake.yml")
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{archive_file}{Name of the zip file to import from}
 
 \item{verbose}{Be verbose when reading the remake file?}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Remake file to read, by default
 \code{remake.yml}.}

@@ -5,12 +5,15 @@
 \title{Dump remake contents to environment}
 \usage{
 dump_environment(envir = .GlobalEnv, verbose = TRUE,
-  remake_file = "remake.yml")
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{envir}{Environment to copy into; by default the global environment.}
 
 \item{verbose}{Be verbose when loading the remakefile}
+
+\item{allow_missing_packages}{Allow missing packages when loading
+remake file?}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml})}

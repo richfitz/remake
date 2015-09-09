@@ -4,7 +4,11 @@
   ## must return the object
   if (!obj$store$packages_loaded) {
     remake_print_message(obj, "READ", "", "# loading packages")
-    load_packages(obj$store$packages, obj$file)
+    packages <- obj$store$packages
+    if (obj$allow_missing_packages) {
+      packages <- intersect(packages, .packages(TRUE))
+    }
+    load_packages(packages, obj$file)
     obj$store$packages_loaded <- TRUE
 
     ## TODO: This might want to go earlier when the remake file is
@@ -26,7 +30,9 @@
   if (!is.null(obj$store$env) && !obj$store$env$is_current()) {
     ## TODO: target specific packages?  Perhaps with
     ## remake.warn.missing.target.packages?
-    warn_missing_packages(obj$store$packages)
+    if (!obj$allow_missing_packages) {
+      warn_missing_packages(obj$store$packages)
+    }
     remake_print_message(obj, "READ", "", "# loading sources")
     obj$store$env$reload()
     global_active_bindings$reload_bindings("source", obj)
