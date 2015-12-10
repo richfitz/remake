@@ -126,7 +126,7 @@ list_archive <- function(archive_file="remake.zip", detail=FALSE) {
                          mangle_key=TRUE)
   keys <- st$list()
 
-  db <- lapply(keys, function(x) st$storr$get(x))
+  db <- lapply(keys, function(x) st$get(x))
   db_names <- vcapply(db, function(x) x$name, USE.NAMES=FALSE)
 
   if (detail) {

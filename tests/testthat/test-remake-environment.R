@@ -25,7 +25,8 @@ test_that("remake_environment", {
   m <- remake("chain.yml")
   ## TODO: This is not good enough:
   expect_that(remake_environment(m, "manual", dependencies=TRUE),
-              throws_error("key 'manual_pt1' not found"))
+              throws_error("key 'manual_pt1' ('objects') not found",
+                           fixed=TRUE))
   remake_make(m, "manual")
   remake_make(m, "chained")
   e <- remake_environment(m, "manual", dependencies=TRUE)

@@ -357,20 +357,21 @@ test_that("get/set/archive object targets", {
   dir.create(path)
   archive_export_target(t, m$store, path)
 
+  ## TODO: now that this has moved into storr, we don't need to test
+  ## for implementation details here.
   expect_that(dir(file.path(path, "objects")),
-              equals(c("data", "keys", "list")))
+              equals(c("config", "data", "keys")))
   expect_that(dir(file.path(path, "objects", "keys", "objects")),
-              equals(c("processed")))
+              equals(storr::encode64("processed")))
   expect_that(readLines(file.path(path, "objects", "keys", "objects",
-                                  "processed")),
+                                  storr::encode64("processed"))),
                equals(digest::digest(target_get(t, m$store))))
 
   st_db <- storr::storr_rds(file.path(path, "objects"),
                             default_namespace="remake_db",
                             mangle_key=TRUE)
 
-  expect_that(st_db$list(),
-              equals(storr:::hash_string(t$name)))
+  expect_that(st_db$list(), equals(t$name))
   res <- st_db$get(t$name)
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))
@@ -413,8 +414,7 @@ test_that("get/set/archive file targets", {
                             default_namespace="remake_db",
                             mangle_key=TRUE)
 
-  expect_that(st_db$list(),
-              equals(storr:::hash_string(t$name)))
+  expect_that(st_db$list(), equals(t$name))
   res <- st_db$get(t$name)
   expect_that(res[names(res) != "time"],
               equals(dep[names(dep) != "time"]))

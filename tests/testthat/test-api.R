@@ -227,7 +227,8 @@ test_that("make_environment", {
                        "myplot", "process_data")))
   ## TODO: Throw a better error:
   expect_that(make_environment("processed"),
-              throws_error("key 'processed' not found"))
+              throws_error("key 'processed' ('objects') not found",
+                           fixed=TRUE))
   make()
   expect_that("processed" %in% ls(make_environment("processed")),
               is_true())

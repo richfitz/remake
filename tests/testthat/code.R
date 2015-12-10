@@ -22,7 +22,8 @@ do_plot <- function(dat, filename) {
 }
 
 myplot <- function(dat) {
-  plot(kmpl ~ disp, dat)
+  ## add a title:
+  plot(kmpl ~ disp,   dat, main="myplot")
 }
 
 clean_hook <- function() {

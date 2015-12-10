@@ -25,8 +25,9 @@ test_that("Build archive", {
   expect_that(file.exists("remake.zip"), is_true())
 
   contents <- unzip("remake.zip", list=TRUE)$Name
-  expect_that("remake/objects/keys/objects/processed" %in% contents,
-              is_true())
+
+  cmp <- file.path("remake/objects/keys/objects", storr::encode64("processed"))
+  expect_that(cmp %in% contents, is_true())
   expect_that(all(c("remake/files/data.csv",
                     "remake/files/data.csv") %in% contents),
               is_true())
