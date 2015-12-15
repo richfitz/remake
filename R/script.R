@@ -1,6 +1,6 @@
 remake_script <- function(obj, target_name=NULL) {
   target_name <- remake_default_target(obj, target_name)
-  pkgs <- lapply(obj$store$env$packages,
+  pkgs <- lapply(obj$store$packages,
                  function(x) sprintf('library("%s")', x))
   srcs <- lapply(obj$store$env$find_files(),
                  function(x) sprintf('source("%s")', x))

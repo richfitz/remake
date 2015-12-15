@@ -7,6 +7,8 @@ test_that("Build works", {
   expect_that(unclass(src), is_a("character"))
 
   expect_that(print(src), prints_text("download_data"))
+  expect_that(src, matches('library("testthat")', fixed=TRUE, all=FALSE))
+  expect_that(src, matches('source("code.R")', fixed=TRUE, all=FALSE))
 
   ## Sourcing the script will run run various "source" commands which
   ## will modify the global environment.  That's not really ideal.
