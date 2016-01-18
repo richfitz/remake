@@ -369,8 +369,8 @@ paint <- function(str, col) {
 
 did_you_mean <- function(name, pos, prefix="did you mean: ") {
   close <- vcapply(name, function(x)
-    paste(agrep(name, pos, ignore.case=TRUE, value=TRUE), collapse=", "))
-  i <- nchar(close) > 0
+    paste(agrep(x, pos, ignore.case=TRUE, value=TRUE), collapse=", "))
+  i <- nzchar(close)
   if (!is.null(prefix)) {
     close[i] <- paste0(prefix, close[i])
   }
