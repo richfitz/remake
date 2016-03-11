@@ -9,7 +9,7 @@ There are several levels of cleanup that apply both through using the `cleanup` 
 
 `clean` includes everything from `tidy` and `purge` includes everything from `clean`.
 
-By default, all targets are by default `tidy`, so they'll be removed by any cleanup operation.  Targets with no rule (including implicit file targets), and fake targets all get the cleanup level `never`.
+By default, all targets are `tidy`, so they'll be removed by any cleanup operation.  Targets with no rule (including implicit file targets), and fake targets all get the cleanup level `never`.
 
 Targets can protected by adding the key:
 
