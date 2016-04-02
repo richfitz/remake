@@ -137,6 +137,15 @@ remake::make_script()
 * A large [data synthesis project](https://github.com/dfalster/baad) (unfortunately complicated by being a templated remakefile).
 * The accounts for a [coffee coop](https://github.com/aammd/CoffeeCoop)
 
+## Tutorials
+
+Some tutorials on using remake with different datasets. 
+
+* [Tutorial on remake from Ecostats workshop](https://github.com/nicercode/2015.12.08-EcoStats)
+* [Tutorial on remake using the Gapminder data](https://github.com/ropenscilabs/remake-tutorial)
+
+
+
 # Installation
 
 Install using [devtools](https://github.com/hadley/devtools):
