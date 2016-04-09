@@ -182,7 +182,7 @@ diagram <- function(..., remake_file="remake.yml") {
 remake_verbose <- function(verbose=getOption("remake.verbose", TRUE),
                           noop=getOption("remake.verbose.noop", TRUE),
                           command=getOption("remake.verbose.command", TRUE),
-                          command_abbreviate=TRUE,
+                          command_abbreviate=getOption("remake.verbose.command.abbreviate", TRUE),
                           target=NULL) {
   if (inherits(verbose, "remake_verbose")) {
     verbose
