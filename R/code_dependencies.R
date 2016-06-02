@@ -14,17 +14,12 @@ code_dependencies <- function(f, hide_errors=TRUE) {
     e_name <- deparse(e)
 
     ## Shadowed by argument:
-    ## TODO: Nested function definitions will not work correctly
-    ## here; we'd need to switch the "active" function.  Getting this
-    ## wrong is most likely to cause false positives.
     if (e_name %in% args) {
       return()
     }
 
     ## TODO: Things like get() will totally confuse this.
-    if (!exists(e_name, env, inherits=FALSE) &&
-        ((!exists(e_name, env)       || # local variable, probably
-          is_active_binding(e_name)))) {  # using remake active bindings
+    if (!exists(e_name, env, inherits=FALSE) && !exists(e_name, env)) {
       return()
     }
     r <- try(eval(e, env), silent=hide_errors)

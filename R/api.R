@@ -100,29 +100,6 @@ install_missing_packages <- function(remake_file="remake.yml",
   invisible(packages)
 }
 
-##' Load bindings from \code{remake} into the global environment
-##' (\code{\link{.GlobalEnv}}.  The resulting objects are "active
-##' bindings" that when accessed will trigger a build of an object.
-##' Conversely, \code{delete_bindings} undoes this and deletes the
-##' bindings that \code{remake} made in the first place.
-##' @title Load remake bindings into the global environment
-##' @param remake_file Name of the remakefile to read.  By default
-##' \code{"remake.yml"}.
-##' @export
-create_bindings <- function(remake_file="remake.yml") {
-  ## TODO: Are these really the best names?  They're explicit, but
-  ## they're not very pleasant.
-  ##
-  ## TODO: Option to just set up the source ones so that things can be
-  ## run easily.
-  global_active_bindings$create_bindings(remake_file)
-}
-##' @export
-##' @rdname create_bindings
-delete_bindings <- function(remake_file="remake.yml") {
-  global_active_bindings$delete_bindings(remake_file)
-}
-
 ##' Plot the graph that remake generates.
 ##'
 ##' This is really just a placeholder, but I want this here early as
@@ -592,17 +569,18 @@ delete <- function(target_names, dependencies=FALSE,
 }
 
 ##' Dump the contents of remake into an environment; by default the
-##' global environment.  This is similar in effect to
-##' \code{\link{create_bindings}} but does not create links; instead a
-##' copy of everything that remake has built, plus all functions
-##' sources into remake, are \emph{copied} into the environment.
+##' global environment.  This causes a copy of everything that remake
+##' has built, plus all functions sources into remake, to be
+##' \emph{copied} into the specified environment (by default the
+##' global environment).
 ##' @title Dump remake contents to environment
-##' @param envir Environment to copy into; by default the global environment.
+##' @param envir Environment to copy into; by default the global
+##'   environment.
 ##' @param verbose Be verbose when loading the remakefile
 ##' @param allow_missing_packages Allow missing packages when loading
-##' remake file?
+##'   remake file?
 ##' @param remake_file Name of the remakefile (by default
-##' \code{remake.yml})
+##'   \code{remake.yml})
 ##' @export
 dump_environment <- function(envir=.GlobalEnv, verbose=TRUE,
                              allow_missing_packages=FALSE,

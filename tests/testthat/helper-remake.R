@@ -26,7 +26,6 @@ cleanup <- function() {
   file_remove("test", recursive=TRUE)
   file_remove("source_dir", recursive=TRUE)
   remake:::cache$clear()
-  remake:::global_active_bindings$clear()
   invisible(NULL)
 }
 

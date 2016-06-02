@@ -1,10 +1,6 @@
 remake <- function(remake_file="remake.yml", verbose=TRUE,
                    allow_cache=TRUE, load_sources=TRUE,
                    allow_missing_packages=FALSE) {
-  if (is.null(remake_file)) {
-    return(.R6_remake_interactive$new(verbose=verbose))
-  }
-
   ## Dealing with caching here is tricky; we don't want to cache the
   ## allow_missing_packages bit.  So to do this nicely I'm just going
   ## to prevent adding it to the cache.  Not ideal, but it's an
@@ -29,38 +25,21 @@ remake <- function(remake_file="remake.yml", verbose=TRUE,
 }
 
 remake_new <- function(remake_file="remake.yml", verbose=TRUE,
-                       load_sources=TRUE, allow_missing_packages=FALSE,
-                       config=NULL) {
+                       load_sources=TRUE, allow_missing_packages=FALSE) {
   obj <- list(file=remake_file, path=".",
               verbose=remake_verbose(verbose),
               allow_missing_packages=allow_missing_packages,
               ##
               fmt=.remake_initialize_message_format(NULL),
-              store=NULL, targets=NULL, config=NULL,
+              store=NULL, targets=NULL,
+              config=read_remake_file(remake_file),
               default_target=NULL, hash=NULL)
   remake_print_message(obj, "LOAD", "")
 
-  if (is.null(config) && !is.null(obj$file)) {
-    obj$config <- read_remake_file(obj$file)
-  } else {
-    obj$config <- config
-  }
-
   obj$hash <- obj$config$hash
-  ## Do this when config is actualy there, and if it's not explicitly
-  ## flagged as inactive.
-  if (!is.null(obj$config) && !isFALSE(obj$config$active)) {
-    obj <- .remake_initialize_targets(obj)
-  }
+  obj <- .remake_initialize_targets(obj)
 
-  if (is.null(obj$config)) {
-    packages <- sources <- character(0)
-  } else {
-    packages <- obj$config$packages
-    sources  <- obj$config$sources
-  }
-
-  obj$store <- store$new(obj$path, packages, sources)
+  obj$store <- store$new(obj$path, obj$config$packages, obj$config$sources)
 
   if (load_sources) {
     obj <- .remake_initialize_sources(obj)

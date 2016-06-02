@@ -35,7 +35,6 @@
     }
     remake_print_message(obj, "READ", "", "# loading sources")
     obj$store$env$reload()
-    global_active_bindings$reload_bindings("source", obj)
   }
   obj
 }
@@ -121,7 +120,6 @@
     obj$default_target <- default
   }
 
-  global_active_bindings$reload_bindings("target", obj)
   obj
 }
 
