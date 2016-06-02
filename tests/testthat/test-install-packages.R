@@ -5,31 +5,33 @@ context("Install packages")
 ## devtools doesn't actually test installation.
 ##
 ## Update: this is crazy hard to test right.
+##
+## TODO: pull out in favour of context I think.
 
 test_that("sources", {
   dat <- read_remake_packages("remake_sources.yml")
-  expect_that(dat$sowsear$repo, equals("richfitz/sowsear"))
+  expect_equal(dat$sowsear$repo, "richfitz/sowsear")
 })
 
 test_that("install_packages", {
   extras <- read_remake_packages("remake_sources.yml")
   cmp_devtools_cran <- 'install.packages("devtools")'
-  expect_that(install_packages("devtools", TRUE, FALSE, extras),
-              equals(cmp_devtools_cran))
-  expect_that(install_packages("sowsear", TRUE, FALSE, extras),
-              equals(c(cmp_devtools_cran,
-                       'devtools::install_github("richfitz/sowsear")')))
+  expect_equal(install_packages("devtools", TRUE, FALSE, extras),
+               cmp_devtools_cran)
+  expect_equal(install_packages("sowsear", TRUE, FALSE, extras),
+               c(cmp_devtools_cran,
+                 'devtools::install_github("richfitz/sowsear")'))
 
   ## Here's a weird case that allows bootstrapping of devtools:
   extras <- list(devtools=list(source="github", repo="hadley/devtools"))
-  expect_that(install_packages("devtools", TRUE, FALSE, extras),
-              equals(c(cmp_devtools_cran,
-                       'devtools::install_github("hadley/devtools")')))
+  expect_equal(install_packages("devtools", TRUE, FALSE, extras),
+               c(cmp_devtools_cran,
+                 'devtools::install_github("hadley/devtools")'))
 
   ## Pick a package that does not exist:
   extras <- list(notreal=list(source="github", repo="notreal/notreal"))
-  expect_that(install_packages("notreal", TRUE, TRUE, extras),
-              equals('devtools::install_github("notreal/notreal")'))
+  expect_equal(install_packages("notreal", TRUE, TRUE, extras),
+               'devtools::install_github("notreal/notreal")')
 })
 
 ## This test is going to be too slow to do most of the time.  So
@@ -44,24 +46,24 @@ test_that("install_packages (for reals)", {
   extras <- read_remake_packages("remake_sources.yml")
   install_packages("sowsear", instructions=TRUE, package_sources=extras)
   res <- install_packages("sowsear", package_sources=extras)
-  expect_that(res, equals("sowsear"))
-  expect_that("sowsear" %in% .packages(TRUE), is_true())
+  expect_equal(res, "sowsear")
+  expect_equal("sowsear" %in% .packages(TRUE))
 
   res <- install_packages("sowsear", package_sources=extras)
-  expect_that(res, equals(character(0)))
+  expect_equal(res, character(0))
 })
 
 test_that("loading a remakefile with a missing package", {
   cleanup()
-  obj <- remake("remake_missing_package.yml")
-  expect_that(.remake_initialize_packages(obj),
-              throws_error('install.packages("nosuchpackage")', fixed=TRUE))
+  obj <- suppressWarnings(remake("remake_missing_package.yml"))
+  expect_error(.remake_initialize_packages(obj),
+               'install.packages("nosuchpackage")', fixed=TRUE)
 
   skip_unless_set("REMAKE_TEST_INSTALL_PACKAGES")
-  expect_that(m <- remake("remake_missing_package.yml", allow_cache=FALSE),
-              gives_warning("Some packages are missing: nosuchpackage"))
-  expect_that(.remake_initialize_packages(m),
-              throws_error("Some packages are missing"))
+  expect_warning(m <- remake("remake_missing_package.yml", allow_cache=FALSE),
+                 "Some packages are missing: nosuchpackage")
+  expect_error(.remake_initialize_packages(m),
+               "Some packages are missing")
 
   ## TODO: There is some disagreement here about the error.  I see
   ##   there is no package called ‘nosuchpackage’
@@ -75,40 +77,34 @@ test_that("loading a remakefile with a missing package", {
   ## track it down - we're doing approximately the right thing).
   msg <- "(is not available|there is no package called)"
   with_options(list(remake.install.missing.packages=TRUE),
-               expect_that(.remake_initialize_packages(m),
-                           throws_error(msg)))
+               expect_error(.remake_initialize_packages(m), msg))
 })
 
 test_that("Allow missing package on load", {
   cleanup()
-  expect_that(obj <- remake("remake_missing_package.yml",
-                            allow_missing_packages=TRUE),
-              not(gives_warning()))
-  expect_that(.remake_initialize_packages(obj),
-              not(throws_error()))
+  expect_warning(obj <- remake("remake_missing_package.yml",
+                               allow_missing_packages=TRUE), NA)
+  expect_error(.remake_initialize_packages(obj), NA)
   ## Not cached; so we still get warning/errors here:
-  expect_that(obj2 <- remake("remake_missing_package.yml"),
-              gives_warning("Some packages are missing: nosuchpackage"))
-  expect_that(.remake_initialize_packages(obj2),
-              throws_error("Some packages are missing"))
-  expect_that(obj3 <- remake("remake_missing_package.yml",
-                             allow_missing_packages=TRUE),
-              not(gives_warning()))
+  expect_warning(obj2 <- remake("remake_missing_package.yml"),
+                 "Some packages are missing: nosuchpackage")
+  expect_error(.remake_initialize_packages(obj2),
+               "Some packages are missing")
+  expect_warning(obj3 <- remake("remake_missing_package.yml",
+                                allow_missing_packages=TRUE), NA)
   ## Caching has left these in the correct position:
-  expect_that(obj2$allow_missing_packages, is_false())
-  expect_that(obj3$allow_missing_packages, is_true())
+  expect_false(obj2$allow_missing_packages)
+  expect_true(obj3$allow_missing_packages)
 
   ## Not tested: how the missing packages thing deals with
   ## installation.  Just consider it to be undefined behaviour for
   ## now.
 
   ## Then we can build the target
-  expect_that(remake_make(obj, "processed"),
-              is_a("data.frame"))
+  expect_is(remake_make(obj, "processed"), "data.frame")
   ## And of course the version that does require the package to load
   ## will see that the database contains the built object already.
-  expect_that(remake_make(obj2, "processed"),
-              is_a("data.frame"))
+  expect_is(remake_make(obj2, "processed"), "data.frame")
 })
 
 test_that("loading a remakefile with a missing package", {
@@ -117,16 +113,16 @@ test_that("loading a remakefile with a missing package", {
     remove.packages("sowsear", .libPaths())
   }
 
-  expect_that(m <- remake("remake_missing_sowsear.yml"),
-              gives_warning("Some packages are missing: sowsear"))
-  expect_that(.remake_initialize_packages(m),
-              throws_error("devtools::install_github"))
+  expect_warning(m <- remake("remake_missing_sowsear.yml"),
+                 "Some packages are missing: sowsear")
+  expect_error(.remake_initialize_packages(m),
+               "devtools::install_github")
 
   oo <- options(remake.install.missing.packages=TRUE)
   on.exit(options(oo))
-  expect_that(.remake_initialize_packages(m),
-              shows_message("Downloading github repo"))
-  expect_that("sowsear" %in% .packages(), is_true())
+  expect_message(.remake_initialize_packages(m),
+                 "Downloading github repo")
+  expect_true("sowsear" %in% .packages())
   unload_extra_packages("sowsear")
 })
 
@@ -138,22 +134,20 @@ test_that("loading a remakefile with a missing target-specific package", {
   }
 
   m <- remake("remake_missing_sowsear2.yml", allow_cache=FALSE)
-  expect_that(.remake_initialize_packages(m),
-              gives_warning("devtools::install_github"))
+  expect_warning(.remake_initialize_packages(m),
+                 "devtools::install_github")
   with_options(list(remake.warn.missing.target.packages=FALSE),
-               expect_that(.remake_initialize_packages(m),
-                           not(gives_warning())))
+               expect_warning(.remake_initialize_packages(m), NA))
 
-  expect_that(remake_make(m, "data.csv"),
-              not(throws_error()))
+  expect_error(remake_make(m, "data.csv"), NA)
 
-  expect_that(remake_make(m, "processed"),
-              throws_error("devtools::install_github"))
-  expect_that(remake_is_current(m, "processed"), is_false())
+  expect_error(remake_make(m, "processed"),
+               "devtools::install_github")
+  expect_false(remake_is_current(m, "processed"))
 
   with_options(list(remake.install.missing.packages=TRUE),
-               expect_that(remake_make(m, "processed"),
-                           shows_message("Downloading github repo")))
-  expect_that(remake_is_current(m, "processed"), is_true())
-  expect_that("sowsear" %in% .packages(), is_false())
+               expect_message(remake_make(m, "processed"),
+                              "Downloading github repo"))
+  expect_true(remake_is_current(m, "processed"))
+  expect_false("sowsear" %in% .packages())
 })

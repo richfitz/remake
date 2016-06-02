@@ -44,22 +44,18 @@ test_that("Simple case", {
   }
 
   ## TODO: does not give error with unknown function
-  expect_that(deps_names("bottom"), equals("bottom"))
-  expect_that(deps_names("single"),
-              equals(c("bottom", "single")))
-  expect_that(deps_names("double"),
-              equals(c("bottom", "double", "single")))
-  expect_that(deps_names("self"), equals("self"))
+  expect_equal(deps_names("bottom"), "bottom")
+  expect_equal(deps_names("single"), c("bottom", "single"))
+  expect_equal(deps_names("double"), c("bottom", "double", "single"))
+  expect_equal(deps_names("self"), "self")
 
   cmp <- list(functions=list(
                 bottom=hash_function(e$bottom),
                 single=hash_function(e$single)))
-  expect_that(deps("single"), equals(cmp))
+  expect_equal(deps("single"), cmp)
 
-  expect_that(deps_names("nonexistant"),
-              equals(character(0)))
-  expect_that(deps("nonexistant"),
-              equals(list(functions=empty_named_list())))
+  expect_equal(deps_names("nonexistant"), character(0))
+  expect_equal(deps("nonexistant"), list(functions=empty_named_list()))
 })
 
 test_that("deparse scipen", {
@@ -70,17 +66,17 @@ test_that("deparse scipen", {
   ## First check the R behaviour that triggers the bug:
   oo <- options(scipen=0)
   on.exit(options(oo))
-  expect_that(deparse(f)[[3]], matches("\\s*1e-04$"))
+  expect_match(deparse(f)[[3]], "\\s*1e-04$")
   h1 <- digest::digest(deparse(f))
   options(scipen=1000)
-  expect_that(deparse(f)[[3]], matches("0\\.0001$"))
+  expect_match(deparse(f)[[3]], "0\\.0001$")
   h2 <- digest::digest(deparse(f))
-  expect_that(h1, not(equals(h2)))
+  expect_false(h1 == h2)
 
   ## But we don't see this:
-  expect_that(hash_function(f), equals(h1))
+  expect_equal(hash_function(f), h1)
   options(scipen=0)
-  expect_that(hash_function(f), equals(h1))
+  expect_equal(hash_function(f), h1)
 })
 
 test_that("deparse cutoff", {
@@ -95,9 +91,9 @@ test_that("deparse cutoff", {
 
   options(deparse.cutoff=60)
   s2 <- deparse(g)
-  expect_that(s1, equals(s2))
+  expect_equal(s1, s2)
 
   ## Bug here with equals:
   s3 <- deparse(g, width.cutoff=50)
-  expect_that(s1, not(is_identical_to(s3)))
+  expect_false(identical(s1, s3))
 })

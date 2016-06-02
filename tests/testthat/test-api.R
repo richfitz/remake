@@ -2,115 +2,106 @@ context("API functions")
 
 test_that("list_targets", {
   ## NOTE: The sort order here is not necessarily stable
-  expect_that(list_targets(),
-              equals(c("all", "data.csv", "processed", "plot.pdf")))
+  expect_equal(sort(list_targets()),
+               sort(c("all", "data.csv", "processed", "plot.pdf")))
 
-  expect_that(list_targets(type="object"),
-              equals("processed"))
-  expect_that(list_targets(type="file"),
-              equals(c("data.csv", "plot.pdf")))
-  expect_that(list_targets(type="fake"),
-              equals(c("all")))
+  expect_equal(list_targets(type="object"), "processed")
+  expect_equal(list_targets(type="file"), c("data.csv", "plot.pdf"))
+  expect_equal(list_targets(type="fake"), c("all"))
 
-  expect_that(list_targets(type="cleanup"),
-              gives_warning("cleanup type listed in type, but also ignored"))
-  expect_that(suppressWarnings(list_targets(type="cleanup")),
-              equals(character(0)))
-  expect_that(list_targets(type="cleanup", include_cleanup_targets=TRUE),
-              equals(cleanup_target_names()))
+  expect_warning(list_targets(type="cleanup"),
+                 "cleanup type listed in type, but also ignored")
+  expect_equal(suppressWarnings(list_targets(type="cleanup")),
+               character(0))
+  expect_equal(list_targets(type="cleanup", include_cleanup_targets=TRUE),
+               cleanup_target_names())
 
   ## Two types:
-  expect_that(list_targets(type=c("object", "fake")),
-              equals(c("all", "processed")))
+  expect_equal(list_targets(type=c("object", "fake")),
+               c("all", "processed"))
   ## No types
-  expect_that(list_targets(type=character(0)),
-              equals(character(0)))
+  expect_equal(list_targets(type=character(0)),
+               character(0))
 
   ## With implicit files:
   fake_empty_file("data.csv")
   on.exit(file_remove("data.csv"))
-  expect_that(list_targets("remake2.yml"),
-              equals(c("processed", "plot.pdf")))
-  expect_that(list_targets("remake2.yml", include_implicit_files=TRUE),
-              equals(c("processed", "plot.pdf", "data.csv")))
+  expect_equal(list_targets("remake2.yml"),
+               c("processed", "plot.pdf"))
+  expect_equal(list_targets("remake2.yml", include_implicit_files=TRUE),
+               c("processed", "plot.pdf", "data.csv"))
 })
 
 test_that("list_dependencies", {
   ## In topological order!
-  expect_that(list_dependencies("all"),
-              equals(c("data.csv", "processed", "plot.pdf", "all")))
-  expect_that(list_dependencies("processed"),
-              equals(c("data.csv", "processed")))
-  expect_that(list_dependencies("data.csv"),
-              equals(c("data.csv")))
+  expect_equal(list_dependencies("all"),
+               c("data.csv", "processed", "plot.pdf", "all"))
+  expect_equal(list_dependencies("processed"),
+               c("data.csv", "processed"))
+  expect_equal(list_dependencies("data.csv"), c("data.csv"))
   ## Cleanup targets usually get filtered:
-  expect_that(list_dependencies("purge"),
-              equals(character(0)))
-  expect_that(list_dependencies("purge", include_cleanup_targets=TRUE),
-              equals(c("tidy", "clean", "purge")))
+  expect_equal(list_dependencies("purge"), character(0))
+  expect_equal(list_dependencies("purge", include_cleanup_targets=TRUE),
+               c("tidy", "clean", "purge"))
 
   ## Implicit targets:
-  expect_that(list_dependencies("plot.pdf", remake_file="remake2.yml"),
-              equals(c("processed", "plot.pdf")))
-  expect_that(list_dependencies("plot.pdf",
-                                include_implicit_files=TRUE,
-                                remake_file="remake2.yml"),
-              equals(c("data.csv", "processed", "plot.pdf")))
+  expect_equal(list_dependencies("plot.pdf", remake_file="remake2.yml"),
+               c("processed", "plot.pdf"))
+  expect_equal(list_dependencies("plot.pdf",
+                                 include_implicit_files=TRUE,
+                                 remake_file="remake2.yml"),
+               c("data.csv", "processed", "plot.pdf"))
 
   ## Filter by type:
-  expect_that(list_dependencies("all", type="object"),
-              equals("processed"))
-  expect_that(list_dependencies("all", type="fake"),
-              equals("all"))
-  expect_that(list_dependencies("all", type="file"),
-              equals(c("data.csv", "plot.pdf")))
-  expect_that(list_dependencies("all", type="cleanup"),
-              gives_warning("cleanup type listed"))
-  expect_that(list_dependencies("all", type="cleanup",
-                                include_cleanup_targets=TRUE),
-              equals(character(0)))
+  expect_equal(list_dependencies("all", type="object"), "processed")
+  expect_equal(list_dependencies("all", type="fake"), "all")
+  expect_equal(list_dependencies("all", type="file"),
+               c("data.csv", "plot.pdf"))
+  expect_warning(list_dependencies("all", type="cleanup"),
+                 "cleanup type listed")
+  expect_equal(list_dependencies("all", type="cleanup",
+                                 include_cleanup_targets=TRUE),
+               character(0))
 
   ## Corner case:
-  expect_that(list_dependencies(character(0)),
-              equals(character(0)))
+  expect_equal(list_dependencies(character(0)), character(0))
   ## The message is not ideal, but I'm OK with an error:
-  expect_that(list_dependencies(NA),
-              throws_error())
+  expect_error(list_dependencies(NA), "Unknown target: NA")
 
   ## Invalid targets:
-  expect_that(list_dependencies("no_such_target"),
-              throws_error("Unknown target"))
+  expect_error(list_dependencies("no_such_target"),
+               "Unknown target")
 
   cleanup()
-  expect_that(list_dependencies("processed",
-                                remake_file="remake_missing_package.yml"),
-              not(gives_warning()))
+  expect_warning(
+    list_dependencies("processed", remake_file="remake_missing_package.yml"),
+    NA) # "Missing warning"
 })
 
 test_that("is_current", {
   ## Verbose:
   cleanup()
-  expect_that(is_current("all"), not(shows_message()))
+  expect_silent(is_current("all"))
   cleanup()
-  expect_that(is_current("all", verbose=TRUE), shows_message("LOAD"))
+  expect_message(is_current("all", verbose=TRUE), "LOAD")
 
   ## Nonexistant targets throw error
-  expect_that(is_current("no_such_target"),
-              throws_error("No such target"))
-  expect_that(is_current(c("no_such_target", "another")),
-              throws_error("No such target"))
+  expect_error(is_current("no_such_target"),
+               "No such target")
+  expect_error(is_current(c("no_such_target", "another")),
+               "No such target")
 
   ## Zero length target
-  expect_that(is_current(character(0)), equals(logical(0)))
+  expect_equal(is_current(character(0)), logical(0))
 
   targets <- list_targets()
-  expect_that(is_current("all"), equals(FALSE))
-  expect_that(is_current(targets), equals(rep(FALSE, length(targets))))
+  expect_false(is_current("all"))
+  expect_equal(is_current(targets), rep(FALSE, length(targets)))
 
   make("data.csv")
-  expect_that(is_current("data.csv"), is_true())
-  expect_that(is_current(setdiff(targets, "data.csv")),
-              equals(rep(FALSE, length(targets) - 1)))
+  expect_true(is_current("data.csv"))
+  expect_equal(is_current(setdiff(targets, "data.csv")),
+               rep(FALSE, length(targets) - 1))
 
   make()
   ## Fake targets never up to date.
@@ -118,47 +109,37 @@ test_that("is_current", {
   ## be less simple-minded and store signaures of all dependencies.
   ## The issue is what the hash of a fake target is.  The current
   ## situation at least should trigger builds.
-  expect_that(is_current("all"), is_false())
-  expect_that(is_current(setdiff(targets, "all")),
-              equals(rep(TRUE, length(targets) - 1)))
+  expect_false(is_current("all"))
+  expect_equal(is_current(setdiff(targets, "all")),
+               rep(TRUE, length(targets) - 1))
 
   ## Some of the examples from test-check-current.R
   cleanup()
 
-  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
-              is_false())
-  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
-              is_false())
+  expect_false(is_current("data.csv", remake_file="remake_check.yml"))
+  expect_false(is_current("data.csv", "exists", remake_file="remake_check.yml"))
 
   make("plot.pdf", remake_file="remake_check.yml")
 
-  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
-              is_true())
-  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
-              is_true())
+  expect_true(is_current("data.csv", remake_file="remake_check.yml"))
+  expect_true(is_current("data.csv", "exists", remake_file="remake_check.yml"))
 
-  expect_that(is_current("data.csv", remake_file="remake_check.yml"),
-              is_true())
-  expect_that(is_current("data.csv", "exists", remake_file="remake_check.yml"),
-              is_true())
+  expect_true(is_current("data.csv", remake_file="remake_check.yml"))
+  expect_true(is_current("data.csv", "exists", remake_file="remake_check.yml"))
 
-  expect_that(is_current("processed", remake_file="remake_check.yml"),
-              is_true())
-  expect_that(is_current("processed", "exists", remake_file="remake_check.yml"),
-              is_true())
+  expect_true(is_current("processed", remake_file="remake_check.yml"))
+  expect_true(is_current("processed", "exists", remake_file="remake_check.yml"))
 
-  expect_that(is_current("plot.pdf", remake_file="remake_check.yml"),
-              is_true())
-  expect_that(is_current("plot.pdf", "exists", remake_file="remake_check.yml"),
-              is_true())
+  expect_true(is_current("plot.pdf", remake_file="remake_check.yml"))
+  expect_true(is_current("plot.pdf", "exists", remake_file="remake_check.yml"))
 
   cleanup()
-  expect_that(is_current("processed",
-                         remake_file="remake_missing_package.yml"),
-              gives_warning())
-  expect_that(is_current("processed", allow_missing_packages=TRUE,
-                         remake_file="remake_missing_package.yml"),
-              not(gives_warning()))
+  expect_warning(is_current("processed",
+                            remake_file="remake_missing_package.yml"),
+                 "Some packages are missing")
+  expect_warning(is_current("processed", allow_missing_packages=TRUE,
+                            remake_file="remake_missing_package.yml"),
+                 NA)
 })
 
 test_that("auto_gitignore", {
@@ -174,29 +155,29 @@ test_that("auto_gitignore", {
   on.exit(restore(".gitignore", tmp))
 
   file_remove(".gitignore")
-  expect_that(auto_gitignore(dry_run=TRUE),
-              equals(c(x, "data.csv", "plot.pdf")))
+  expect_equal(auto_gitignore(dry_run=TRUE),
+               c(x, "data.csv", "plot.pdf"))
 
   writeLines("plot.pdf", ".gitignore")
-  expect_that(auto_gitignore(dry_run=TRUE),
-              equals(c(x, "data.csv")))
-  expect_that(auto_gitignore("remake2.yml", dry_run=TRUE),
-              equals(c(x, character(0))))
-  expect_that(auto_gitignore(dry_run=TRUE, check_git=FALSE),
-              equals(c(".remake", "data.csv")))
+  expect_equal(auto_gitignore(dry_run=TRUE),
+               c(x, "data.csv"))
+  expect_equal(suppressWarnings(auto_gitignore("remake2.yml", dry_run=TRUE)),
+               c(x, character(0)))
+  expect_equal(auto_gitignore(dry_run=TRUE, check_git=FALSE),
+               c(".remake", "data.csv"))
 
   ## Glob:
   writeLines("*.pdf", ".gitignore")
-  expect_that(auto_gitignore(dry_run=TRUE),
-              equals(c(x, "data.csv", if (!has_git) "plot.pdf")))
-  expect_that(auto_gitignore(check_git=FALSE, dry_run=TRUE),
-              equals(c(".remake", "data.csv", "plot.pdf")))
+  expect_equal(auto_gitignore(dry_run=TRUE),
+               c(x, "data.csv", if (!has_git) "plot.pdf"))
+  expect_equal(auto_gitignore(check_git=FALSE, dry_run=TRUE),
+               c(".remake", "data.csv", "plot.pdf"))
 
   file_remove(".gitignore")
   str <- auto_gitignore()
-  expect_that(readLines(".gitignore"), is_identical_to(str))
-  expect_that(auto_gitignore(), equals(character(0)))
-  expect_that(readLines(".gitignore"), is_identical_to(str))
+  expect_identical(readLines(".gitignore"), str)
+  expect_equal(auto_gitignore(), character(0))
+  expect_identical(readLines(".gitignore"), str)
 })
 
 ## This one is pretty well tested via remake_environment so probably
@@ -204,105 +185,94 @@ test_that("auto_gitignore", {
 test_that("make_environment", {
   cleanup()
   e <- make_environment()
-  expect_that(ls(e),
-              equals(c("clean_hook", "do_plot", "download_data",
-                       "myplot", "process_data")))
+  expect_equal(ls(e),
+               c("clean_hook", "do_plot", "download_data",
+                 "myplot", "process_data"))
   ## TODO: Throw a better error:
-  expect_that(make_environment("processed"),
-              throws_error("key 'processed' ('objects') not found",
-                           fixed=TRUE))
+  expect_error(make_environment("processed"),
+               "key 'processed' ('objects') not found", fixed=TRUE)
   make()
-  expect_that("processed" %in% ls(make_environment("processed")),
-              is_true())
+  expect_true("processed" %in% ls(make_environment("processed")))
 })
 
 test_that("fetch", {
   cleanup()
 
-  expect_that(fetch("all"),
-              throws_error("Can only fetch object targets"))
-  expect_that(fetch("clean"),
-              throws_error("Can only fetch object targets"))
-  expect_that(fetch("data.csv"),
-              throws_error("Can only fetch object targets"))
-  expect_that(fetch("plot.pdf"),
-              throws_error("Can only fetch object targets"))
-  expect_that(fetch("nosuchtarget"),
-              throws_error("No such target"))
-  expect_that(fetch(c("a", "b")),
-              throws_error("must be a scalar"))
-  expect_that(fetch(NULL),
-              throws_error("must be a scalar"))
-  expect_that(fetch(1L),
-              throws_error("must be character"))
+  expect_error(fetch("all"), "Can only fetch object targets")
+  expect_error(fetch("clean"), "Can only fetch object targets")
+  expect_error(fetch("data.csv"), "Can only fetch object targets")
+  expect_error(fetch("plot.pdf"), "Can only fetch object targets")
+  expect_error(fetch("nosuchtarget"), "No such target")
+  expect_error(fetch(c("a", "b")), "must be a scalar")
+  expect_error(fetch(NULL), "must be a scalar")
+  expect_error(fetch(1L), "must be character")
 
-  expect_that(fetch("processed"),
-              throws_error("has not been made"))
+  expect_error(fetch("processed"), "has not been made")
   make()
   d <- fetch("processed")
-  expect_that(d, is_a("data.frame"))
+  expect_is(d, "data.frame")
   obj <- remake()
-  expect_that(d, is_identical_to(obj$store$objects$get("processed")))
+  expect_identical(d, obj$store$objects$get("processed"))
 
   ## Then, we'll invalidate data.csv so that things are out of date:
   file.remove("data.csv")
-  expect_that(is_current("processed"), is_false())
+  expect_false(is_current("processed"))
   d2 <- fetch("processed")
-  expect_that(d2, is_identical_to(d))
+  expect_identical(d2, d)
 
-  expect_that(fetch("processed", require_current=TRUE),
-              throws_error("Object is out of date"))
+  expect_error(fetch("processed", require_current=TRUE),
+               "Object is out of date")
 })
 
 test_that("delete", {
   cleanup()
   make()
 
-  expect_that(delete("all"),
-              throws_error("Not something that can be deleted"))
-  expect_that(delete("all", dependencies=TRUE),
-              shows_message("DEL"))
-  expect_that(file.exists("data.csv"), is_false())
+  expect_error(delete("all"),
+               "Not something that can be deleted")
+  expect_message(delete("all", dependencies=TRUE),
+                 "DEL")
+  expect_false(file.exists("data.csv"))
 
   make("data.csv")
-  expect_that(delete("data.csv"), shows_message("DEL"))
-  expect_that(delete("data.csv"), not(shows_message("DEL")))
+  expect_message(delete("data.csv"), "DEL")
+  expect_false(any(grepl("DEL", capture_messages(delete("data.csv")))))
 
   make("data.csv")
-  expect_that(delete("data.csv", verbose=FALSE),
-              not(shows_message()))
-  expect_that(file.exists("data.csv"), is_false())
+  expect_message(delete("data.csv", verbose=FALSE), NA)
+  expect_false(file.exists("data.csv"))
 
   ## Different remake file
   cleanup()
   make(remake_file="knitr.yml")
-  expect_that(file.exists("knitr.md"), is_true())
+  expect_true(file.exists("knitr.md"))
   delete("knitr.md", remake_file="knitr.yml")
-  expect_that(file.exists("knitr.md"), is_false())
+  expect_false(file.exists("knitr.md"))
 })
 
 test_that("dump_environment", {
   cleanup()
   env <- new.env(parent=.GlobalEnv)
   dump_environment(env)
-  expect_that("do_plot" %in% ls(env), is_true())
-  expect_that("processed" %in% ls(env), is_false())
+  expect_true("do_plot" %in% ls(env))
+  expect_false("processed" %in% ls(env))
   make()
-  expect_that("processed" %in% ls(env), is_false())
+  expect_false("processed" %in% ls(env))
   dump_environment(env)
-  expect_that("processed" %in% ls(env), is_true())
+  expect_true("processed" %in% ls(env))
   make("clean")
-  expect_that("processed" %in% ls(env), is_true())
+  expect_true("processed" %in% ls(env))
 
   cleanup()
-  expect_that(dump_environment(env, remake_file="remake_missing_package.yml"),
-              throws_error("Some packages are missing"))
-  expect_that(dump_environment(env,
-                               allow_missing_packages=TRUE,
-                               remake_file="remake_missing_package.yml"),
-              not(throws_error()))
-  expect_that(dump_environment(env,
-                               allow_missing_packages=TRUE,
-                               remake_file="remake_missing_package.yml"),
-              not(throws_error()))
+  expect_error(suppressWarnings(
+    dump_environment(env, remake_file="remake_missing_package.yml")),
+    "Some packages are missing")
+  expect_error(dump_environment(env,
+                                allow_missing_packages=TRUE,
+                                remake_file="remake_missing_package.yml"),
+               NA)
+  expect_error(dump_environment(env,
+                                allow_missing_packages=TRUE,
+                                remake_file="remake_missing_package.yml"),
+               NA)
 })

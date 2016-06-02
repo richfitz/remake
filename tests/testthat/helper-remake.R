@@ -79,3 +79,10 @@ print_libpaths <- function(msg) {
 has_internet <- function() {
   !is.null(suppressWarnings(nsl("www.google.com")))
 }
+
+capture_messages <- function(expr) {
+  res <- character(0)
+  withCallingHandlers(expr,
+                      message=function(e) res <<- c(res, e$message))
+  res
+}

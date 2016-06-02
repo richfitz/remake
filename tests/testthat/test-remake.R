@@ -1,20 +1,20 @@
 context("Loading remakefiles")
 
 test_that("Recursive remakefiles", {
-  expect_that(remake("recursive1.yml"),
-              throws_error("Recursive include detected"))
-  expect_that(remake("recursive2.yml"),
-              throws_error("Recursive include detected"))
-  expect_that(remake("recursive3.yml"),
-              throws_error("Recursive include detected"))
+  expect_error(remake("recursive1.yml"),
+               "Recursive include detected")
+  expect_error(remake("recursive2.yml"),
+               "Recursive include detected")
+  expect_error(remake("recursive3.yml"),
+               "Recursive include detected")
 })
 
 test_that("Target/rule clash", {
   cleanup()
-  expect_that(m <- remake("remake_rule_clash.yml"),
-              gives_warning("Rule name clashes with target name"))
+  expect_warning(m <- remake("remake_rule_clash.yml"),
+                 "Rule name clashes with target name")
   remake_make(m)
-  expect_that(file.exists("plot.pdf"), is_true())
+  expect_true(file.exists("plot.pdf"))
 })
 
 test_that("Quoting", {
@@ -40,37 +40,37 @@ targets:
 
   writeLines(sprintf(template, 'target_name', '"data.csv"', 'processed'),
              filename)
-  expect_that(remake(filename), not(throws_error()))
+  expect_error(remake(filename), NA)
 
   writeLines(sprintf(template, '"data.csv"', '"data.csv"', 'processed'),
              filename)
-  expect_that(remake(filename), not(throws_error()))
+  expect_error(remake(filename), NA)
 
   ## Then different errors:
   ## The first two are *useless* errors
   writeLines(sprintf(template, '"target_name"', '"data.csv"', 'processed'),
              filename)
-  expect_that(remake(filename),
-              throws_error("target_name must not be quoted"))
+  expect_error(remake(filename),
+               "target_name must not be quoted")
 
   writeLines(sprintf(template, 'data.csv', '"data.csv"', 'processed'),
              filename)
-  expect_that(remake(filename),
-              throws_error("target name must be quoted"))
+  expect_error(remake(filename),
+               "target name must be quoted")
 
   writeLines(sprintf(template, 'target_name', 'data.csv', 'processed'),
              filename)
-  expect_that(remake(filename),
-              throws_error("Incorrect quotation in target"))
-  expect_that(remake(filename),
-              throws_error("Should be quoted: data.csv"))
+  expect_error(remake(filename),
+               "Incorrect quotation in target")
+  expect_error(remake(filename),
+               "Should be quoted: data.csv")
 
   writeLines(sprintf(template, 'target_name', '"data.csv"', '"processed"'),
              filename)
-  expect_that(remake(filename),
-              throws_error("Incorrect quotation in target"))
-  expect_that(remake(filename),
-              throws_error("Should not be quoted: processed"))
+  expect_error(remake(filename),
+               "Incorrect quotation in target")
+  expect_error(remake(filename),
+               "Should not be quoted: processed")
 })
 
 test_that("Verbosity", {
@@ -96,45 +96,43 @@ test_that("Verbosity", {
 
 test_that("Caching", {
   cleanup()
-  expect_that(cache$fetch("remake.yml"),
-              is_null())
+  expect_null(cache$fetch("remake.yml"))
   m <- remake("remake.yml")
-  expect_that(cache$fetch("remake.yml"),
-              equals(m))
+  expect_equal(cache$fetch("remake.yml"), m)
   cleanup()
-  expect_that(cache$fetch("remake.yml"),
-              is_null())
+  expect_null(cache$fetch("remake.yml"))
 })
 
 test_that("Loading without sources", {
   cleanup()
   ## No caching here:
-  expect_that(m <- remake_new(load_sources=FALSE),
-              not(shows_message("loading sources")))
-  expect_that(m <- remake_new(load_sources=TRUE),
-              shows_message("loading sources"))
+  msg <- capture_messages(m <- remake_new(load_sources=FALSE))
+  expect_false(any(grepl("loading sources", msg)))
+  expect_message(m <- remake_new(load_sources=TRUE), "loading sources")
 
   ## With caching:
   cleanup()
-  expect_that(m <- remake(load_sources=FALSE),
-              not(shows_message("loading sources")))
-  expect_that(m$store$env,     is_a("managed_environment"))
-  expect_that(m$store$env$env, is_null())
+  msg <- capture_messages(m <- remake(load_sources=FALSE))
+  expect_false(any(grepl("loading sources", msg)))
+  expect_is(m$store$env, "managed_environment")
+  expect_null(m$store$env$env)
   ## This means that things *will* get cleared
-  expect_that(m$store$env$is_current(), is_false())
+  expect_false(m$store$env$is_current())
 
   ## And again from the cache no message:
-  expect_that(m <- remake(load_sources=FALSE), not(shows_message()))
+  expect_message(m <- remake(load_sources=FALSE), NA)
 
   ## Check again:
   m <- cache$fetch("remake.yml")
-  expect_that(m, is_a("remake"))
-  expect_that(m$store$env$env, is_null())
+  expect_is(m, "remake")
+  expect_null(m$store$env$env)
 
   ## This does load the sources
-  expect_that(m <- remake(), shows_message("loading sources"))
+  expect_message(m <- remake(), "loading sources")
+  expect_is(m$store$env$env, "environment")
   ## Sources already loaded
-  expect_that(m <- remake(), not(shows_message("loading sources")))
+  msg <- capture_messages(m <- remake())
+  expect_false(any(grepl("loading sources", msg)))
 })
 
 test_that("Missing targets", {
@@ -148,41 +146,36 @@ test_that("Missing targets", {
   writeLines(yaml::as.yaml(dat), filename)
   on.exit(file_remove(filename))
   ## Sanity check!
-  expect_that(remake(filename), not(throws_error()))
+  expect_error(remake(filename), NA)
 
   ## Misspelling:
   dat$targets$a_target$command <- "download_data(aother_target)"
   writeLines(yaml::as.yaml(dat), filename)
-  expect_that(remake(filename),
-              throws_error("created targets must all be files"))
+  expect_error(remake(filename),
+               "created targets must all be files")
   str <- "aother_target: (in a_target) -- did you mean: another_target"
-  expect_that(remake(filename),
-              throws_error(str, fixed=TRUE))
+  expect_error(remake(filename), str, fixed=TRUE)
 
   ## Warning if it looks like a file.
   dat$targets$a_target$command <- "download_data('an/other_target')"
   writeLines(yaml::as.yaml(dat), filename)
-  expect_that(remake(filename),
-              gives_warning("Creating implicit target for nonexistant files"))
+  expect_warning(remake(filename),
+                 "Creating implicit target for nonexistant files")
   str <- "an/other_target: (in a_target) -- did you mean: another_target"
-  expect_that(remake(filename, allow_cache=FALSE),
-              gives_warning(str, fixed=TRUE))
+  expect_warning(remake(filename, allow_cache=FALSE), str, fixed=TRUE)
 
   ## No suggestions:
   oo <- options(remake.dym=FALSE)
   on.exit(options(oo), add=TRUE)
-  expect_that(remake(filename, allow_cache=FALSE),
-              gives_warning("Creating implicit target for nonexistant files"))
-  expect_that(remake(filename, allow_cache=FALSE),
-              not(gives_warning(str, fixed=TRUE)))
+  expect_warning(remake(filename, allow_cache=FALSE),
+                 "Creating implicit target for nonexistant files")
 })
 
 test_that("Source case sensitivity", {
-  expect_that(remake("remake_wrong_case.yml"),
-              throws_error("Files not found"))
+  expect_error(remake("remake_wrong_case.yml"), "Files not found")
   if (is_case_insensitive()) {
-    expect_that(remake("remake_wrong_case.yml"),
-                throws_error("incorrect case => code.R"))
+    expect_error(remake("remake_wrong_case.yml"),
+                 "incorrect case => code.R")
   }
 })
 
@@ -191,8 +184,8 @@ test_that("ggplot targets", {
   ## conditional:
   if (suppressWarnings(require(ggplot2, quietly=TRUE))) {
     make(remake_file="ggplot.yml")
-    expect_that(hash_files("plot_manual.png", FALSE),
-                equals(hash_files("plot_auto.png", FALSE)))
+    expect_equal(hash_files("plot_manual.png", FALSE),
+                 hash_files("plot_auto.png", FALSE))
     file.remove("plot_manual.png")
     file.remove("plot_auto.png")
   }
@@ -207,15 +200,13 @@ test_that("Function dependencies", {
   on.exit(file.remove(filename))
 
   res <- make("all", remake_file="remake_dependncies.yml")
-  expect_that(res, equals("A"))
-  expect_that(is_current("all", remake_file="remake_dependncies.yml"),
-              is_true())
+  expect_equal(res, "A")
+  expect_true(is_current("all", remake_file="remake_dependncies.yml"))
 
   code[[1]] <- sub("A", "B", code[[1]])
   writeLines(code, filename)
 
-  expect_that(is_current("all", remake_file="remake_dependncies.yml"),
-              is_false())
+  expect_false(is_current("all", remake_file="remake_dependncies.yml"))
   res <- make("all", remake_file="remake_dependncies.yml")
-  expect_that(res, equals("B"))
+  expect_equal(res, "B")
 })

@@ -4,9 +4,9 @@ test_that("simple run", {
   cleanup()
   m <- remake("remake.yml")
 
-  expect_that(remake_is_current(m, "data.csv"), is_false())
-  expect_that(remake_is_current(m, "processed"), is_false())
-  expect_that(remake_is_current(m, "plot.pdf"), is_false())
+  expect_false(remake_is_current(m, "data.csv"))
+  expect_false(remake_is_current(m, "processed"))
+  expect_false(remake_is_current(m, "plot.pdf"))
 
   ## This is possibly overkill:
   cmp <- list(version=m$store$version,
@@ -18,9 +18,9 @@ test_that("simple run", {
                 functions=list(download_data=hash_function(
                                  m$store$env$env$download_data))))
   x <- dependency_status(m$targets[["data.csv"]], m$store, TRUE)
-  expect_that(x[names(cmp)], equals(cmp))
-  expect_that(sort(setdiff(names(x), names(cmp))),
-              equals(sort(c("hash", "time"))))
+  expect_equal(x[names(cmp)], cmp)
+  expect_equal(sort(setdiff(names(x), names(cmp))),
+               sort(c("hash", "time")))
 
   cmp <- list(version=m$store$version,
               name="processed",
@@ -31,9 +31,9 @@ test_that("simple run", {
                 functions=list(process_data=hash_function(
                                  m$store$env$env$process_data))))
   x <- dependency_status(m$targets[["processed"]], m$store, TRUE)
-  expect_that(x[names(cmp)], equals(cmp))
-  expect_that(sort(setdiff(names(x), names(cmp))),
-              equals(sort(c("hash", "time"))))
+  expect_equal(x[names(cmp)], cmp)
+  expect_equal(sort(setdiff(names(x), names(cmp))),
+               sort(c("hash", "time")))
 
   ## NOTE: I don't really understand why we're sensitive to order
   ## here, differently from the command line and within R.  It seems
@@ -51,18 +51,18 @@ test_that("simple run", {
                 functions=list(
                   do_plot=hash_function(m$store$env$env$do_plot),
                   myplot=hash_function(m$store$env$env$myplot))))
-  expect_that(res[names(cmp)], equals(cmp))
-  expect_that(sort(setdiff(names(res), names(cmp))),
-              equals(sort(c("hash", "time"))))
+  expect_equal(res[names(cmp)], cmp)
+  expect_equal(sort(setdiff(names(res), names(cmp))),
+               sort(c("hash", "time")))
 
   ## Run the build system manually:
   remake_update(m, "data.csv")
   remake_update(m, "processed")
   remake_update(m, "plot.pdf")
 
-  expect_that(remake_is_current(m, "data.csv"),  is_true())
-  expect_that(remake_is_current(m, "processed"), is_true())
-  expect_that(remake_is_current(m, "plot.pdf"),  is_true())
+  expect_true(remake_is_current(m, "data.csv"))
+  expect_true(remake_is_current(m, "processed"))
+  expect_true(remake_is_current(m, "plot.pdf"))
 
   cleanup()
 })
@@ -74,19 +74,19 @@ test_that("Depending on a file we don't make", {
   e <- new.env()
   source("code.R", e)
   e$download_data("data.csv")
-  expect_that(file.exists("data.csv"), is_true())
+  expect_true(file.exists("data.csv"))
 
   ## This configuration is the same as remake.yml, but it does not
   ## contain a rule for building data.csv
   m <- remake("remake2.yml")
 
-  expect_that(remake_update(m, "data.csv"), not(shows_message()))
+  expect_message(remake_update(m, "data.csv"), NA)
   remake_update(m, "processed")
   remake_update(m, "plot.pdf")
-  expect_that(file.exists("plot.pdf"), is_true())
+  expect_true(file.exists("plot.pdf"))
   remake_make(m, "clean")
-  expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(file.exists("data.csv"), is_true())
+  expect_false(file.exists("plot.pdf"))
+  expect_true(file.exists("data.csv"))
 
   cleanup()
 })

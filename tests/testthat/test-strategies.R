@@ -14,39 +14,39 @@ test_that("Plan", {
   p <- remake_plan(m, "plot.pdf")
 
   cmp <- c("data.csv", "processed", "plot.pdf")
-  expect_that(remake_plan(m, "plot.pdf"), equals(cmp))
+  expect_equal(remake_plan(m, "plot.pdf"), cmp)
 
   ## Default plan:
-  expect_that(remake_plan(m), equals(c(cmp, "all")))
+  expect_equal(remake_plan(m), c(cmp, "all"))
 
   cmp_status <- cbind(dirty=rep(TRUE, 3),
                       dirty_by_descent=c(FALSE, TRUE, TRUE))
   rownames(cmp_status) <- cmp
 
-  expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
-  expect_that(m_status(m), equals(rbind(cmp_status, all=c(TRUE, TRUE))))
+  expect_equal(m_status(m, "plot.pdf"), cmp_status)
+  expect_equal(m_status(m), rbind(cmp_status, all=c(TRUE, TRUE)))
 
   ## Now, build the data:
   remake_make(m, "data.csv")
   cmp_status["data.csv","dirty"] <- FALSE
   cmp_status["processed","dirty_by_descent"] <- FALSE
-  expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
+  expect_equal(m_status(m, "plot.pdf"), cmp_status)
 
   remake_make(m, "processed")
   cmp_status["processed","dirty"] <- FALSE
   cmp_status["plot.pdf","dirty_by_descent"] <- FALSE
-  expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
+  expect_equal(m_status(m, "plot.pdf"), cmp_status)
 
   remake_make(m, "plot.pdf")
   cmp_status["plot.pdf","dirty"] <- FALSE
-  expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
-  expect_that(m_status(m), equals(rbind(cmp_status, all=c(TRUE, FALSE))))
+  expect_equal(m_status(m, "plot.pdf"), cmp_status)
+  expect_equal(m_status(m), rbind(cmp_status, all=c(TRUE, FALSE)))
 
   ## Now, delete data.csv: Notice that the plot.pdf is not actually
   ## dirty, though it *is* dirty by descent.
   file_remove("data.csv")
   cmp_status[c("data.csv", "processed"), "dirty"] <- TRUE
   cmp_status[c("processed", "plot.pdf"), "dirty_by_descent"] <- TRUE
-  expect_that(m_status(m, "plot.pdf"), equals(cmp_status))
-  expect_that(m_status(m), equals(rbind(cmp_status, all=c(TRUE, TRUE))))
+  expect_equal(m_status(m, "plot.pdf"), cmp_status)
+  expect_equal(m_status(m), rbind(cmp_status, all=c(TRUE, TRUE)))
 })

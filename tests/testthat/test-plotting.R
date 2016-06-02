@@ -4,7 +4,7 @@ test_that("Build works", {
   cleanup()
   m <- remake("plot_simple.yml")
   remake_make(m, "plot.pdf")
-  expect_that(file.exists("plot.pdf"), is_true())
+  expect_true(file.exists("plot.pdf"))
   ## TODO: ideally check that it is the expected size
   cleanup()
 })
@@ -20,19 +20,19 @@ test_that("Plot options", {
 
   style <- list(width=8, height=4)
 
-  expect_that(t1$plot$args, equals(style))
-  expect_that(t2$plot$args, equals(style))
+  expect_equal(t1$plot$args, style)
+  expect_equal(t2$plot$args, style)
 
   ## No arguments on these two:
-  expect_that(t3$plot$args, equals(empty_named_list()))
-  expect_that(t4$plot$args, equals(empty_named_list()))
+  expect_equal(t3$plot$args, empty_named_list())
+  expect_equal(t4$plot$args, empty_named_list())
 
   remake_make(m)
 
-  expect_that(file.exists("plot1.pdf"), is_true())
-  expect_that(file.exists("plot2.pdf"), is_true())
-  expect_that(file.exists("plot3.pdf"), is_true())
-  expect_that(file.exists("plot4.pdf"), is_true())
+  expect_true(file.exists("plot1.pdf"))
+  expect_true(file.exists("plot2.pdf"))
+  expect_true(file.exists("plot3.pdf"))
+  expect_true(file.exists("plot4.pdf"))
 
   cleanup()
 })
