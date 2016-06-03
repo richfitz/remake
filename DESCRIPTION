@@ -11,7 +11,6 @@ License: BSD_2_clause + file LICENSE
 LazyData: true
 Imports:
     R6 (>= 2.0.0),
-    codetools,
     crayon,
     digest,
     optparse,
