@@ -5,6 +5,7 @@
 ## Main functionality:
 ######################################################################
 
+##' Run remake to build one or more targets.
 ##' @title Make one or more targets
 ##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
@@ -32,6 +33,7 @@ make <- function(target_names=NULL, ...,
   remake_make(obj, target_names)
 }
 
+##' Create a simple standalone script from a remake file.
 ##' @title Write standalone script to make targets
 ##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
