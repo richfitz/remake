@@ -132,8 +132,8 @@ archive_import_target <- function(target, store, path) {
 archive_metadata <- function() {
   ## TODO: Get local directory git information in here, including
   ## incompletely committed files.  See richfitz/tree for an example.
-  list(remake_version=packageVersion("remake"),
-       session_info=devtools::session_info())
+  list(remake_version=utils::packageVersion("remake"),
+       session_info=utils::sessionInfo())
 }
 
 archive_get_file <- function(path, dest_dir, archive_file) {
