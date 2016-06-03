@@ -35,12 +35,9 @@ download_from_remake_target <- function(target, store, quiet=NULL) {
   invisible(target$name)
 }
 
-## OK, so we want a new function to download a file and abstract over
-## loading different packages to make it all work.  But I'm also cool
-## with just using httr and falling back on download.file perhaps?
-## Who knows.  But the dependency needs to be sorted out at some point
-## so that we can *rely* on these functions on new computers.  Adding
-## to `install_missing_packages()` is probably the best bet.
+## NOTE: This may trigger warnings because the built-in
+## download/libcurl support warns if the reported and true lengths
+## differ.  Not sure if this is really a problem though.
 ##
 ## The progress bar that downloader::download creates is much nicer.
 ## It's also very hard to tune in/out.  But for big files it's
@@ -57,16 +54,16 @@ download_from_remake_target <- function(target, store, quiet=NULL) {
 ## Debian/Ubuntu installations, too).  So in that case we can ignore
 ## downloader *unless* capabilities("libcurl") is FALSE _and_ the URL
 ## is an https:// url.
-download_file <- function(url, dest, quiet, ...) {
+download_file <- function(url, dest, quiet) {
   tmp <- tempfile()
-  status <- downloader::download(url, tmp, quiet=quiet)
+  status <- download.file(utils::URLencode(url), tmp, mode="wb")
   if (status != 0) {
     stop("Download failed with code ", status)
   }
   ok <- file.rename(tmp, dest)
   if (!ok) {
-    # Linux
-    ok <- file.copy(tmp, dest)
+    ## Linux
+    ok <- file.copy(tmp, dest, overwrite=TRUE)
     file.remove(tmp)
   }
   ok

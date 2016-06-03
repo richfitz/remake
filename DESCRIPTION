@@ -20,7 +20,6 @@ Imports:
 Suggests:
     DiagrammeR,
     devtools,
-    downloader,
     knitr,
     testthat
 RoxygenNote: 5.0.1
