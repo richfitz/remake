@@ -517,7 +517,7 @@ target_run_fake <- function(target, for_script=FALSE) {
                      target$knitr$input, target$name)
     } else if (inherits(target, "target_download")) {
       ## This is a lie:
-      res <- sprintf('downloader::download("%s", "%s")',
+      res <- sprintf('download.file("%s", "%s")',
                      target$download, target$name)
     } else if (target$type == "object") {
       ## This is a trick to ensure correct printing of the LHS of the
