@@ -29,4 +29,7 @@ remake file?}
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).}
 }
+\description{
+Run remake to build one or more targets.
+}
 

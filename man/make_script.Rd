@@ -26,4 +26,7 @@ file using \code{\link{source_character}}.}
 Practically this means that all other arguments must be specified
 by full name.}
 }
+\description{
+Create a simple standalone script from a remake file.
+}
 
