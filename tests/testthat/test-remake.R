@@ -210,3 +210,8 @@ test_that("Function dependencies", {
   res <- make("all", remake_file="remake_dependncies.yml")
   expect_equal(res, "B")
 })
+
+test_that("file target must make files", {
+  expect_error(remake::make(remake_file="remake_file_missing.yml"),
+               "command for plot2.png did not create file")
+})

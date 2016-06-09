@@ -12,6 +12,8 @@ cleanup <- function() {
                                  "code2.R", "remake_error.yml",
                                  "plot1.pdf", "plot2.pdf",
                                  "plot3.pdf", "plot4.pdf",
+                                 "plot_manual.png",
+                                 "plot_auto.png",
                                  "knitr.md", "knitr_rename.md",
                                  "knitr.tex",
                                  "knitr_file_dep.md",

@@ -577,7 +577,10 @@ target_run <- function(target, store, quiet=NULL) {
     return(download_from_remake_target(target, store, quiet))
   }
 
-  if (inherits(target, "target_plot")) {
+  is_plot <- inherits(target, "target_plot")
+  is_file <- target$type == "file"
+
+  if (is_plot) {
     open_device(target$name, target$plot$device, target$plot$args,
                 store$env$env)
     on.exit(dev.off())
@@ -610,8 +613,11 @@ target_run <- function(target, store, quiet=NULL) {
     withCallingHandlers(
       eval(target$command, envir),
       message=function(e) if (quiet) invokeRestart("muffleMessage"))
-  if (inherits(target, "target_plot") && inherits(ret, "ggplot")) {
+  if (is_plot && inherits(ret, "ggplot")) {
     print(ret)
+  }
+  if (is_file && !is_plot && !file.exists(target$name)) {
+    stop(sprintf("command for %s did not create file", target$name))
   }
   ret
 }
