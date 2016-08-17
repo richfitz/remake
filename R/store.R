@@ -67,7 +67,6 @@ file_store <- R6Class(
     ))
 
 ##' @importFrom R6 R6Class
-##' @importFrom storr storr_rds
 store <- R6Class(
   "store",
   public=list(
@@ -85,10 +84,10 @@ store <- R6Class(
       dir.create(path, FALSE, TRUE)
       self$path    <- file.path(normalizePath(path, mustWork=TRUE), ".remake")
       dir.create(self$path, FALSE, TRUE)
-      self$db <- storr_rds(file.path(self$path, "objects"),
-                           default_namespace="remake_db",
-                           mangle_key=TRUE)
-      self$objects <- storr_rds(file.path(self$path, "objects"))
+      self$db <- storr::storr_rds(file.path(self$path, "objects"),
+                                  default_namespace="remake_db",
+                                  mangle_key=TRUE)
+      self$objects <- storr::storr_rds(file.path(self$path, "objects"))
       self$files <- file_store$new()
       self$version <- packageVersion(.packageName)
       self$packages <- packages
