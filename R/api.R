@@ -263,10 +263,23 @@ install_remake <- function(destination_directory, overwrite=FALSE) {
   Sys.chmod(file, "0755")
 }
 
-##' Returns the vector of known file extensions.  If a target ends in
-##' one of these, then it will be considered a file, rather than an
-##' object.  In a future version, it might be possible to configure
-##' additional extensions: please let me know if that would be useful.
+##' Returns the vector of \emph{default} file extensions.  If a target
+##' ends in one of these, then it will be considered a file, rather
+##' than an object.
+##'
+##' To include \emph{additional} file extensions, include them in the
+##' yaml like (at the top level):
+##'
+##' \preformatted{
+##' file_extensions: ["phy", "tre"]
+##' }
+##'
+##' Any number of extensions can be listed.  Don't use a leading
+##' period (it will be dropped).  The union of file extensions listed
+##' here and in \code{file_extensions()} will be used, so if you
+##' accidently include a default extension (or if one is included in a
+##' future remake version) it is no problem.
+##'
 ##' @title Vector of file extensions
 ##' @export
 file_extensions <- function() {
