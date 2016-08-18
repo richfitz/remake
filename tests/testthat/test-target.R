@@ -45,7 +45,3 @@ test_that("Targets return their output on build", {
   expect_null(remake_make(m, "all"))
   expect_null(remake_make(m, "all"))
 })
-
-test_that("Extensions", {
-  expect_identical(file_extensions(), tolower(file_extensions()))
-})

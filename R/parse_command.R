@@ -2,7 +2,7 @@
 ## that we have to run:
 ##
 ## TODO: Need some tests here, throughout
-process_target_command <- function(name, dat) {
+process_target_command <- function(name, dat, file_extensions) {
   core <- c("command", "rule", "args", "depends", "is_target")
 
   ## Quick check that may disappear later:
@@ -37,7 +37,7 @@ process_target_command <- function(name, dat) {
     dat[rewrite] <- cmd[rewrite]
   }
 
-  type <- target_infer_type(name, dat)
+  type <- target_infer_type(name, dat, file_extensions)
 
   is_command <- names(dat) %in% core
   list(command=dat[is_command], opts=dat[!is_command], type=type)
@@ -48,7 +48,7 @@ process_target_command <- function(name, dat) {
 ##  - use the target name, *in quotes*
 ##  - use the special name target_name, *no quotes*.  This then
 ##    becomes a restricted name in target_reserved_names.
-parse_target_command <- function(target_name, command) {
+parse_target_command <- function(target_name, command, file_extensions) {
   if (is.character(command) && length(command) > 1L) {
     ## TODO: this might be better off being assert_scalar_character?
     stop("commands must be scalar")
@@ -184,10 +184,10 @@ is_target_like <- function(x) {
 }
 
 
-target_infer_type <- function(name, dat) {
+target_infer_type <- function(name, dat, file_extensions) {
   type <- dat$type
   if (is.null(type)) {
-    type <- if (target_is_file(name)) "file" else  "object"
+    type <- if (target_is_file(name, file_extensions)) "file" else  "object"
     if ("knitr" %in% names(dat)) {
       type <- "knitr"
     } else if ("download" %in% names(dat)) {
@@ -203,11 +203,14 @@ target_infer_type <- function(name, dat) {
   type
 }
 
-target_is_file <- function(x) {
+target_is_file <- function(x, file_extensions) {
   is_file <- grepl("/", x, fixed=TRUE)
   check <- !is_file
   if (any(check)) {
-    is_file[check] <- tolower(file_extension(x[check])) %in% file_extensions()
+    if (is.null(file_extensions)) {
+      file_extensions <- file_extensions()
+    }
+    is_file[check] <- tolower(file_extension(x[check])) %in% file_extensions
   }
   is_file
 }

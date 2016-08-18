@@ -215,3 +215,11 @@ test_that("file target must make files", {
   expect_error(remake::make(remake_file="remake_file_missing.yml"),
                "command for plot2.png did not create file")
 })
+
+test_that("custom extensions", {
+  file_remove("data.phy")
+  file_remove("plot.pdf")
+  res <- make("all", remake_file="remake_extension.yml")
+  expect_true(file.exists("data.phy"))
+  expect_true(file.exists("plot.pdf"))
+})

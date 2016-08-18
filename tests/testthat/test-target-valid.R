@@ -438,3 +438,17 @@ test_that("Targets from calls", {
   t2 <- make_target("a", list(command=quote(foo(b))))
   expect_identical(t1, t2)
 })
+
+test_that("Extensions", {
+  expect_identical(file_extensions(), tolower(file_extensions()))
+})
+
+## NOTE: here, file_extensions is either NULL or a _complete_ list;
+## this differs from the logic used in the yml as this is processed a
+## little.
+test_that("custom file extensions", {
+  expect_is(make_target("a.phy", list(command="foo()")),
+            "target_object")
+  expect_is(make_target("a.phy", list(command="foo()"), file_extensions="phy"),
+            "target_file")
+})

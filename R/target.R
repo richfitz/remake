@@ -1,6 +1,6 @@
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
-make_target <- function(name, dat, extra=NULL) {
+make_target <- function(name, dat, extra=NULL, file_extensions=NULL) {
   assert_scalar_character(name)
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
@@ -9,7 +9,7 @@ make_target <- function(name, dat, extra=NULL) {
   ## This is just a wrapper function to improve the traceback on error.
   make_target_dat <- function(dat) {
     assert_named_list(dat, name="target data")
-    dat <- process_target_command(name, dat)
+    dat <- process_target_command(name, dat, file_extensions)
     generators <- list(object=target_new_object,
                        file=target_new_file,
                        plot=target_new_plot,

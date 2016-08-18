@@ -84,7 +84,7 @@ read_remake_file <- function(filename, seen=character(0)) {
   warn_unknown(filename, dat,
                c("packages", "sources", "include",
                  "plot_options", "knitr_options",
-                 "target_default", "targets"))
+                 "file_extensions", "target_default", "targets"))
 
   dat$hash <- hash_files(filename, named=TRUE)
 
@@ -108,6 +108,14 @@ read_remake_file <- function(filename, seen=character(0)) {
       assert_named_list(dat$knitr_options[[i]],
                         name=paste("knitr_options: ", i))
     }
+  }
+
+  if (is.null(dat$file_extensions) || length(dat$file_extensions) == 0L) {
+    dat$file_extensions <- NULL
+  } else {
+    assert_character(dat$file_extensions)
+    dat$file_extensions <- union(file_extensions(),
+                                 sub("^\\.", "", dat$file_extensions))
   }
 
   if (!is.null(dat$include)) {
@@ -168,7 +176,8 @@ read_remake_file <- function(filename, seen=character(0)) {
   if (length(seen) == 0L) { # main file only
     extra <- list(plot_options=dat$plot_options,
                   knitr_options=dat$knitr_options)
-    dat$targets <- lnapply(dat$targets, make_target, extra=extra)
+    dat$targets <- lnapply(dat$targets, make_target, extra=extra,
+                           file_extensions=dat$file_extensions)
   }
 
   dat

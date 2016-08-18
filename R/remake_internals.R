@@ -137,7 +137,7 @@
   deps_uniq <- unique(unlist(unname(deps)))
   deps_msg <- setdiff(deps_uniq, names(obj_targets))
   if (length(deps_msg) > 0L) {
-    err <- !target_is_file(deps_msg)
+    err <- !target_is_file(deps_msg, obj$file_extensions)
     if (any(err)) {
       err_names <- deps_msg[err]
       err_used <- remake_who_refers_to(obj, err_names)
