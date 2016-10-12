@@ -6,11 +6,14 @@ matrix:
     - os: linux
       dist: precise
       sudo: false
-      env: R_CODECOV=true
+      env:
+        - R_CODECOV=true
+        - MAKEFLAGS="-j 2"
       addons:
         apt:
           packages:
             - libv8-dev
+            - libssh2-1-dev
     - os: osx
       osx_image: xcode7.2
       latex: false
