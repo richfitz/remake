@@ -1,32 +1,31 @@
-language: c
+language: r
+cache: packages
 
-sudo: required
+matrix:
+  include:
+    - os: linux
+      dist: precise
+      sudo: false
+      env: R_CODECOV=true
+      addons:
+        apt:
+          packages:
+            - libv8-dev
+    - os: osx
+      osx_image: xcode7.2
+      latex: false
 
-env:
-  - global:
-      - WARNINGS_ARE_ERRORS=1
-      - REMAKE_TEST_INSTALL_PACKAGES=true
+r_github_packages:
+  - richfitz/storr
+  - jimhester/covr
 
-before_install:
-  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-  - chmod 755 ./travis-tool.sh
-  - ./travis-tool.sh bootstrap
-
-install:
-  - ./travis-tool.sh install_aptget libv8-dev
-  - ./travis-tool.sh install_deps
-  - ./travis-tool.sh github_package richfitz/storr
-  - ./travis-tool.sh github_package jimhester/covr
-
-script: ./travis-tool.sh run_tests
-
-after_success:
-  - Rscript -e 'library(covr); coveralls()'
-
-after_failure:
-  - ./travis-tool.sh dump_logs
+warnings_are_errors: true
+#r_check_revdep: true
 
 notifications:
   email:
     on_success: change
     on_failure: change
+
+after_success:
+  - if [[ "${R_CODECOV}" ]]; then R -e 'covr::codecov()'; fi
