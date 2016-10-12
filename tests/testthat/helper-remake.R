@@ -32,12 +32,6 @@ cleanup <- function() {
   invisible(NULL)
 }
 
-set_cran_mirror <- function() {
-  if (is.null(getOption("repos"))) {
-    options(repos="http://cran.rstudio.com")
-  }
-}
-
 skip_unless_set <- function(name) {
   if (identical(Sys.getenv(name), "true")) {
     return()
