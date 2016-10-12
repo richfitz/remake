@@ -26,6 +26,6 @@ test_that("download", {
                  "proceeding with existing file")
 
   remake_remove_target(obj, "mtcars.R")
-  expect_error(remake_make(obj),
+  expect_error(expect_warning(remake_make(obj)),
                "Downloading mtcars.R failed")
 })
