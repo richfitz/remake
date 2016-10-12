@@ -4,8 +4,8 @@ test_that("code_dependencies skips active bindings", {
   lava <- function(...) stop("I am lava, don't touch", call.=FALSE)
   makeActiveBinding("foo", lava, .GlobalEnv)
   on.exit(rm(list="foo", envir=.GlobalEnv))
-  expect_that(foo, throws_error("I am lava"))
-  expect_that(foo <<- 1, throws_error("I am lava"))
+  expect_error(foo, "I am lava", label="query foo")
+  expect_error(foo <<- 1, "I am lava", label="assign to foo")
   e <- new.env(parent=.GlobalEnv)
   e$f <- function(foo) foo + 1
   environment(e$f) <- e
