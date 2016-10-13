@@ -1,3 +1,6 @@
+cache:
+  - C:\RLibrary
+
 init:
   ps: |
         $ErrorActionPreference = "Stop"
