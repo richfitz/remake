@@ -6,3 +6,5 @@ tests/testthat/.remake
 ^docker$
 ^TODO\.md$
 ^remake_.*\.tar\.gz$
+^.*\.Rproj$
+^\.Rproj\.user$
