@@ -29,3 +29,7 @@ myplot <- function(dat) {
 clean_hook <- function() {
   message("running post-cleanup hook")
 }
+
+generate_function <- function() {
+  function(a, b = "wow") NULL
+}
