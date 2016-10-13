@@ -36,8 +36,7 @@ code_dependencies <- function(f, hide_error=TRUE) {
         }
       }
     } else { # keep going
-      walk(e[[1L]]) # not sure if this is needed...
-      for (a in as.list(e[-1L])) {
+      for (a in as.list(e)) {
         if (!missing(a)) {
           walk(a)
         }
