@@ -25,7 +25,7 @@ test_that("insert_at", {
 })
 
 test_that("zip_dir", {
-  dir.create("test")
+  dir.create("test", showWarnings = FALSE)
   file.copy(c("code.R", "remake.yml"), "test")
 
   dest <- zip_dir("test")
