@@ -12,7 +12,7 @@ test_that("Build works", {
 
   ## Sourcing the script will run run various "source" commands which
   ## will modify the global environment.  That's not really ideal.
-  extras <- c("do_plot", "clean_hook", "download_data", "myplot",
+  extras <- c("do_plot", "clean_hook", "download_data", "generate_function", "myplot",
               "process_data")
   rm_all_remake_objects <- function() {
     suppressWarnings(rm(list=c("processed", extras), envir=.GlobalEnv))

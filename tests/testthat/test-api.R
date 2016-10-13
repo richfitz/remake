@@ -186,7 +186,7 @@ test_that("make_environment", {
   cleanup()
   e <- make_environment()
   expect_equal(ls(e),
-               c("clean_hook", "do_plot", "download_data",
+               c("clean_hook", "do_plot", "download_data", "generate_function",
                  "myplot", "process_data"))
   ## TODO: Throw a better error:
   expect_error(make_environment("processed"),
