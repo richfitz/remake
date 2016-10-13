@@ -28,6 +28,8 @@ test_that("zip_dir", {
   dir.create("test", showWarnings = FALSE)
   file.copy(c("code.R", "remake.yml"), "test")
 
+  skip_unless_has_zip()
+
   dest <- zip_dir("test")
   expect_equal(dest, "test.zip")
   expect_true(file.exists("test.zip"))
@@ -60,7 +62,7 @@ test_that("git_exists", {
   expect_equal(git_ignores("foo"), FALSE)
 })
 
-test_that("file_exists", {
+test_that("file_exists() and file_real_case()", {
   expect_true(file.exists("test-target.R"))
   ## This will be true on Mac and Windows; Linux and unixes will not
   ## see the file.
@@ -75,6 +77,7 @@ test_that("file_exists", {
                         tolower(substr(files, len, len)))
   files_upper <- paste0(substr(files, 1, len - 1),
                         toupper(substr(files, len, len)))
+
   ## Case munging sees them all:
   expect_equal(file.exists(files_lower),
                is_case_insensitive() | files == files_lower)
@@ -83,6 +86,25 @@ test_that("file_exists", {
 
   expect_equal(file_exists(files_lower), files == files_lower)
   expect_equal(file_exists(files_upper), files == files_upper)
+
+  expect_equal(file_real_case(files), files)
+
+  skip_if_case_sensitive()
+  skip_on_os("windows") # https://bugs.r-project.org/bugzilla3/show_bug.cgi?id=17165
+  if (is_case_insensitive()) {
+    expect_equal(file_real_case(files_upper), files)
+    expect_equal(file_real_case(files_lower), files)
+  }
+})
+
+test_that("file_exists() and file_real_case() with fakes", {
+  files <- dir(".", recursive=TRUE)
+  ## There's a nicer way of doing this with sub I think.
+  len <- nchar(files)
+  files_lower <- paste0(substr(files, 1, len - 1),
+                        tolower(substr(files, len, len)))
+  files_upper <- paste0(substr(files, 1, len - 1),
+                        toupper(substr(files, len, len)))
 
   ## Mix in some nonexistant things:
   fake <- c("test/fake.r", "fakedir/fake.r", "fake.r")
@@ -96,16 +118,11 @@ test_that("file_exists", {
   expect_equal(file_exists(files2_lower), exists & files2 == files2_lower)
   expect_equal(file_exists(files2_upper), exists & files2 == files2_upper)
 
-  expect_equal(file_real_case(files), files)
-  if (is_case_insensitive()) {
-    expect_equal(file_real_case(files_upper), files)
-    expect_equal(file_real_case(files_lower), files)
-  }
-
   files2_real <- ifelse(exists, files2, NA_character_)
   expect_equal(file_real_case(files2), files2_real)
-  if (is_case_insensitive()) {
-    expect_equal(file_real_case(files2_upper), files2_real)
-    expect_equal(file_real_case(files2_lower), files2_real)
-  }
+
+  skip_if_case_sensitive()
+  skip_on_os("windows") # https://bugs.r-project.org/bugzilla3/show_bug.cgi?id=17165
+  expect_equal(file_real_case(files2_upper), files2_real)
+  expect_equal(file_real_case(files2_lower), files2_real)
 })
