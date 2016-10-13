@@ -5,11 +5,11 @@ Authors@R: "Rich FitzJohn <rich.fitzjohn@gmail.com> [aut, cre]"
 Description: Make-like build management in R.  The idea is to have
     some sort of declarative programming to build analysis pipelines,
     without having to use/install make.
-Depends:
+Depends: 
     R (>= 3.0.0)
 License: BSD_2_clause + file LICENSE
 LazyData: true
-Imports:
+Imports: 
     R6 (>= 2.0.0),
     codetools,
     crayon,
@@ -17,9 +17,9 @@ Imports:
     optparse,
     storr (>= 0.5.0),
     yaml
-Suggests:
+Suggests: 
     DiagrammeR,
     devtools,
     knitr,
     testthat
-RoxygenNote: 5.0.1
+RoxygenNote: 5.0.1.9000
