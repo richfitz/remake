@@ -78,6 +78,7 @@ print_libpaths <- function(msg) {
 }
 
 has_internet <- function() {
+  if (!exists("nsl", getNamespace("utils"))) return(FALSE)
   !is.null(suppressWarnings(nsl("www.google.com")))
 }
 
