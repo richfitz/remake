@@ -6,16 +6,14 @@ test_that("file store", {
   path <- tempdir()
   file <- file.path(path, "test.txt")
   writeLines(letters, file)
-  expect_that(st$exists(file), is_true())
+  expect_true(st$exists(file))
 
   h <- st$get_hash(file)
-  expect_that(h, equals(unname(tools::md5sum(file))))
+  expect_equal(h, unname(tools::md5sum(file)))
 
-  expect_that(st$get_hash("not/in/store"),
-              throws_error("not found in file store"))
-  expect_that(st$exists("not/in/store"),
-              is_false())
+  expect_error(st$get_hash("not/in/store"), "not found in file store")
+  expect_false(st$exists("not/in/store"))
 
   st$del(file)
-  expect_that(st$exists(file), is_false())
+  expect_false(st$exists(file))
 })

@@ -33,8 +33,7 @@ remake_diagram_command <- function(obj) {
   ## Do this with list_targets:
   keep <- remake_list_targets(obj, type=NULL,
                               include_implicit_files=TRUE,
-                              include_cleanup_targets=FALSE,
-                              include_chain_intermediates=TRUE)
+                              include_cleanup_targets=FALSE)
 
   types <- vcapply(obj$targets[keep], "[[", "type")
   g <- g[keep]

@@ -1,6 +1,6 @@
 ## TODO: Elsewhere run a tryCatch over this to uniformly add the
 ## target name to the error.
-make_target <- function(name, dat, extra=NULL) {
+make_target <- function(name, dat, extra=NULL, file_extensions=NULL) {
   assert_scalar_character(name)
   if (name %in% target_reserved_names()) {
     stop(sprintf("Target name %s is reserved", name))
@@ -9,7 +9,7 @@ make_target <- function(name, dat, extra=NULL) {
   ## This is just a wrapper function to improve the traceback on error.
   make_target_dat <- function(dat) {
     assert_named_list(dat, name="target data")
-    dat <- process_target_command(name, dat)
+    dat <- process_target_command(name, dat, file_extensions)
     generators <- list(object=target_new_object,
                        file=target_new_file,
                        plot=target_new_plot,
@@ -68,12 +68,6 @@ target_new_base <- function(name, command, opts, extra=NULL,
   if ("packages" %in% names(opts)) {
     ret$packages <- opts$packages
     assert_character(opts$packages)
-  }
-
-  if ("chain" %in% names(command)) {
-    chain <- target_chain(command$chain, ret, opts)
-    ret <- chain$parent
-    ret$chain_kids <- chain$kids
   }
 
   class(ret) <- "target_base"
@@ -400,56 +394,6 @@ target_reserved_names <- function() {
   c("target_name", ".")
 }
 
-## TODO: There is an issue here for getting options for rules that
-## terminate in knitr or plot rules: we can't pass along options to
-## these!
-##
-##   Always accept quiet, check, packages (base)
-##     cleanup_level (file and object)
-##   never plot, knitr, auto_figure_prefix
-##
-## Special testing will be required to get that right.  Basically only
-## the terminating bit of rule here will accept nonstandard options.
-target_chain <- function(chain, parent, opts) {
-  if (!(parent$type %in% c("file", "object"))) {
-    stop("Can't use chained rules on targets of type ", parent)
-  }
-  len <- length(chain)
-  chain_names <- chained_rule_name(parent$name, seq_len(len))
-  parent <- target_chain_match_dot(parent, len + 1L, chain_names)
-
-  ## TODO: Duplication of object valid options here.
-  opts_chain <- opts[names(opts) %in%
-                     c("quiet", "check", "packages", "cleanup_level")]
-  f <- function(i) {
-    x <- target_new_object(chain_names[[i]], chain[[i]], opts_chain)
-    x$chain_parent <- parent
-    target_chain_match_dot(x, i, chain_names)
-  }
-
-  kids <- lapply(seq_len(len), f)
-  list(parent=parent, kids=kids)
-}
-
-target_chain_match_dot <- function(target, pos, chain_names) {
-  j <- which(as.character(target$depends_name) == ".")
-  if (length(j) == 1L) {
-    if (j > length(chain_names)) {
-      stop("Attempt to select impossible chain element") # defensive only
-    }
-    dot_name <- chain_names[[pos - 1L]]
-    target$depends_name[[j]] <- dot_name
-    target$command[[j + 1L]] <- as.name(dot_name)
-  } else { # defensive - should be safe here.
-    if (length(j) > 1L) {
-      stop("never ok")
-    } else if (pos > 1L) {
-      stop("missing")
-    }
-  }
-  target
-}
-
 make_target_cleanup <- function(name, remake) {
   levels <- cleanup_target_names()
   name <- match_value(name, levels)
@@ -459,9 +403,6 @@ make_target_cleanup <- function(name, remake) {
     t <- remake$targets[[name]]
 
     ## These aren't tested:
-    if (!is.null(t$chain_kids)) {
-      stop("Cleanup target cannot contain a chain")
-    }
     if (length(t$command) > 1L) {
       stop("Cleanup target commands must have no arguments")
     }
@@ -483,10 +424,6 @@ make_target_cleanup <- function(name, remake) {
   ret$targets_to_remove <-
     setdiff(names(remake$targets)[target_level == name], levels)
   ret
-}
-
-chained_rule_name <- function(name, i) {
-  sprintf("%s{%d}", name, i)
 }
 
 check_levels <- function() {
@@ -580,7 +517,7 @@ target_run_fake <- function(target, for_script=FALSE) {
                      target$knitr$input, target$name)
     } else if (inherits(target, "target_download")) {
       ## This is a lie:
-      res <- sprintf('downloader::download("%s", "%s")',
+      res <- sprintf('download.file("%s", "%s")',
                      target$download, target$name)
     } else if (target$type == "object") {
       ## This is a trick to ensure correct printing of the LHS of the
@@ -640,7 +577,10 @@ target_run <- function(target, store, quiet=NULL) {
     return(download_from_remake_target(target, store, quiet))
   }
 
-  if (inherits(target, "target_plot")) {
+  is_plot <- inherits(target, "target_plot")
+  is_file <- target$type == "file"
+
+  if (is_plot) {
     open_device(target$name, target$plot$device, target$plot$args,
                 store$env$env)
     on.exit(dev.off())
@@ -673,8 +613,11 @@ target_run <- function(target, store, quiet=NULL) {
     withCallingHandlers(
       eval(target$command, envir),
       message=function(e) if (quiet) invokeRestart("muffleMessage"))
-  if (inherits(target, "target_plot") && inherits(ret, "ggplot")) {
+  if (is_plot && inherits(ret, "ggplot")) {
     print(ret)
+  }
+  if (is_file && !is_plot && !file.exists(target$name)) {
+    stop(sprintf("command for %s did not create file", target$name))
   }
   ret
 }
@@ -688,8 +631,7 @@ target_environment <- function(target, store) {
 
 filter_targets <- function(targets, type=NULL,
                            include_implicit_files=FALSE,
-                           include_cleanup_targets=FALSE,
-                           include_chain_intermediates=FALSE) {
+                           include_cleanup_targets=FALSE) {
   ok <- rep_along(TRUE, targets)
 
   if (!is.null(type)) {
@@ -704,9 +646,6 @@ filter_targets <- function(targets, type=NULL,
       warning("cleanup type listed in type, but also ignored")
     }
     ok[names(targets) %in% cleanup_target_names()] <- FALSE
-  }
-  if (!include_chain_intermediates) {
-    ok[!vlapply(targets, function(x) is.null(x$chain_parent))] <- FALSE
   }
 
   names(targets[ok])

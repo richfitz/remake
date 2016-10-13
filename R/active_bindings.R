@@ -88,8 +88,7 @@ binding_manager <- R6Class(
 
     set_bindings=function(type, obj) {
       if (type == "target") {
-        names <- remake_list_targets(obj, "object",
-                                     include_chain_intermediates=FALSE)
+        names <- remake_list_targets(obj, "object")
       } else if (type == "source") {
         .remake_initialize_packages(obj)
         names <- ls(obj$store$env$env, all.names=TRUE)

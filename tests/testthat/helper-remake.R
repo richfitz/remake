@@ -12,6 +12,8 @@ cleanup <- function() {
                                  "code2.R", "remake_error.yml",
                                  "plot1.pdf", "plot2.pdf",
                                  "plot3.pdf", "plot4.pdf",
+                                 "plot_manual.png",
+                                 "plot_auto.png",
                                  "knitr.md", "knitr_rename.md",
                                  "knitr.tex",
                                  "knitr_file_dep.md",
@@ -28,12 +30,6 @@ cleanup <- function() {
   remake:::cache$clear()
   remake:::global_active_bindings$clear()
   invisible(NULL)
-}
-
-set_cran_mirror <- function() {
-  if (is.null(getOption("repos"))) {
-    options(repos="http://cran.rstudio.com")
-  }
 }
 
 skip_unless_set <- function(name) {
@@ -78,4 +74,11 @@ print_libpaths <- function(msg) {
 
 has_internet <- function() {
   !is.null(suppressWarnings(nsl("www.google.com")))
+}
+
+capture_messages <- function(expr) {
+  res <- character(0)
+  withCallingHandlers(expr,
+                      message=function(e) res <<- c(res, e$message))
+  res
 }

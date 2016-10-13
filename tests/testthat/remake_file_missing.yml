@@ -1,0 +1,12 @@
+target_default: plot2.png
+
+targets:
+  x:
+    command: runif(10)
+  y:
+    command: runif(10)
+  plot1.png:
+    command: plot(x, y)
+    plot: true
+  plot2.png:
+    command: plot(x, y)

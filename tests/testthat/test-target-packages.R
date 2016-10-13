@@ -1,25 +1,25 @@
 context("Target packages")
 
 test_that("bootstrap", {
-  expect_that(exists("install_github"), is_false())
-  expect_that("devtools" %in% .packages(), is_false())
+  expect_false(exists("install_github"))
+  expect_false("devtools" %in% .packages())
 })
 
 test_that("target with no extra packages", {
   cleanup()
   m <- remake("remake_target_packages.yml")
   t <- m$targets[["will_not_load"]]
-  expect_that(t$packages, is_null())
+  expect_null(t$packages)
   x <- remake_make(m, "will_not_load")
-  expect_that(x, is_false())
+  expect_false(x)
 })
 
 test_that("target that loads extra package", {
   cleanup()
   m <- remake("remake_target_packages.yml")
   t <- m$targets[["will_load"]]
-  expect_that(t$packages, equals("devtools"))
+  expect_equal(t$packages, "devtools")
   x <- remake_make(m, "will_load")
-  expect_that(x, is_true())
-  expect_that("devtools" %in% .packages(), is_false())
+  expect_true(x)
+  expect_false("devtools" %in% .packages())
 })

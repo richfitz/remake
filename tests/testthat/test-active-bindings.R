@@ -4,8 +4,8 @@ test_that("code_dependencies skips active bindings", {
   lava <- function(...) stop("I am lava, don't touch", call.=FALSE)
   makeActiveBinding("foo", lava, .GlobalEnv)
   on.exit(rm(list="foo", envir=.GlobalEnv))
-  expect_that(foo, throws_error("I am lava"))
-  expect_that(foo <<- 1, throws_error("I am lava"))
+  expect_error(foo, "I am lava", label="query foo")
+  expect_error(foo <<- 1, "I am lava", label="assign to foo")
   e <- new.env(parent=.GlobalEnv)
   e$f <- function(foo) foo + 1
   environment(e$f) <- e
@@ -41,8 +41,7 @@ test_that("global binding manager", {
   expect_that(global_active_bindings$type, equals(character(0)))
   expect_that(global_active_bindings$file, equals(character(0)))
 
-  expect_that(global_active_bindings$clear(),
-              not(throws_error()))
+  expect_error(global_active_bindings$clear(), NA)
 })
 
 test_that("low level", {
@@ -79,7 +78,7 @@ test_that("low level", {
               shows_message("BUILD"))
 
   expect_that(d, is_a("data.frame"))
-  expect_that(d <- processed, not(shows_message()))
+  expect_message(d <- processed, NA)
   expect_that(d, is_a("data.frame"))
 
   expect_that(processed <<- 1, throws_error("read-only"))
@@ -106,7 +105,7 @@ test_that("High level", {
               shows_message("BUILD"))
 
   expect_that(d, is_a("data.frame"))
-  expect_that(d <- processed, not(shows_message()))
+  expect_message(d <- processed, NA)
   expect_that(d, is_a("data.frame"))
 
   expect_that(processed <<- 1, throws_error("read-only"))
@@ -126,16 +125,16 @@ test_that("Source changes trigger rebuild on variable access", {
   expect_that(exists("obj", .GlobalEnv), is_true())
   expect_that(is_active_binding("obj"), is_true())
 
-  expect_that(x <- obj, shows_message("[ BUILD ] obj"))
-  expect_that(x <- obj, not(shows_message()))
+  expect_that(x <- obj, shows_message("\\[.+BUILD.+\\] obj"))
+  expect_message(x <- obj, NA)
 
   code <- paste0(code, " * 2")
   writeLines(code, filename_code)
   expect_that(x <- obj, shows_message("loading sources"))
-  expect_that(x <- obj, not(shows_message()))
+  expect_message(x <- obj, NA)
 
   code <- paste0(code, " * 2")
   writeLines(code, filename_code)
-  expect_that(x <- obj, shows_message("[ BUILD ] obj"))
-  expect_that(x <- obj, not(shows_message()))
+  expect_that(x <- obj, shows_message("\\[.+BUILD.+\\] obj"))
+  expect_message(x <- obj, NA)
 })

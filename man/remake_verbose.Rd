@@ -7,7 +7,8 @@
 remake_verbose(verbose = getOption("remake.verbose", TRUE),
   noop = getOption("remake.verbose.noop", TRUE),
   command = getOption("remake.verbose.command", TRUE),
-  command_abbreviate = TRUE, target = NULL)
+  command_abbreviate = getOption("remake.verbose.command.abbreviate", TRUE),
+  target = NULL)
 }
 \arguments{
 \item{verbose}{Print progress at each step that remake does

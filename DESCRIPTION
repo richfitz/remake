@@ -1,6 +1,6 @@
 Package: remake
 Title: Make-like build management
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: "Rich FitzJohn <rich.fitzjohn@gmail.com> [aut, cre]"
 Description: Make-like build management in R.  The idea is to have
     some sort of declarative programming to build analysis pipelines,
@@ -11,15 +11,15 @@ License: BSD_2_clause + file LICENSE
 LazyData: true
 Imports:
     R6 (>= 2.0.0),
-    digest,
-    yaml,
     codetools,
     crayon,
+    digest,
     optparse,
-    storr (>= 0.5.0)
+    storr (>= 0.5.0),
+    yaml
 Suggests:
-    testthat,
     DiagrammeR,
+    devtools,
     knitr,
-    downloader,
-    devtools
+    testthat
+RoxygenNote: 5.0.1

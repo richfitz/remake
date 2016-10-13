@@ -5,6 +5,7 @@
 ## Main functionality:
 ######################################################################
 
+##' Run remake to build one or more targets.
 ##' @title Make one or more targets
 ##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
@@ -32,6 +33,7 @@ make <- function(target_names=NULL, ...,
   remake_make(obj, target_names)
 }
 
+##' Create a simple standalone script from a remake file.
 ##' @title Write standalone script to make targets
 ##' @param target_names Character vector of names of targets to build,
 ##' or \code{NULL} to build the default target (if specified in the
@@ -110,9 +112,6 @@ install_missing_packages <- function(remake_file="remake.yml",
 ##' \code{"remake.yml"}.
 ##' @export
 create_bindings <- function(remake_file="remake.yml") {
-  ## TODO: Perhaps filter through to export only some names?
-  ## Definitely filter through and do not export chain targets!
-  ##
   ## TODO: Are these really the best names?  They're explicit, but
   ## they're not very pleasant.
   ##
@@ -264,10 +263,23 @@ install_remake <- function(destination_directory, overwrite=FALSE) {
   Sys.chmod(file, "0755")
 }
 
-##' Returns the vector of known file extensions.  If a target ends in
-##' one of these, then it will be considered a file, rather than an
-##' object.  In a future version, it might be possible to configure
-##' additional extensions: please let me know if that would be useful.
+##' Returns the vector of \emph{default} file extensions.  If a target
+##' ends in one of these, then it will be considered a file, rather
+##' than an object.
+##'
+##' To include \emph{additional} file extensions, include them in the
+##' yaml like (at the top level):
+##'
+##' \preformatted{
+##' file_extensions: ["phy", "tre"]
+##' }
+##'
+##' Any number of extensions can be listed.  Don't use a leading
+##' period (it will be dropped).  The union of file extensions listed
+##' here and in \code{file_extensions()} will be used, so if you
+##' accidently include a default extension (or if one is included in a
+##' future remake version) it is no problem.
+##'
 ##' @title Vector of file extensions
 ##' @export
 file_extensions <- function() {
@@ -353,22 +365,17 @@ source_character <- function(str, envir=.GlobalEnv, rewrite_source=TRUE) {
 ##' implicit targets should be included.
 ##' @param include_cleanup_targets Logical scalar indicating if cleanup
 ##' targets (which are automatically generated) should be included.
-##' @param include_chain_intermediates Logical scalar indicating if
-##' chain intermediates (automatically generated with mangled names)
-##' should be included.
 ##' @return A character vector containing names of targets.
 ##' @export
 list_targets <- function(remake_file="remake.yml",
                          type=NULL,
                          include_implicit_files=FALSE,
-                         include_cleanup_targets=FALSE,
-                         include_chain_intermediates=FALSE) {
+                         include_cleanup_targets=FALSE) {
   obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
   remake_list_targets(obj,
                       type,
                       include_implicit_files,
-                      include_cleanup_targets,
-                      include_chain_intermediates)
+                      include_cleanup_targets)
 }
 ##' @rdname list_targets
 ##' @param target_names Names of targets to list dependencies of (for
@@ -381,14 +388,12 @@ list_dependencies <- function(target_names,
                               type=NULL,
                               include_implicit_files=FALSE,
                               include_cleanup_targets=FALSE,
-                              include_chain_intermediates=FALSE,
                               remake_file="remake.yml") {
   obj <- remake(remake_file, verbose=FALSE, load_sources=FALSE)
   remake_list_dependencies(obj, target_names,
                            type,
                            include_implicit_files,
-                           include_cleanup_targets,
-                           include_chain_intermediates)
+                           include_cleanup_targets)
 }
 
 ##' Determine if one or more targets are "current" or not.  A target
@@ -597,7 +602,7 @@ delete <- function(target_names, dependencies=FALSE,
                                              type=c("file", "object"))
   }
   for (t in target_names) {
-    remake_remove_target(obj, t, chain=TRUE)
+    remake_remove_target(obj, t)
   }
 }
 

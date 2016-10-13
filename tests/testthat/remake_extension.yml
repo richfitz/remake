@@ -1,0 +1,19 @@
+## Custom file extensions:
+file_extensions: ["phy", "tre"]
+
+sources:
+  - code.R
+
+targets:
+  all:
+    depends: plot.pdf
+
+  data.phy:
+    command: download_data(target_name)
+
+  processed:
+    command: process_data("data.phy")
+
+  plot.pdf:
+    command: myplot(processed)
+    plot: true

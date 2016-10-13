@@ -6,12 +6,10 @@
 \title{List targets}
 \usage{
 list_targets(remake_file = "remake.yml", type = NULL,
-  include_implicit_files = FALSE, include_cleanup_targets = FALSE,
-  include_chain_intermediates = FALSE)
+  include_implicit_files = FALSE, include_cleanup_targets = FALSE)
 
 list_dependencies(target_names, type = NULL, include_implicit_files = FALSE,
-  include_cleanup_targets = FALSE, include_chain_intermediates = FALSE,
-  remake_file = "remake.yml")
+  include_cleanup_targets = FALSE, remake_file = "remake.yml")
 }
 \arguments{
 \item{remake_file}{Name of the remakefile to read (by default
@@ -27,10 +25,6 @@ implicit targets should be included.}
 
 \item{include_cleanup_targets}{Logical scalar indicating if cleanup
 targets (which are automatically generated) should be included.}
-
-\item{include_chain_intermediates}{Logical scalar indicating if
-chain intermediates (automatically generated with mangled names)
-should be included.}
 
 \item{target_names}{Names of targets to list dependencies of (for
 \code{list_dependencies}).  These dependencies will be filtered as

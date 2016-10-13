@@ -188,7 +188,7 @@ path_split <- function(x) {
 
 file_copy <- function(from, to, ..., warn=TRUE) {
   assert_scalar_character(from)
-  ok <- file.exists(from) && file.copy(from, to)
+  ok <- file.exists(from) && file.copy(from, to, TRUE)
   if (warn && any(!ok)) {
     warning("Failed to copy file: ", paste(from[!ok], collapse=", "))
   }
@@ -358,12 +358,11 @@ browse_environment <- function(e, ...) {
   f(e)
 }
 
-##' @importFrom crayon make_style
 paint <- function(str, col) {
   if (is.null(col)) {
     str
   } else {
-    make_style(col)(str)
+    crayon::make_style(col)(str)
   }
 }
 

@@ -8,19 +8,18 @@ test_that("Check mocking works", {
 
   ## Things are as they should be:
   m$store$env$env$download_data_works("data.csv")
-  expect_that(file.exists("data.csv"), is_true())
-  expect_that(file.info("data.csv")$size, is_more_than(0))
+  expect_true(file.exists("data.csv"))
+  expect_gt(file.info("data.csv")$size, 0)
 
   ## No entry in the database:
-  expect_that(m$store$db$exists("data.csv"),
-              is_false())
+  expect_false(m$store$db$exists("data.csv"))
 
   ## Manually run the broken case:
-  expect_that(m$store$env$env$download_data("data.csv"),
-              throws_error("There was an error downloading data!"))
-  expect_that(file.exists("data.csv"), is_true())
+  expect_error(m$store$env$env$download_data("data.csv"),
+               "There was an error downloading data!")
+  expect_true(file.exists("data.csv"))
   ## Oh noes! the file has been truncated!
-  expect_that(file.info("data.csv")$size, equals(0))
+  expect_equal(file.info("data.csv")$size, 0)
   cleanup()
 })
 
@@ -30,22 +29,21 @@ test_that("Errored builds restore files", {
   m$store$env$env$download_data_works("data.csv")
   hash <- tools::md5sum("data.csv")
 
-  expect_that(remake_make(m, "data.csv"),
-              throws_error("There was an error downloading data!"))
-  expect_that(try(remake_make(m, "data.csv"), silent=TRUE),
-              shows_message("Restoring previous version of data.csv"))
+  expect_error(remake_make(m, "data.csv"),
+               "There was an error downloading data!")
+  expect_message(try(remake_make(m, "data.csv"), silent=TRUE),
+                 "Restoring previous version of data.csv")
   ## Original unchanged:
-  expect_that(tools::md5sum("data.csv"), equals(hash))
+  expect_equal(tools::md5sum("data.csv"), hash)
 
   ## Still no entry in the database:
-  expect_that(m$store$db$exists("data.csv"),
-              is_false())
+  expect_false(m$store$db$exists("data.csv"))
 
   .GlobalEnv$.run_download_data_works <- TRUE
   on.exit(rm(.run_download_data_works, envir=.GlobalEnv))
 
   remake_make(m, "data.csv")
-  expect_that(file.exists("data.csv"), is_true())
+  expect_true(file.exists("data.csv"))
 
-  expect_that(m$store$db$exists("data.csv"), is_true())
+  expect_true(m$store$db$exists("data.csv"))
 })

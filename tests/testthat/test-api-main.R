@@ -3,50 +3,47 @@ context("API: Main script")
 test_that("Default arguments", {
   ## Defaults:
   opts <- remake_main_parse_args(character(0))
-  expect_that(opts$options$remake_file, equals("remake.yml"))
-  expect_that(opts$options$quiet, equals(FALSE))
-  expect_that(opts$options$list_targets, equals(FALSE))
-  expect_that(opts$options$script, equals(FALSE))
-  expect_that(opts$options$script_file, equals(NULL))
-  expect_that(opts$options$version, equals(FALSE))
-  expect_that(opts$options$help, equals(FALSE))
-  expect_that(opts$options$install_missing_packages, equals(FALSE))
-  expect_that(opts$args, equals(character(0)))
+  expect_equal(opts$options$remake_file, "remake.yml")
+  expect_equal(opts$options$quiet, FALSE)
+  expect_equal(opts$options$list_targets, FALSE)
+  expect_equal(opts$options$script, FALSE)
+  expect_equal(opts$options$script_file, NULL)
+  expect_equal(opts$options$version, FALSE)
+  expect_equal(opts$options$help, FALSE)
+  expect_equal(opts$options$install_missing_packages, FALSE)
+  expect_equal(opts$args, character(0))
 
   ## No unknown options:
   known_opts <- c("help", "list_targets", "quiet", "remake_file",
                   "script", "version", "install_missing_packages")
-  expect_that(sort(names(opts$options)),
-              equals(sort(known_opts)))
+  expect_equal(sort(names(opts$options)), sort(known_opts))
 })
 
 test_that("Misspelt arguments", {
-  expect_that(remake_main_parse_args("--quit"),
-              throws_error('Invalid targets: "--quit"'))
-  expect_that(remake_main_parse_args(c("--foo", "--bar", "baz")),
-              throws_error('Invalid targets: "--foo", "--bar"'))
+  expect_error(remake_main_parse_args("--quit"),
+               'Invalid targets: "--quit"')
+  expect_error(remake_main_parse_args(c("--foo", "--bar", "baz")),
+               'Invalid targets: "--foo", "--bar"')
 })
 
 test_that("Version", {
-  expect_that(main("--version"),
-              shows_message(paste0("remake version ",
-                                   packageVersion("remake"))))
+  expect_message(main("--version"),
+                 paste0("remake version ", packageVersion("remake")))
 })
 
 test_that("List targets", {
   cmp <- list_targets()
-  expect_that(main("--list-targets"),
-              shows_message(paste(cmp, collapse="\n")))
+  expect_message(main("--list-targets"),
+                 paste(cmp, collapse="\n"))
 })
 
 test_that("Plain", {
   cleanup()
-  expect_that(file.exists("plot.pdf"), is_false())
-  expect_that(main(character(0)),
-              shows_message("[ ----- ] all", fixed=TRUE))
-  expect_that(file.exists("plot.pdf"), is_true())
+  expect_false(file.exists("plot.pdf"))
+  expect_message(main(character(0)), "] all", fixed=TRUE)
+  expect_true(file.exists("plot.pdf"))
   ## Quiet:
-  expect_that(main("-q"), not(shows_message()))
+  expect_silent(main("-q"))
 })
 
 test_that("Multiple targets", {
@@ -63,43 +60,39 @@ test_that("Multiple targets", {
     "[ BUILD ] processed",
     "<  MAKE > data.csv",
     "[    OK ] data.csv")
-  expect_that(length(dat$messages), equals(length(expected)))
-  expect_that(substr(dat$messages, 1, nchar(expected)),
-              equals(expected))
+  expect_equal(length(dat$messages), length(expected))
+  expect_equal(substr(dat$messages, 1, nchar(expected)), expected)
 })
 
 test_that("Different remake file", {
-  cmp <- list_targets("chain.yml")
-  expect_that(main(c("--list-targets", "-f", "chain.yml")),
-              shows_message(paste(cmp, collapse="\n")))
+  cmp <- list_targets("modular.yml")
+  expect_message(main(c("--list-targets", "-f", "modular.yml")),
+                 paste(cmp, collapse="\n"))
   ## This style of option parsing does not work:
-  ## expect_that(main(c("--list-targets", "-fchain.yml")),
-  ##             shows_message(paste(cmp, collapse="\n")))
-  expect_that(main(c("--list-targets", "--file=chain.yml")),
-              shows_message(paste(cmp, collapse="\n")))
-  expect_that(main(c("--list-targets", "--file", "chain.yml")),
-              shows_message(paste(cmp, collapse="\n")))
+  ## expect_message(main(c("--list-targets", "-fmodular.yml")),
+  ##                paste(cmp, collapse="\n"))
+  expect_message(main(c("--list-targets", "--file=modular.yml")),
+                 paste(cmp, collapse="\n"))
+  expect_message(main(c("--list-targets", "--file", "modular.yml")),
+                 paste(cmp, collapse="\n"))
 })
 
 test_that("Script", {
   cleanup()
-  expect_that(main(c("-s")),
-              shows_message("LOAD"))
+  expect_message(capture.output(main(c("-s"))), "LOAD")
   ## With quiet:
-  expect_that(main(c("-s", "-q")),
-              not(shows_message("READ")))
-  expect_that(capture.output(main(c("-s", "-q"))),
-              equals(make_script()))
+  expect_message(capture.output(main(c("-s", "-q"))), NA)
+  expect_equal(capture.output(main(c("-s", "-q"))), make_script())
   tmp <- tempfile()
   main(c("-s", "-q", "--script-file", tmp))
-  expect_that(readLines(tmp), equals(make_script()))
+  expect_equal(readLines(tmp), make_script())
 })
 
 test_that("Installation", {
   cleanup()
-  expect_that(file.exists("remake"), is_false())
+  expect_false(file.exists("remake"))
   install_remake(".")
-  expect_that(file.exists("remake"), is_true())
+  expect_true(file.exists("remake"))
 
   ## TODO: I don't know why this is not working; it works fine
   ## interactively.  It looks like when running non-interactively
@@ -111,20 +104,16 @@ test_that("Installation", {
   ##
   ## str <- system2("./remake", stdout=TRUE, stderr=TRUE)
   ## if (interactive()) {
-  ##   expect_that(any(grepl("[ BUILD ] plot.pdf", str, fixed=TRUE)),
-  ##               is_true())
+  ##   expect_true(any(grepl("[ BUILD ] plot.pdf", str, fixed=TRUE)))
   ## }
 
-  expect_that(install_remake("."), throws_error("already exists"))
-  expect_that(install_remake(".", TRUE),
-              not(throws_error()))
+  expect_error(install_remake("."), "already exists")
+  expect_error(install_remake(".", TRUE), NA)
 
   ## Using internal access:
-  expect_that("remake:::main()" %in% readLines("remake"),
-              is_true())
+  expect_true("remake:::main()" %in% readLines("remake"))
   ## Working around methods:
-  expect_that("library(methods)" %in% readLines("remake"),
-              is_true())
+  expect_true("library(methods)" %in% readLines("remake"))
 })
 
 ## TODO: Test --install-missing-targets:
