@@ -43,8 +43,16 @@ skip_unless_internet <- function() {
   skip_if_not(has_internet())
 }
 
+skip_if_case_sensitive <- function() {
+  skip_if_not(is_case_insensitive())
+}
+
 skip_unless_travis <- function() {
   skip_unless_set("TRAVIS")
+}
+
+skip_unless_has_zip <- function() {
+  skip_if_not(has_zip())
 }
 
 with_options <- function(new, code) {
