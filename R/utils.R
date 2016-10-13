@@ -330,14 +330,15 @@ git_ignores <- function(files) {
     on.exit(file_remove(tmp))
     writeLines(files, tmp)
 
-    recover_git <- function(e) {
-      warning(e)
-      character(0)
+    ignored <- suppressWarnings(system2("git", c("check-ignore", "--stdin"),
+                                        stdin=tmp, stdout=TRUE, stderr=FALSE))
+    status <- attr(ignored, "status")
+    if (!is.null(status) && status > 1) {
+      warning("git check-ignore exited with error ", status, call. = FALSE)
+      rep_along(FALSE, files)
+    } else {
+      files %in% ignored
     }
-    ignored <- tryCatch(system2("git", c("check-ignore", "--stdin"),
-                                stdin=tmp, stdout=TRUE, stderr=FALSE),
-                        condition=recover_git)
-    files %in% ignored
   }
 }
 

@@ -454,10 +454,8 @@ auto_gitignore <- function(remake_file="remake.yml", check_git=TRUE,
                            dry_run=FALSE) {
   files <- c(".remake", list_targets(remake_file, type="file"))
   if (check_git && git_exists()) {
-    ignored <- try(git_ignores(files))
-    if (!inherits(ignored, "try-error")) {
-      files <- files[!ignored]
-    }
+    ignored <- git_ignores(files)
+    files <- files[!ignored]
   } else if (file.exists(".gitignore")) {
     curr <- readLines(".gitignore")
     files <- setdiff(files, strip_whitespace(curr))
