@@ -40,10 +40,7 @@ skip_unless_set <- function(name) {
 }
 
 skip_unless_internet <- function() {
-  if (has_internet()) {
-    return()
-  }
-  skip("No internet :(")
+  skip_if_not(has_internet())
 }
 
 skip_unless_travis <- function() {
