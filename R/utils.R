@@ -197,7 +197,7 @@ file_copy <- function(from, to, ..., warn=TRUE) {
 
 require_zip <- function() {
   if (!has_zip()) {
-    stop("This function needs a zip program on the path.", call. = FALSE)
+    stop("This function needs a zip program on the path.", call.=FALSE)
   }
 }
 

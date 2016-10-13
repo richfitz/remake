@@ -25,7 +25,7 @@ test_that("insert_at", {
 })
 
 test_that("zip_dir", {
-  dir.create("test", showWarnings = FALSE)
+  dir.create("test", showWarnings=FALSE)
   file.copy(c("code.R", "remake.yml"), "test")
 
   skip_unless_has_zip()
