@@ -155,7 +155,7 @@ test_that("auto_gitignore", {
   ignores_pdf <- function(file) grepl("[.]pdf$", file)
   ignores_all <- function(file) rep_along(TRUE, file)
 
-  with_mock("remake::git_ignores"=ignores_pdf, {
+  with_mock("remake::git_ignores"=ignores_pdf, "remake::git_exists"=function() TRUE, {
     file_remove(".gitignore")
     expect_equal(auto_gitignore(dry_run=TRUE),
                  c(".remake", "data.csv"))
@@ -180,7 +180,7 @@ test_that("auto_gitignore", {
     expect_identical(readLines(".gitignore"), str)
   })
 
-  with_mock("remake::git_ignores"=ignores_all, {
+  with_mock("remake::git_ignores"=ignores_all, "remake::git_exists"=function() TRUE, {
     expect_equal(auto_gitignore(), character(0))
     expect_identical(readLines(".gitignore"), str)
   })
