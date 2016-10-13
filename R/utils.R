@@ -195,12 +195,25 @@ file_copy <- function(from, to, ..., warn=TRUE) {
   invisible(ok)
 }
 
+require_zip <- function() {
+  if (!has_zip()) {
+    stop("This function needs a zip program on the path.", call. = FALSE)
+  }
+}
+
+has_zip <- function() {
+  zip_default <- eval(formals(zip)$zip)
+  "" != unname(Sys.which(zip_default))
+}
+
 ## This zips up the directory at `path` into basename(path).zip.
 ## Because of the limitations of `zip()`, we do need to change working
 ## directories temporarily.
 ## TODO: Is this generally useful?
 zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
                     overwrite=TRUE) {
+  require_zip()
+
   assert_directory(path)
   at <- dirname(path)
   base <- basename(path)
