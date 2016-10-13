@@ -415,7 +415,7 @@ test_that("get/set/archive file targets", {
   res <- st_db$get(t$name)
   expect_equal(res[names(res) != "time"],
                dep[names(dep) != "time"])
-  expect_gt(as.numeric(dep$time), as.numeric(res$time))
+  expect_gte(as.numeric(dep$time), as.numeric(res$time))
   file_remove(path, recursive=TRUE)
 
   remake_remove_target(m, "plot.pdf")
