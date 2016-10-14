@@ -1,3 +1,5 @@
+#' @importFrom utils packageName packageVersion browseURL download.file install.packages unzip zip
+#' @importFrom grDevices col2rgb dev.cur dev.off rgb
 remake <- function(remake_file="remake.yml", verbose=TRUE,
                    allow_cache=TRUE, load_sources=TRUE,
                    allow_missing_packages=FALSE) {
