@@ -6,7 +6,9 @@
 ## }
 ## 2. Encode the filename in the argument:
 download_data <- function(dest) {
-  write.csv(mtcars, dest)
+  f <- file(dest, "wb")
+  on.exit(close(f))
+  write.csv(mtcars, f)
 }
 
 process_data <- function(filename) {

@@ -148,36 +148,42 @@ test_that("auto_gitignore", {
   ## gitignore is set and ignores anything here (which is moderately
   ## unlikely).  In any case, these tests are horribly fragile :(
   has_git <- git_exists()
-  ignore_remake <- git_ignores(".remake")
-  x <- if (ignore_remake) character(0) else ".remake"
 
   tmp <- backup(".gitignore")
   on.exit(restore(".gitignore", tmp))
 
-  file_remove(".gitignore")
-  expect_equal(auto_gitignore(dry_run=TRUE),
-               c(x, "data.csv", "plot.pdf"))
+  ignores_pdf <- function(file) grepl("[.]pdf$", file)
+  ignores_all <- function(file) rep_along(TRUE, file)
 
-  writeLines("plot.pdf", ".gitignore")
-  expect_equal(auto_gitignore(dry_run=TRUE),
-               c(x, "data.csv"))
-  expect_equal(suppressWarnings(auto_gitignore("remake2.yml", dry_run=TRUE)),
-               c(x, character(0)))
-  expect_equal(auto_gitignore(dry_run=TRUE, check_git=FALSE),
-               c(".remake", "data.csv"))
+  with_mock("remake::git_ignores"=ignores_pdf, "remake::git_exists"=function() TRUE, {
+    file_remove(".gitignore")
+    expect_equal(auto_gitignore(dry_run=TRUE),
+                 c(".remake", "data.csv"))
 
-  ## Glob:
-  writeLines("*.pdf", ".gitignore")
-  expect_equal(auto_gitignore(dry_run=TRUE),
-               c(x, "data.csv", if (!has_git) "plot.pdf"))
-  expect_equal(auto_gitignore(check_git=FALSE, dry_run=TRUE),
-               c(".remake", "data.csv", "plot.pdf"))
+    writeLines("plot.pdf", ".gitignore")
+    expect_equal(auto_gitignore(dry_run=TRUE),
+                 c(".remake", "data.csv"))
+    expect_equal(suppressWarnings(auto_gitignore("remake2.yml", dry_run=TRUE)),
+                 c(".remake"))
+    expect_equal(auto_gitignore(dry_run=TRUE, check_git=FALSE),
+                 c(".remake", "data.csv"))
 
-  file_remove(".gitignore")
-  str <- auto_gitignore()
-  expect_identical(readLines(".gitignore"), str)
-  expect_equal(auto_gitignore(), character(0))
-  expect_identical(readLines(".gitignore"), str)
+    ## Glob:
+    writeLines("*.pdf", ".gitignore")
+    expect_equal(auto_gitignore(dry_run=TRUE),
+                 c(".remake", "data.csv"))
+    expect_equal(auto_gitignore(check_git=FALSE, dry_run=TRUE),
+                 c(".remake", "data.csv", "plot.pdf"))
+
+    file_remove(".gitignore")
+    str <- auto_gitignore()
+    expect_identical(readLines(".gitignore"), str)
+  })
+
+  with_mock("remake::git_ignores"=ignores_all, "remake::git_exists"=function() TRUE, {
+    expect_equal(auto_gitignore(), character(0))
+    expect_identical(readLines(".gitignore"), str)
+  })
 })
 
 ## This one is pretty well tested via remake_environment so probably

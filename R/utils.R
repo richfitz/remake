@@ -195,12 +195,25 @@ file_copy <- function(from, to, ..., warn=TRUE) {
   invisible(ok)
 }
 
+require_zip <- function() {
+  if (!has_zip()) {
+    stop("This function needs a zip program on the path.", call.=FALSE)
+  }
+}
+
+has_zip <- function() {
+  zip_default <- eval(formals(zip)$zip)
+  "" != unname(Sys.which(zip_default))
+}
+
 ## This zips up the directory at `path` into basename(path).zip.
 ## Because of the limitations of `zip()`, we do need to change working
 ## directories temporarily.
 ## TODO: Is this generally useful?
 zip_dir <- function(path, zipfile=NULL, ..., flags="-r9X", quiet=TRUE,
                     overwrite=TRUE) {
+  require_zip()
+
   assert_directory(path)
   at <- dirname(path)
   base <- basename(path)
@@ -317,14 +330,15 @@ git_ignores <- function(files) {
     on.exit(file_remove(tmp))
     writeLines(files, tmp)
 
-    recover_git <- function(e) {
-      warning(e)
-      character(0)
+    ignored <- suppressWarnings(system2("git", c("check-ignore", "--stdin"),
+                                        stdin=tmp, stdout=TRUE, stderr=FALSE))
+    status <- attr(ignored, "status")
+    if (!is.null(status) && status > 1) {
+      warning("git check-ignore exited with error ", status, call. = FALSE)
+      rep_along(FALSE, files)
+    } else {
+      files %in% ignored
     }
-    ignored <- tryCatch(system2("git", c("check-ignore", "--stdin"),
-                                stdin=tmp, stdout=TRUE, stderr=FALSE),
-                        condition=recover_git)
-    files %in% ignored
   }
 }
 

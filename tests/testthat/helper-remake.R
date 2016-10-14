@@ -40,14 +40,19 @@ skip_unless_set <- function(name) {
 }
 
 skip_unless_internet <- function() {
-  if (has_internet()) {
-    return()
-  }
-  skip("No internet :(")
+  skip_if_not(has_internet())
+}
+
+skip_if_case_sensitive <- function() {
+  skip_if_not(is_case_insensitive())
 }
 
 skip_unless_travis <- function() {
   skip_unless_set("TRAVIS")
+}
+
+skip_unless_has_zip <- function() {
+  skip_if_not(has_zip())
 }
 
 with_options <- function(new, code) {
@@ -73,6 +78,7 @@ print_libpaths <- function(msg) {
 }
 
 has_internet <- function() {
+  if (!exists("nsl", getNamespace("utils"))) return(FALSE)
   !is.null(suppressWarnings(nsl("www.google.com")))
 }
 
