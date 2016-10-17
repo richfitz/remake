@@ -1,0 +1,14 @@
+sources:
+  - code.R
+
+packages:
+  - testthat
+
+target_default: data
+
+targets:
+  data.csv:
+    command: download_data(target_name)
+
+  data:
+    command: utils::read.csv("data.csv", row.names = 1)
