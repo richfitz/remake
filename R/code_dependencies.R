@@ -1,65 +1,55 @@
-## TODO: According to JJ, there is support for doing this sort of
-## thing in a DTL package - possibly called 'codedeps'.  Probably
-## worth finding out how that works and seeing if I can make this
-## faster and more reliable.
-code_dependencies <- function(f, hide_errors=TRUE) {
+code_dependencies <- function(f, hide_error=TRUE) {
   env <- environment(f)
-  ## Exclude these:
+  ## Exclude these as they shadow variables:
   args <- names(formals(f))
 
-  leaf <- function(e, w) {
-    if (!is.symbol(e)) { # A literal of some type
-      return()
-    }
-    e_name <- deparse(e)
-
-    ## Shadowed by argument:
-    ## TODO: Nested function definitions will not work correctly
-    ## here; we'd need to switch the "active" function.  Getting this
-    ## wrong is most likely to cause false positives.
-    if (e_name %in% args) {
-      return()
-    }
-
-    ## TODO: Things like get() will totally confuse this.
-    if (!exists(e_name, env, inherits=FALSE) &&
-        ((!exists(e_name, env)       || # local variable, probably
-          is_active_binding(e_name)))) {  # using remake active bindings
-      return()
-    }
-    r <- try(eval(e, env), silent=hide_errors)
-    if (!is.null(r) && is.function(r) && !is.primitive(r)) {
-      if (identical(environment(r), env)) {
-        if (!identical(r, f)) {
-          ## TODO: Why not e_name here?
-          ret$functions <<- c(ret$functions, as.character(e))
-        }
-      } else {
-        r_env <- environment(r)
-        if (is.environment(r_env)) {
-          ret$packages <<- c(ret$packages, packageName(r_env))
-        }
-      }
-    }
-  }
-  call <- function (e, w) {
-    codetools::walkCode(e[[1]], w)
-    for (a in as.list(e[-1])) {
-      if (!missing(a)) {
-        codetools::walkCode(a, w)
-      }
-    }
-  }
+  ## This is what we build up:
   ret <- list(functions=character(0),
               packages=character(0))
-  walker <- codetools::makeCodeWalker(call=call, leaf=leaf, write=cat)
-  codetools::walkCode(body(f), walker)
+
+  walk <- function(e) {
+    if (!is.recursive(e)) { # leaf
+      if (!is.symbol(e)) { # A literal of some type
+        return()
+      }
+      e_name <- deparse(e)
+      ## Shadowed by argument:
+      if (e_name %in% args) {
+        return()
+      }
+      ## Can't find this function in scope; possibly global...
+      if (!exists(e_name, env)) {
+        return()
+      }
+      r <- get(e_name, env)
+      if (is.function(r) && !is.primitive(r)) {
+        if (identical(environment(r), env)) {
+          if (!identical(r, f)) {
+            ret$functions <<- c(ret$functions, e_name)
+          }
+        } else {
+          ## TODO: for issue #85 descend into some packages here.
+          r_env <- environment(r)
+          if (is.environment(r_env)) {
+            ret$packages <<- c(ret$packages, packageName(r_env))
+          }
+        }
+      }
+    } else { # keep going
+      for (a in as.list(e)) {
+        if (!missing(a)) {
+          walk(a)
+        }
+      }
+    }
+  }
+
+  walk(body(f))
   lapply(ret, unique)
 }
 
-## TODO: this looks overly complicated?
 functions_in_environment <- function(env) {
-  pos <- ls(env)
+  pos <- ls(env, all.names=TRUE)
   keep_if_fn <- function(x) {
     if (is.function(x)) x else NULL
   }
@@ -68,8 +58,6 @@ functions_in_environment <- function(env) {
   obj[!vlapply(obj, is.null)]
 }
 
-## TODO: This can be replaced with the free function $info(rule) I
-## believe.
 code_deps <- function(env) {
   fns <- functions_in_environment(env)
   deps <- lapply(fns, code_dependencies)
@@ -82,6 +70,11 @@ code_deps <- function(env) {
     } else {
       fns <- character(0)
     }
+    ## NOTE: This is largely future (and past) proofing in case I
+    ## depend on package information or something else in the future
+    ## (and to keep current caches current).  See
+    ## compare_dependency_status for the only place where the list
+    ## matters here.
     list(functions=function_hashes[fns])
   }
 }
