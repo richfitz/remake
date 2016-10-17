@@ -223,3 +223,8 @@ test_that("custom extensions", {
   expect_true(file.exists("data.phy"))
   expect_true(file.exists("plot.pdf"))
 })
+
+test_that("scoped rules", {
+  res <- remake::make(remake_file = "remake_scoped.yml")
+  expect_equal(res, mtcars)
+})

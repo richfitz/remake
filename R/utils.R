@@ -432,3 +432,7 @@ mix_cols <- function(cols, col2, p) {
   m3 <- (m * p + m2 * (1-p))/255
   rgb(m3[1, ], m3[2, ], m3[3, ])
 }
+
+is_call <- function(expr, symbol) {
+  is.recursive(expr) && identical(expr[[1L]], symbol)
+}

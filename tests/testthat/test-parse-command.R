@@ -199,3 +199,10 @@ test_that("Literal arguments", {
   expect_identical(parse_command("foo(target_arg, 1.0)")$args[[2]], 1.0)
   expect_identical(parse_command("foo(target_arg, 1i)")$args[[2]], 1i)
 })
+
+test_that("scoped commands", {
+  obj <- parse_command("foo::bar(baz)")
+  expect_equal(obj$rule, "foo::bar")
+  expect_equal(obj$command, quote(foo::bar(baz)))
+  expect_equal(obj$depends, "baz")
+})

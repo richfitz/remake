@@ -156,6 +156,8 @@ check_command <- function(str) {
 check_command_rule <- function(x) {
   if (is.name(x)) {
     x <- as.character(x)
+  } else if (is_call(x, quote(`::`))) {
+    x <- deparse(x)
   } else if (!is.character(x)) {
     stop("Rule must be a character or name")
   }
