@@ -69,3 +69,14 @@ test_that("caching file store", {
   expect_equal(st$db$get(filename)$size, 999)
   expect_equal(st$db$get(filename)$mtime, file.mtime(filename))
 })
+
+test_that("store persists across remake invokations", {
+  cleanup()
+  make()
+  obj <- remake()
+  expect_true(obj$store$files$db$exists("data.csv"))
+  make("clean")
+  expect_true(obj$store$files$db$exists("data.csv"))
+  make("purge")
+  expect_true(obj$store$files$db$exists("data.csv"))
+})
