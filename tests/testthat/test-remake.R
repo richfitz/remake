@@ -223,3 +223,21 @@ test_that("custom extensions", {
   expect_true(file.exists("data.phy"))
   expect_true(file.exists("plot.pdf"))
 })
+
+test_that("Return values for multiple targets", {
+  cleanup()
+  ret_data <- make("data.csv")
+  ret_processed <- make("processed")
+
+  cleanup()
+  ret <- make(c("processed", "data.csv"))
+  expect_equal(ret, ret_data)
+  ret <- make(c("processed", "data.csv"))
+  expect_equal(ret, ret_data)
+
+  cleanup()
+  ret <- make(c("data.csv", "processed"))
+  expect_equal(ret, ret_processed)
+  ret <- make(c("data.csv", "processed"))
+  expect_equal(ret, ret_processed)
+})

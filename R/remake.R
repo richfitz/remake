@@ -247,9 +247,10 @@ remake_update <- function(obj, target_name, check=NULL,
     remake_print_message(obj, status, target_name, cmd, style)
   }
 
+  ret <- NULL
   if (target$type == "fake") {
     ## Just weed these out for now
-  } else if (!current && target$type != "fake") {
+  } else if (!current) {
     ## We'll load packages here because we might actually build
     ## something -- this can take a while on some projects (e.g.,
     ## richfitz/modeladequacy).
@@ -272,9 +273,15 @@ remake_update <- function(obj, target_name, check=NULL,
       ret <- target_build(target, obj$store, obj$verbose$quiet_target)
     }
     unload_extra_packages(extra)
-    invisible(ret)
   } else if (return_target) {
-    invisible(target_get(target, obj$store))
+    ret <- target_get(target, obj$store)
+  }
+
+  # Return only if asked
+  if (return_target) {
+    invisible(ret)
+  } else {
+    invisible(NULL)
   }
 }
 
@@ -315,18 +322,17 @@ remake_make <- function(obj, target_names=NULL, ...) {
   for (t in target_names) {
     remake_print_message(obj, "MAKE", t, style="angle")
   }
-  last <- remake_make1(obj, target_names, ...)
-  invisible(last)
+  remake_make1(obj, target_names, ...)
 }
 
 remake_make1 <- function(obj, target_name, check=NULL) {
   last_target_name <- utils::tail(target_name, 1L)
   plan <- remake_plan(obj, target_name)
-  for (i in plan) {
+  ret <- lapply(plan, function(i) {
     is_last <- i == last_target_name
     last <- remake_update(obj, i, check=check, return_target=is_last)
-  }
-  invisible(last)
+  })
+  invisible(ret[plan == last_target_name][[1L]])
 }
 
 remake_list_targets <- function(obj, type=NULL,
