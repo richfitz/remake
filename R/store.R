@@ -21,6 +21,11 @@
 file_store <- R6Class(
   "file_store",
   public=list(
+    db = NULL,
+    initialize = function() {
+      self$db <- storr::storr_environment()
+    },
+
     exists=function(filename) {
       file.exists(filename)
     },
@@ -36,7 +41,31 @@ file_store <- R6Class(
 
     get_hash=function(filename) {
       if (self$exists(filename)) {
-        hash_files(filename, named=FALSE)
+        ## The approach here is to try and compute the hash of a file
+        ## only once per session (if the file appears not to have
+        ## changed).
+        ##
+        ## Every time that the hash is computed we save into an
+        ## emphemeral (environment) storr the hash, mtime and size of
+        ## the file.
+        ##
+        ## On subsequent hash requests if mtime and size are the same,
+        ## then we will assume that the file is not changed and return
+        ## the previously computed hash.
+        ##
+        ## Extending this to store the information persistently (e.g.,
+        ## in the main storr, or in another alongside the existing
+        ## one) would not be a great problem.
+        info <- file_info(filename)
+        if (self$db$exists(filename)) {
+          dat <- self$db$get(filename)
+          if (identical(info, dat[names(info)])) {
+            return(dat$hash)
+          }
+        }
+        info$hash <- hash_files(filename, named = FALSE)
+        self$db$set(filename, info)
+        info$hash
       } else {
         stop(sprintf("file %s not found in file store", filename))
       }
@@ -64,7 +93,12 @@ file_store <- R6Class(
       dir.create(path_out, showWarnings=FALSE, recursive=TRUE)
       file_copy(file_in, path_out)
     }
-    ))
+  ))
+
+file_info <- function(filename) {
+  info <- file.info(filename, extra_cols = FALSE)
+  list(mtime = info$mtime, size = info$size)
+}
 
 ##' @importFrom R6 R6Class
 store <- R6Class(
