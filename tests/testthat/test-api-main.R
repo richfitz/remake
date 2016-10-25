@@ -55,11 +55,10 @@ test_that("Multiple targets", {
     "[  LOAD ]",
     "[  READ ]", # sources
     "<  MAKE > processed",
+    "<  MAKE > data.csv",
     "[ BUILD ] data.csv",
     "[  READ ]", # packages
-    "[ BUILD ] processed",
-    "<  MAKE > data.csv",
-    "[    OK ] data.csv")
+    "[ BUILD ] processed")
   expect_equal(length(dat$messages), length(expected))
   expect_equal(substr(dat$messages, 1, nchar(expected)), expected)
 })

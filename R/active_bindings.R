@@ -7,7 +7,10 @@ binding_types <- function() {
 ## `remake_make1()`) or something from the managed environment (a
 ## simple `get()`).
 make_active_binding_function <- function(obj, name, type) {
-  filename <- obj$file
+  file_path <- normalizePath(obj$file)
+  dir_path <- dirname(file_path)
+  file_name <- basename(file_path)
+
   force(name)
   if (!(type %in% binding_types())) {
     stop("Unknown binding type ", type)
@@ -16,7 +19,9 @@ make_active_binding_function <- function(obj, name, type) {
     if (missing(value)) {
       ## TODO: Possibly fetch from cache here?  I'm mildly concerned
       ## about an infinite loop.
-      obj <- remake(filename) # TODO: add `verbose=FALSE`
+      old_wd <- setwd(dir_path)
+      on.exit(setwd(old_wd), add = TRUE)
+      obj <- remake(file_name) # TODO: add `verbose=FALSE`
       if (type == "target") {
         if (isFALSE(obj$config$active)) {
           ret <- list(name=name)
