@@ -282,3 +282,31 @@ test_that("dump_environment", {
                                 remake_file="remake_missing_package.yml"),
                NA)
 })
+
+test_that("remake_verbose - defaults", {
+  v <- remake_verbose()
+  expect_is(v, "remake_verbose")
+  expect_true(v$print_progress)
+  expect_true(v$print_noop)
+  expect_true(v$print_command)
+  expect_true(v$print_command_abbreviate)
+  expect_null(v$quiet_target)
+})
+
+test_that("remake_verbose - options", {
+  with_options(list(remake.verbose = FALSE),
+               expect_false(remake_verbose()$print_progress))
+  with_options(list(remake.verbose.noop = FALSE),
+               expect_false(remake_verbose()$print_noop))
+  with_options(list(remake.verbose.command = FALSE),
+               expect_false(remake_verbose()$print_command))
+  with_options(list(remake.verbose.command_abbreviate = FALSE),
+               expect_false(remake_verbose()$print_command_abbreviate))
+})
+
+test_that("target verbose setting works", {
+  expect_false(remake_verbose(target = TRUE)$quiet_target)
+  expect_true(remake_verbose(target = FALSE)$quiet_target)
+  expect_error(remake_verbose(target = 1)$quiet_target,
+               "target must be logical")
+})

@@ -4,31 +4,34 @@
 \alias{remake_verbose}
 \title{Control remake verbosity}
 \usage{
-remake_verbose(verbose = getOption("remake.verbose", TRUE),
-  noop = getOption("remake.verbose.noop", TRUE),
-  command = getOption("remake.verbose.command", TRUE),
-  command_abbreviate = getOption("remake.verbose.command.abbreviate", TRUE),
-  target = NULL)
+remake_verbose(verbose = NULL, noop = NULL, command = NULL,
+  command_abbreviate = NULL, target = NULL)
 }
 \arguments{
 \item{verbose}{Print progress at each step that remake does
-something.}
+something.  By default this is \code{TRUE}.}
 
 \item{noop}{Print progress for steps that are non-operations, such
 as targets that need nothing done to them.  Setting this to
-\code{FALSE} is useful for very large projects.}
+\code{FALSE} is useful for very large projects.  By default this
+is \code{TRUE}.}
 
 \item{command}{Print the command along with the progress
 information?  This is only printed when remake actually runs
-something.}
+something.  By default this is \code{TRUE}.}
 
 \item{command_abbreviate}{Abbreviate the command information so
 that it fits on one line.  If \code{FALSE} then the command will
-be allowed to run on for as many lines as required.}
+be allowed to run on for as many lines as required.  By default
+this is \code{TRUE} (sometimes there are very long commands).}
 
-\item{target}{Print information that the target produces (via
-\code{message}, \code{cat} or \code{print}).  If \code{FALSE} then
-these messages will be suppressed.}
+\item{target}{Print information that the target produces (which
+may be produced by \code{message}, \code{cat} or \code{print}).
+Valid options here are \code{NULL} (the default) which will
+print target output if it is produced, unless overridden by a
+\code{quiet: true} tag in the yaml.  Setting \code{target =
+FALSE} suppresses all target output and setting \code{target =
+TRUE} allows all target output even when suppressed in the yaml.}
 }
 \description{
 Helper function to set options for verbosity.
@@ -40,5 +43,10 @@ so the value of \code{noop}, \code{command} and
 \code{command_abbreviate} does not matter.  Similarly, setting
 \code{command=FALSE} means that \code{command_abbreviate} does not
 matter.
+
+The first four arguments can be set globally via \code{options} by
+setting options \code{remake.verbose}, \code{remake.verbose.noop},
+\code{remake.verbose.command}, and
+\code{remake.verbose.command_abbreviate}).
 }
 
