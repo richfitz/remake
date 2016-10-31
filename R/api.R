@@ -157,10 +157,10 @@ diagram <- function(..., remake_file="remake.yml") {
 ##' Helper function to set options for verbosity.
 ##'
 ##' The first four options have a natural nesting: setting
-##' \code{progress=FALSE} prevents printing any progress information,
+##' \code{verbose = FALSE} prevents printing any progress information,
 ##' so the value of \code{noop}, \code{command} and
 ##' \code{command_abbreviate} does not matter.  Similarly, setting
-##' \code{command=FALSE} means that \code{command_abbreviate} does not
+##' \code{command = FALSE} means that \code{command_abbreviate} does not
 ##' matter.
 ##'
 ##' The first four arguments can be set globally via \code{options} by
@@ -195,9 +195,15 @@ diagram <- function(..., remake_file="remake.yml") {
 ##'   FALSE} suppresses all target output and setting \code{target =
 ##'   TRUE} allows all target output even when suppressed in the yaml.
 ##'
+##' @param timing Print timing information - after every target, this
+##'   will print the number of seconds taken to process the target,
+##'   along with the current time.  This may be useful for debugging
+##'   slow builds.
+##'
 ##' @export
 remake_verbose <- function(verbose = NULL, noop = NULL, command = NULL,
-                           command_abbreviate = NULL, target = NULL) {
+                           command_abbreviate = NULL, target = NULL,
+                           timing = FALSE) {
   if (inherits(verbose, "remake_verbose")) {
     verbose
   } else {
@@ -212,6 +218,7 @@ remake_verbose <- function(verbose = NULL, noop = NULL, command = NULL,
     assert_scalar_logical(noop)
     assert_scalar_logical(command)
     assert_scalar_logical(command_abbreviate)
+    assert_scalar_logical(timing)
     if (is.null(target)) {
       quiet_target <- NULL
     } else {
@@ -222,7 +229,8 @@ remake_verbose <- function(verbose = NULL, noop = NULL, command = NULL,
                    print_noop = noop,
                    print_command = command,
                    print_command_abbreviate = command_abbreviate,
-                   quiet_target = quiet_target),
+                   quiet_target = quiet_target,
+                   timing = timing),
               class = "remake_verbose")
   }
 }

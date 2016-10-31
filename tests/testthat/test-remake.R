@@ -241,3 +241,22 @@ test_that("Return values for multiple targets", {
   ret <- make(c("data.csv", "processed"))
   expect_equal(ret, ret_processed)
 })
+
+test_that("timing", {
+  cleanup()
+  dat <- evaluate_promise(make(verbose = remake_verbose(timing = TRUE)))
+  type <- substr(dat$messages, 3, 7)
+  cmp <- c(" LOAD", " READ", " MAKE", "BUILD", " READ", " TIME", "BUILD",
+           " TIME", "BUILD", " TIME", "-----", " TIME")
+  expect_equal(type, cmp)
+
+  re <-
+    "^\\|  TIME \\| data\\.csv\\s+\\|\\s+[0-9.]+ \\([0-9]{4}-[0-9]{2}-[0-9]{2}"
+  expect_match(dat$messages[[6]], re)
+
+  ## No timing information:
+  cleanup()
+  dat <- evaluate_promise(make(verbose = remake_verbose(timing = FALSE)))
+  type <- substr(dat$messages, 3, 7)
+  expect_equal(type, cmp[cmp != " TIME"])
+})

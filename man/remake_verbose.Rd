@@ -5,7 +5,7 @@
 \title{Control remake verbosity}
 \usage{
 remake_verbose(verbose = NULL, noop = NULL, command = NULL,
-  command_abbreviate = NULL, target = NULL)
+  command_abbreviate = NULL, target = NULL, timing = FALSE)
 }
 \arguments{
 \item{verbose}{Print progress at each step that remake does
@@ -32,16 +32,21 @@ print target output if it is produced, unless overridden by a
 \code{quiet: true} tag in the yaml.  Setting \code{target =
 FALSE} suppresses all target output and setting \code{target =
 TRUE} allows all target output even when suppressed in the yaml.}
+
+\item{timing}{Print timing information - after every target, this
+will print the number of seconds taken to process the target,
+along with the current time.  This may be useful for debugging
+slow builds.}
 }
 \description{
 Helper function to set options for verbosity.
 }
 \details{
 The first four options have a natural nesting: setting
-\code{progress=FALSE} prevents printing any progress information,
+\code{verbose = FALSE} prevents printing any progress information,
 so the value of \code{noop}, \code{command} and
 \code{command_abbreviate} does not matter.  Similarly, setting
-\code{command=FALSE} means that \code{command_abbreviate} does not
+\code{command = FALSE} means that \code{command_abbreviate} does not
 matter.
 
 The first four arguments can be set globally via \code{options} by

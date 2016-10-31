@@ -8,3 +8,4 @@ tests/testthat/.remake
 ^remake_.*\.tar\.gz$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^notes\.md$

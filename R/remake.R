@@ -239,6 +239,11 @@ remake_update <- function(obj, target_name, check=NULL,
                           return_target=TRUE) {
   target <- obj$targets[[target_name]]
   current <- remake_is_current(obj, target_name)
+  verbose_timing <- obj$verbose$timing
+
+  if (verbose_timing) {
+    t0 <- Sys.time()
+  }
 
   if (!isTRUE(target$implicit)) {
     status <- if (current) "OK" else target$status_string
@@ -275,6 +280,12 @@ remake_update <- function(obj, target_name, check=NULL,
     unload_extra_packages(extra)
   } else if (return_target) {
     ret <- target_get(target, obj$store)
+  }
+
+  if (verbose_timing) {
+    t1 <- Sys.time()
+    str <- sprintf("%2.5f (%s)", as.numeric(t1 - t0, "secs"), t1)
+    remake_print_message(obj, "TIME", target_name, str, "pipe")
   }
 
   # Return only if asked
