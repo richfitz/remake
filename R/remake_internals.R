@@ -45,9 +45,7 @@
     stop("All elements must be targets")
   }
   target_names <- vcapply(targets, "[[", "name")
-  if (any(duplicated(target_names))) {
-    stop("All target names must be unique")
-  }
+  stop_if_duplicated(target_names, "All target names must be unique")
 
   obj_targets <- obj$targets
   target_names_existing <- names(obj_targets)

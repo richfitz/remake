@@ -48,12 +48,8 @@ target_new_base <- function(name, command, opts, extra=NULL,
 
   ret$depends_name <- with_default(unname(command$depends), character(0))
   ret$arg_is_target <- with_default(command$is_target, logical(0))
-  if (any(duplicated(ret$depends_name))) {
-    stop("Dependency listed more than once")
-  }
-  if (any(duplicated(setdiff(names(command$args), "")))) {
-    stop("All named depends targets must be unique")
-  }
+  stop_if_duplicated(ret$depends_name, "Dependency listed more than once")
+  stop_if_duplicated(setdiff(names(command$args), ""), "All named depends targets must be unique")
 
   ret$cleanup_level <- with_default(opts$cleanup_level, "never")
   ret$cleanup_level <-
