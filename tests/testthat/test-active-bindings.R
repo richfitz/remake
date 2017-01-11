@@ -74,8 +74,9 @@ test_that("low level", {
               equals(c(rep_len("source", n), "target")))
 
   expect_that(is_active_binding("processed"), is_true())
-  expect_that(d <- processed,
-              shows_message("BUILD"))
+  expect_error(d <- processed, "Object has not been made")
+  make("processed")
+  expect_message(d <- processed, NA)
 
   expect_that(d, is_a("data.frame"))
   expect_message(d <- processed, NA)
@@ -101,8 +102,9 @@ test_that("High level", {
   expect_that(exists("processed"), is_true())
   expect_that(is_active_binding("processed"), is_true())
 
-  expect_that(d <- processed,
-              shows_message("BUILD"))
+  expect_error(d <- processed, "Object has not been made")
+  make("processed")
+  expect_message(d <- processed, NA)
 
   expect_that(d, is_a("data.frame"))
   expect_message(d <- processed, NA)
@@ -125,16 +127,16 @@ test_that("Source changes trigger rebuild on variable access", {
   expect_that(exists("obj", .GlobalEnv), is_true())
   expect_that(is_active_binding("obj"), is_true())
 
-  expect_that(x <- obj, shows_message("\\[.+BUILD.+\\] obj"))
+  expect_error(x <- obj, "Object has not been made")
+  make("obj", remake_file = "remake_active.yml")
   expect_message(x <- obj, NA)
 
   code <- paste0(code, " * 2")
   writeLines(code, filename_code)
-  expect_that(x <- obj, shows_message("loading sources"))
   expect_message(x <- obj, NA)
+  expect_equal(x, 2)
 
-  code <- paste0(code, " * 2")
-  writeLines(code, filename_code)
-  expect_that(x <- obj, shows_message("\\[.+BUILD.+\\] obj"))
+  make("obj", remake_file = "remake_active.yml")
   expect_message(x <- obj, NA)
+  expect_equal(x, 4)
 })
