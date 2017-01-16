@@ -541,7 +541,7 @@ target_build <- function(target, store, quiet=NULL) {
   if (target$type == "file") {
     if (is.null(target$rule)) {
       ## NOTE: Not sure this is desirable - should just pass?
-      stop("Can't build implicit targets")
+      stop("Can't build implicit target ", target$name)
     }
     ## This avoids either manually creating directories, or obscure
     ## errors when R can't save a file to a place.  Possibly this
