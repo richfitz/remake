@@ -432,3 +432,10 @@ mix_cols <- function(cols, col2, p) {
   m3 <- (m * p + m2 * (1-p))/255
   rgb(m3[1, ], m3[2, ], m3[3, ])
 }
+
+stop_if_duplicated <- function(x, message) {
+  if (anyDuplicated(x)) {
+    stop(message, ": ", paste(unique(duplicated(x)), collapse = ", "),
+         call. = FALSE)
+  }
+}
