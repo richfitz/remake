@@ -17,22 +17,10 @@ make_active_binding_function <- function(obj, name, type) {
   }
   function(value) {
     if (missing(value)) {
-      ## TODO: Possibly fetch from cache here?  I'm mildly concerned
-      ## about an infinite loop.
       old_wd <- setwd(dir_path)
       on.exit(setwd(old_wd), add = TRUE)
-      obj <- remake(file_name) # TODO: add `verbose=FALSE`
       if (type == "target") {
-        if (isFALSE(obj$config$active)) {
-          ret <- list(name=name)
-          class(ret) <- c("target_placeholder", class(ret))
-          ret
-          ## TODO: We might do something different on "pause" here,
-          ## such as return the last known version of the data.
-        } else {
-          obj$verbose$print_noop <- FALSE
-          uninvisible(remake_make1(obj, name))
-        }
+        fetch(name, remake_file = file_name, verbose = FALSE)
       } else if (type == "source") {
         obj$store$env$env[[name]]
       }
