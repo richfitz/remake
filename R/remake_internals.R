@@ -68,11 +68,14 @@
 .remake_initialize_message_format <- function(obj) {
   width <- getOption("width")
   keep <- !vlapply(obj$targets, function(x) isTRUE(x$implicit))
-  target_width <- max(0, nchar(names(obj$targets)[keep]))
+  min_cmd_width <- 10
+  extra_space <- min(nchar("[ BUILD ] ") + 4 + 1 + min_cmd_width, width)
+  target_width <- min(max(0, nchar(names(obj$targets)[keep])), width - extra_space)
+  max_cmd_width <- max(width - (target_width + extra_space - min_cmd_width), 0)
   list(
     fmt=sprintf("%%s %%-%ds |  %%s", target_width),
     target_width=target_width,
-    max_cmd_width=width - (nchar("[ BUILD ] ") + 1 + target_width + 4))
+    max_cmd_width=max_cmd_width)
 }
 
 ## Used only in `refresh`
