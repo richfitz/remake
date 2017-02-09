@@ -211,6 +211,8 @@ remake_print_message <- function(obj, status, target_name,
   status <- brackets(paint(sprintf("%5s", status),
                            status_colour(status)), style)
 
+  target_name <- abbreviate(target_name, obj$fmt$target_width)
+
   if (is.null(cmd)) {
     str <- sprintf("%s %s", status, target_name)
   } else {
