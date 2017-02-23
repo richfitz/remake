@@ -199,7 +199,7 @@ test_that("Implicit file targets", {
   expect_null(t$rule)
   expect_equal(t$depends_name, character(0))
   expect_error(target_build(t),
-               "Can't build implicit targets")
+               "Can't build implicit target code.R")
   expect_null(target_run(t, NULL))
   expect_null(target_run_fake(t))
 
@@ -212,7 +212,7 @@ test_that("Implicit file targets", {
   ## should be lists.
   expect_equal(t$depends_name, character(0))
   expect_error(target_build(t),
-               "Can't build implicit targets")
+               "Can't build implicit target file.csv")
   expect_null(target_run(t))
   expect_null(target_run_fake(t))
 })
