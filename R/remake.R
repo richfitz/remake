@@ -211,12 +211,13 @@ remake_print_message <- function(obj, status, target_name,
   status <- brackets(paint(sprintf("%5s", status),
                            status_colour(status)), style)
 
+  target_name <- abbreviate(target_name, obj$fmt$target_width)
+
   if (is.null(cmd)) {
     str <- sprintf("%s %s", status, target_name)
   } else {
     if (verbose$print_command_abbreviate) {
-      w_extra <- max(0, nchar(target_name) - obj$fmt$target_width)
-      cmd <- abbreviate(cmd, obj$fmt$max_cmd_width - w_extra)
+      cmd <- abbreviate(cmd, obj$fmt$max_cmd_width)
     }
     str <- sprintf(obj$fmt$fmt, status, target_name, paint(cmd, "grey60"))
   }

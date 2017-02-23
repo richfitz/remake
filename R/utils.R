@@ -93,7 +93,7 @@ abbreviate <- function(str, width, cutoff="...") {
   if (nc <= width) {
     str
   } else if (width < nchar(cutoff)) {
-    character(0)
+    ""
   } else {
     w <- nchar(cutoff)
     paste0(substr(str, 1, width - w), cutoff)
