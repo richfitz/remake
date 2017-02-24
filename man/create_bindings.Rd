@@ -14,9 +14,11 @@ delete_bindings(remake_file = "remake.yml")
 \code{"remake.yml"}.}
 }
 \description{
-Load bindings from \code{remake} into the global environment
-(\code{\link{.GlobalEnv}}.  The resulting objects are "active
-bindings" that when accessed will trigger a build of an object.
-Conversely, \code{delete_bindings} undoes this and deletes the
-bindings that \code{remake} made in the first place.
+\code{create_bindings()} loads bindings from \code{remake} into the global environment
+(\code{\link{.GlobalEnv}}).  The resulting objects are "active
+bindings" that when accessed will fetch an object.
+You still need to use \code{\link[=make]{make()}} to update targets.
+
+Conversely, \code{delete_bindings()} undoes this and deletes the
+bindings that \code{remake} instantiated before.
 }

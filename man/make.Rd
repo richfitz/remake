@@ -16,12 +16,12 @@ remakefile).}
 Practically this means that all other arguments must be specified
 by full name.}
 
-\item{verbose}{Controls whether remake is verbose or not.  By
-default it is (\code{TRUE}), which prints out the name of each
+\item{verbose}{Controls whether remake is verbose or not.  The
+default (\code{TRUE}) prints out the name of each
 target as it is built/checked.  This argument is passed to
-\code{\link{remake_verbose}}; valid options are \code{TRUE},
+\code{\link[=remake_verbose]{remake_verbose()}}; valid options are \code{TRUE},
 \code{FALSE} and also the result of calling
-\code{\link{remake_verbose}}.}
+\code{\link[=remake_verbose]{remake_verbose()}}.}
 
 \item{allow_missing_packages}{Allow missing packages when loading
 remake file?}

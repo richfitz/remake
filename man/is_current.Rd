@@ -40,6 +40,6 @@ since it was last built.
 Note that this function does not check all the way down the
 dependency tree; so if A depends on B and B depends on C, A may be
 current with respect to B but B may be out of date with respect to
-C.  Therefore running \code{make} would trigger building B, which
+C.  Therefore running make()] would trigger building B, which
 \emph{may} imply rebuilding A.
 }

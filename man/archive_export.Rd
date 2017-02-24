@@ -48,7 +48,7 @@ The archive format is subject to change and is
 not suitable for long-term archiving.  Moreover, it depends on R's
 internal rds format.  This format is itself not guaranteed to stay
 constant, though it has for a long time now (see
-\code{\link{serialize}}).  However, this is likely to be
+\code{\link[=serialize]{serialize()}}).  However, this is likely to be
 reasonable for data interchange between computers or for
 short/medium term export of results.  Until a lossless
 representation of all R objects exists, the rds problem is not

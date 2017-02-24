@@ -29,9 +29,9 @@ file system is also fine.
 }
 \details{
 This function ignores \code{cleanup_level} and will quite happily
-delete things that have been flagged as \code{cleanup_level:
-purge} - be careful using \code{dependencies=TRUE} as this will
-delete all dependencies.  See \code{\link{list_dependencies}} to
+delete things that have been flagged as \code{cleanup_level: purge} -
+be careful using \code{dependencies=TRUE} as this will
+delete all dependencies.  See \code{\link[=list_dependencies]{list_dependencies()}} to
 see what would be deleted.
 
 It is an error to try to delete a fake target (i.e., a target with
