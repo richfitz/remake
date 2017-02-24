@@ -44,4 +44,3 @@ information about targets that are deleted with a \code{DEL} for
 each deleted target and an empty string if the target is already
 nonexistant.
 }
-

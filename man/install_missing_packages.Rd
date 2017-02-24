@@ -33,4 +33,3 @@ does not play that nicely with remake.
 \author{
 Rich FitzJohn
 }
-

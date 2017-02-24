@@ -29,4 +29,3 @@ by full name.}
 \description{
 Create a simple standalone script from a remake file.
 }
-

@@ -30,4 +30,3 @@ global gitignore) and only files that are not already excluded
 will be added.  Probably after running this function you will want
 to do some editing.
 }
-

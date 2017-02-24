@@ -25,4 +25,3 @@ here and in \code{file_extensions()} will be used, so if you
 accidently include a default extension (or if one is included in a
 future remake version) it is no problem.
 }
-

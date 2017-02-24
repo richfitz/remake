@@ -44,4 +44,3 @@ str <- c("x <- runif(10)",
 e <- source_character(str, envir=new.env())
 ls(e) # x, y
 }
-

@@ -37,4 +37,3 @@ Additionally, the file used can be selected by using \code{-f} or
 be run with \code{verbose=FALSE} by passing in \code{-q} or
 \code{--quiet}.
 }
-

@@ -41,4 +41,3 @@ so the value of \code{noop}, \code{command} and
 \code{command=FALSE} means that \code{command_abbreviate} does not
 matter.
 }
-

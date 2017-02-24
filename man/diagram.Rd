@@ -27,4 +27,3 @@ an indication of where the package is headed.  Plus this is
 something I have always wanted in \code{make}.  Current version is
 not tunable on purpose.
 }
-

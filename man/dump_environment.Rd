@@ -25,4 +25,3 @@ global environment.  This is similar in effect to
 copy of everything that remake has built, plus all functions
 sources into remake, are \emph{copied} into the environment.
 }
-

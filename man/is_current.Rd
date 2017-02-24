@@ -43,4 +43,3 @@ current with respect to B but B may be out of date with respect to
 C.  Therefore running \code{make} would trigger building B, which
 \emph{may} imply rebuilding A.
 }
-

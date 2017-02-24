@@ -41,4 +41,3 @@ It is an error to use this function with file targets (but see
 \code{\link{is_current}} for checking currentness) and
 \code{fetch_archive} for extracting files from archives.
 }
-

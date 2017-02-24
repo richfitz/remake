@@ -20,4 +20,3 @@ bindings" that when accessed will trigger a build of an object.
 Conversely, \code{delete_bindings} undoes this and deletes the
 bindings that \code{remake} made in the first place.
 }
-

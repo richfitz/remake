@@ -14,4 +14,3 @@ is_archive(archive_file = "remake.zip")
 \description{
 Test if a file is a remake archive.
 }
-
