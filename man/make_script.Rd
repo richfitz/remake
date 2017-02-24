@@ -17,7 +17,7 @@ remakefile).}
 \item{filename}{A filename to save the resulting script into.  If
 \code{NULL} (the default) then an a character vector is returned
 that can be inspected.  It can also be sourced without writing to
-file using \code{\link{source_character}}.}
+file using \code{\link[=source_character]{source_character()}}.}
 
 \item{remake_file}{Name of the remakefile (by default
 \code{remake.yml}).  This is passed to \code{remake()}.}
@@ -29,4 +29,3 @@ by full name.}
 \description{
 Create a simple standalone script from a remake file.
 }
-

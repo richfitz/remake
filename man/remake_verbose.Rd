@@ -27,7 +27,7 @@ that it fits on one line.  If \code{FALSE} then the command will
 be allowed to run on for as many lines as required.}
 
 \item{target}{Print information that the target produces (via
-\code{message}, \code{cat} or \code{print}).  If \code{FALSE} then
+\code{\link[=message]{message()}}, \code{\link[=cat]{cat()}} or \code{\link[=print]{print()}}).  If \code{FALSE} then
 these messages will be suppressed.}
 }
 \description{
@@ -41,4 +41,3 @@ so the value of \code{noop}, \code{command} and
 \code{command=FALSE} means that \code{command_abbreviate} does not
 matter.
 }
-

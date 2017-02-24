@@ -26,9 +26,8 @@ file, then the return value is the path to the restored file
 \description{
 Fetch a file or object from an archive.  Throws an error if
 requesting a target that was not exported (see
-\code{\link{list_archive}} for archive contents).
+\code{\link[=list_archive]{list_archive()}} for archive contents).
 }
 \author{
 Rich FitzJohn
 }
-

@@ -32,13 +32,12 @@ Fetch the last computed value from the remake database.
 }
 \details{
 The last computed value would be returned invisibly by
-\code{make}, but this function provides a way of accessing values
+\code{\link[=make]{make()}}, but this function provides a way of accessing values
 without ever triggering a rebuild.  As such, it's possible that the
 target is not made, or is not current, so there are options for
 controlling what to do in this case.
 
 It is an error to use this function with file targets (but see
-\code{\link{is_current}} for checking currentness) and
-\code{fetch_archive} for extracting files from archives.
+\code{\link[=is_current]{is_current()}} for checking currentness) and
+\code{\link[=fetch_archive]{fetch_archive()}} for extracting files from archives.
 }
-

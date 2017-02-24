@@ -9,9 +9,8 @@ is_archive(archive_file = "remake.zip")
 }
 \arguments{
 \item{archive_file}{Name of a file, by default \code{remake.zip}
-(the default for \code{\link{archive_export}}.}
+(the default for \code{\link[=archive_export]{archive_export()}}.}
 }
 \description{
 Test if a file is a remake archive.
 }
-

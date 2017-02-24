@@ -21,8 +21,7 @@ remake file?}
 \description{
 Dump the contents of remake into an environment; by default the
 global environment.  This is similar in effect to
-\code{\link{create_bindings}} but does not create links; instead a
+\code{\link[=create_bindings]{create_bindings()}} but does not create links; instead a
 copy of everything that remake has built, plus all functions
 sources into remake, are \emph{copied} into the environment.
 }
-

@@ -6,7 +6,7 @@
 ##' not suitable for long-term archiving.  Moreover, it depends on R's
 ##' internal rds format.  This format is itself not guaranteed to stay
 ##' constant, though it has for a long time now (see
-##' \code{\link{serialize}}).  However, this is likely to be
+##' [serialize()]).  However, this is likely to be
 ##' reasonable for data interchange between computers or for
 ##' short/medium term export of results.  Until a lossless
 ##' representation of all R objects exists, the rds problem is not
@@ -14,21 +14,21 @@
 ##' @title Export remake contents
 ##' @param target_names Names of targets to export.
 ##' @param dependencies Export the \emph{dependencies} of
-##' \code{target_names}?  The default is \code{TRUE}, which allows
-##' targets such as \code{all} to be specified in order to export
-##' everything that is a dependency of \code{all}.  If
-##' \code{dependencies} is \code{FALSE}, all elements of
-##' \code{target_names} must represent files or objects.
+##' `target_names`?  The default is `TRUE`, which allows
+##' targets such as `all` to be specified in order to export
+##' everything that is a dependency of `all`.  If
+##' `dependencies` is `FALSE`, all elements of
+##' `target_names` must represent files or objects.
 ##' @param verbose Be verbose when reading the remake file?
 ##' @param require_current Logical indicating if the targets must be
-##' up-to-date to be fetched.  If this is \code{TRUE} and the targets
+##' up-to-date to be fetched.  If this is `TRUE` and the targets
 ##' are not up-to-date, then an error will be thrown.
 ##' @param allow_missing_packages Allow missing packages when loading
 ##' remake file?
 ##' @param archive_file Name of the archive file to generate, by
-##' default \code{remake.zip}.
+##' default `remake.zip`.
 ##' @param remake_file Remake file to read, by default
-##' \code{remake.yml}.
+##' `remake.yml`.
 ##' @return Invisibly, the name of the archive file generated.
 ##' However, this function is primarily useful for its side effect,
 ##' which is generating the archive.
@@ -48,7 +48,7 @@ archive_export <- function(target_names=NULL, dependencies=TRUE,
 }
 
 ##' Import a previously exported archive (see
-##' \code{\link{archive_export}}.  This function will overwrite files
+##' [archive_export()].  This function will overwrite files
 ##' and objects.  Be careful.
 ##' @title Import a remake archive
 ##' @param archive_file Name of the zip file to import from
@@ -56,7 +56,7 @@ archive_export <- function(target_names=NULL, dependencies=TRUE,
 ##' @param allow_missing_packages Allow missing packages when loading
 ##' remake file?
 ##' @param remake_file Remake file to read, by default
-##' \code{remake.yml}.
+##' `remake.yml`.
 ##' @export
 archive_import <- function(archive_file="remake.zip",
                            verbose=TRUE, allow_missing_packages=FALSE,
@@ -76,9 +76,9 @@ archive_import <- function(archive_file="remake.zip",
 
 ##' Test if a file is a remake archive.
 ##' @title Test if a zip file is likely to be a remake archive, as
-##' created by \code{archive_create}
-##' @param archive_file Name of a file, by default \code{remake.zip}
-##' (the default for \code{\link{archive_export}}.
+##' created by `archive_create`
+##' @param archive_file Name of a file, by default `remake.zip`
+##' (the default for [archive_export()].
 ##' @export
 is_archive <- function(archive_file="remake.zip") {
   assert_file_exists(archive_file)
@@ -151,19 +151,19 @@ list_archive <- function(archive_file="remake.zip", detail=FALSE) {
 
 ##' Fetch a file or object from an archive.  Throws an error if
 ##' requesting a target that was not exported (see
-##' \code{\link{list_archive}} for archive contents).
+##' [list_archive()] for archive contents).
 ##' @title Fetch a file or object from an archive
 ##' @param target_name Name of a single file or
 ##' @param path_prefix Optional path prefix for exported files only
-##' (not for objects).  If given, a file \code{path/to/file} will be
-##' exported as \code{path_prefix/path/to/file}; this is useful to avoid
+##' (not for objects).  If given, a file `path/to/file` will be
+##' exported as `path_prefix/path/to/file`; this is useful to avoid
 ##' overwriting existing data, as this will happen without warning.
 ##' @param archive_file Name of the archive file to use, by
-##' default \code{remake.zip}.
-##' @return If \code{target_name} refers to an object, then the return
-##' value is the restored object.  If \code{target_name} refers to a
+##' default `remake.zip`.
+##' @return If `target_name` refers to an object, then the return
+##' value is the restored object.  If `target_name` refers to a
 ##' file, then the return value is the path to the restored file
-##' (including \code{path_prefix} if given).
+##' (including `path_prefix` if given).
 ##' @export
 ##' @author Rich FitzJohn
 fetch_archive <- function(target_name,

@@ -1,34 +1,34 @@
 ##' This function exists to support commandline use, as installed by
-##' \code{\link{install_remake}}.  This little script accepts standard
+##' [install_remake()].  This little script accepts standard
 ##' unix-style command-line options to drive a subset of remake's
 ##' functionality.  Don't run this function from within R!  This uses
-##' \code{commandArgs} to pass along arguments to various remake
+##' `commandArgs` to pass along arguments to various remake
 ##' functions.
 ##'
-##' See \code{remake --help} for instructions.
+##' See `remake --help` for instructions.
 ##'
 ##' At the moment, supported featues are:
 ##' \itemize{
 ##'
-##' \item Running \code{remake::make}, as \code{remake target1
+##' \item Running `remake::make`, as \code{remake target1
 ##' [target2]}.  If targets are ommitted the default target will be
 ##' used.
 ##'
-##' \item listing targets, as \code{--list-targets}, which calls
-##' \code{\link{list_targets}}
+##' \item listing targets, as `--list-targets`, which calls
+##' [list_targets()]
 ##'
-##' \item generating a script with \code{-s} or \code{--script}
-##' (printing to standard output) or \code{--script-file} prints to a
+##' \item generating a script with `-s` or `--script`
+##' (printing to standard output) or `--script-file` prints to a
 ##' file.
 ##'
-##' \item return the version, as \code{-v} or \code{--version},
-##' returning \code{packageVersion("remake")}
+##' \item return the version, as `-v` or `--version`,
+##' returning `packageVersion("remake")`
 ##' }
 ##'
-##' Additionally, the file used can be selected by using \code{-f} or
-##' \code{--file} (following \code{make}'s convention), and remake can
-##' be run with \code{verbose=FALSE} by passing in \code{-q} or
-##' \code{--quiet}.
+##' Additionally, the file used can be selected by using `-f` or
+##' `--file` (following `make`'s convention), and remake can
+##' be run with `verbose=FALSE` by passing in `-q` or
+##' `--quiet`.
 ##'
 ##' @title Command line interface to remake
 ##' @name remake

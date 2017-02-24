@@ -5,7 +5,7 @@
 \title{Command line interface to remake}
 \description{
 This function exists to support commandline use, as installed by
-\code{\link{install_remake}}.  This little script accepts standard
+\code{\link[=install_remake]{install_remake()}}.  This little script accepts standard
 unix-style command-line options to drive a subset of remake's
 functionality.  Don't run this function from within R!  This uses
 \code{commandArgs} to pass along arguments to various remake
@@ -22,7 +22,7 @@ At the moment, supported featues are:
 used.
 
 \item listing targets, as \code{--list-targets}, which calls
-\code{\link{list_targets}}
+\code{\link[=list_targets]{list_targets()}}
 
 \item generating a script with \code{-s} or \code{--script}
 (printing to standard output) or \code{--script-file} prints to a
@@ -37,4 +37,3 @@ Additionally, the file used can be selected by using \code{-f} or
 be run with \code{verbose=FALSE} by passing in \code{-q} or
 \code{--quiet}.
 }
-

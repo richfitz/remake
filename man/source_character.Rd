@@ -13,14 +13,14 @@ element of the vector will be treated as a separate line.}
 \item{envir}{An environment to source into (by default the global
 environment).}
 
-\item{rewrite_source}{Because calls to \code{source} within a
+\item{rewrite_source}{Because calls to \code{source()} within a
 script will still be evaluated in the global environment, so this
 may have side-effects when running in a non-global
 environment.  Setting \code{rewrite_source=TRUE} (the default)
-attempts to rewrite top-level calls to \code{source} to source
+attempts to rewrite top-level calls to \code{source()} to source
 locally.  This is likely error prone but the current
-implementation matches the way that \code{make_script} produces
-calls to \code{source}.}
+implementation matches the way that \code{make_script()} produces
+calls to \code{source()}.}
 }
 \value{
 The environment into which the code is sourced,
@@ -33,7 +33,7 @@ Convenience function for sourcing a remake script (or other
 arbitrary code) that is present as a character vector rather than
 saved in a file.  This just takes
 care of writing the character vector to a temporary file and
-running R's \code{\link{source}} over it.  It will also source
+running R's \code{\link[=source]{source()}} over it.  It will also source
 other arbitrary sets of R code that are character vectors rather
 than files.
 }
@@ -44,4 +44,3 @@ str <- c("x <- runif(10)",
 e <- source_character(str, envir=new.env())
 ls(e) # x, y
 }
-

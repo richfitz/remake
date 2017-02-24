@@ -12,13 +12,13 @@ make_environment(target_names = character(0), dependencies = FALSE,
 \item{target_names}{Vector of target names to export.  If omitted,
 then no targets are copied, though functions are still copied.}
 
-\item{dependencies}{Should the dependenciesof \code{target_names}
+\item{dependencies}{Should the dependencies of \code{target_names}
 also be copied over?  Setting this to \code{TRUE} is equivalent to
 \code{make_environment(list_dependencies(target_names, type="file"))}
 but shorter to type.}
 
 \item{copy_functions}{Should functions be directly copied into
-the retuned environment?  If \code{FALSE}, then the returned
+the returned environment?  If \code{FALSE}, then the returned
 environment has an environment with functions as its
 \emph{parent}.  This is the same as the environment used by
 \code{remake} so don't assign anything in here!  (This may change
@@ -35,8 +35,7 @@ remake file?}
 \description{
 Construct an environment with remake target products, useful for
 debugging.  Once you have an environment, you can
-\code{\link{attach}} it (yes, it \emph{is} useful for something,
-but be careful to \code{detach} later), extract elements or browse
+\code{\link[=attach]{attach()}} it (yes, it \emph{is} useful for something,
+but be careful to \code{\link[=detach]{detach()}} later), extract elements or browse
 it.
 }
-
