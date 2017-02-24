@@ -331,7 +331,7 @@ remake_make1 <- function(obj, target_name, check=NULL) {
   plan <- remake_plan(obj, target_name)
   ret <- lapply(plan, function(i) {
     is_last <- i == last_target_name
-    last <- remake_update(obj, i, check=check, return_target=is_last)
+    remake_update(obj, i, check=check, return_target=is_last)
   })
   invisible(ret[plan == last_target_name][[1L]])
 }
