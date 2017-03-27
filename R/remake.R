@@ -236,8 +236,8 @@ remake_dependency_graph <- function(obj) {
   topological_sort(g)
 }
 
-remake_update <- function(obj, target_name, check=NULL,
-                          return_target=TRUE) {
+remake_update2 <- function(obj, target_name, check=NULL,
+                           return_target=TRUE) {
   target <- obj$targets[[target_name]]
   current <- remake_is_current(obj, target_name)
 
@@ -326,12 +326,24 @@ remake_make <- function(obj, target_names=NULL, ...) {
   remake_make1(obj, target_names, ...)
 }
 
-remake_make1 <- function(obj, target_name, check=NULL) {
-  last_target_name <- utils::tail(target_name, 1L)
-  plan <- remake_plan(obj, target_name)
+remake_make1 <- function(obj, target_names, check=NULL) {
+  last_target_name <- utils::tail(target_names, 1L)
+  plan <- remake_plan(obj, target_names)
+  remake_update1(obj, plan, last_target_name, check=check)
+}
+
+remake_update <- function(obj, target_names, check=NULL, ...) {
+  last_target_name <- utils::tail(target_names, 1L)
+  for (t in target_names) {
+    remake_print_message(obj, "UPDT", t, style="angle")
+  }
+  remake_update1(obj, target_names, last_target_name, check=check, ...)
+}
+
+remake_update1 <- function(obj, plan, last_target_name, check=NULL) {
   ret <- lapply(plan, function(i) {
     is_last <- i == last_target_name
-    remake_update(obj, i, check=check, return_target=is_last)
+    remake_update2(obj, i, check=check, return_target=is_last)
   })
   invisible(ret[plan == last_target_name][[1L]])
 }
