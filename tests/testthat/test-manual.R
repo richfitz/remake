@@ -56,9 +56,9 @@ test_that("simple run", {
                sort(c("hash", "time")))
 
   ## Run the build system manually:
-  remake_update(m, "data.csv")
-  remake_update(m, "processed")
-  remake_update(m, "plot.pdf")
+  remake_update2(m, "data.csv")
+  remake_update2(m, "processed")
+  remake_update2(m, "plot.pdf")
 
   expect_true(remake_is_current(m, "data.csv"))
   expect_true(remake_is_current(m, "processed"))
@@ -80,9 +80,9 @@ test_that("Depending on a file we don't make", {
   ## contain a rule for building data.csv
   m <- remake("remake2.yml")
 
-  expect_message(remake_update(m, "data.csv"), NA)
-  remake_update(m, "processed")
-  remake_update(m, "plot.pdf")
+  expect_message(remake_update2(m, "data.csv"), NA)
+  remake_update2(m, "processed")
+  remake_update2(m, "plot.pdf")
   expect_true(file.exists("plot.pdf"))
   remake_make(m, "clean")
   expect_false(file.exists("plot.pdf"))

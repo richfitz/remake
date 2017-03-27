@@ -5,7 +5,7 @@
 ## Main functionality:
 ######################################################################
 
-##' Run remake to build one or more targets.
+##' `make()` builds the selected targets (default: `all()`) and all dependencies.
 ##' @title Make one or more targets
 ##' @param target_names Character vector of names of targets to build,
 ##' or `NULL` to build the default target (if specified in the
@@ -31,6 +31,20 @@ make <- function(target_names=NULL, ...,
   obj <- remake(remake_file, verbose,
                 allow_missing_packages=allow_missing_packages)
   remake_make(obj, target_names)
+}
+
+##' @rdname make
+##' @description `update()` only updates the selected targets (no default),
+##' without checking up-to-date state of dependencies. You should almost always
+##' prefer `make()`, unless you have specific reasons not to update dependencies.
+##' @export
+update <- function(target_names=NULL, ...,
+                   verbose=TRUE,
+                   allow_missing_packages=FALSE,
+                   remake_file="remake.yml") {
+  obj <- remake(remake_file, verbose,
+                allow_missing_packages=allow_missing_packages)
+  remake_update(obj, target_names)
 }
 
 ##' Create a simple standalone script from a remake file.

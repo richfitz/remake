@@ -2,9 +2,13 @@
 % Please edit documentation in R/api.R
 \name{make}
 \alias{make}
+\alias{update}
 \title{Make one or more targets}
 \usage{
 make(target_names = NULL, ..., verbose = TRUE,
+  allow_missing_packages = FALSE, remake_file = "remake.yml")
+
+update(target_names = NULL, ..., verbose = TRUE,
   allow_missing_packages = FALSE, remake_file = "remake.yml")
 }
 \arguments{
@@ -30,5 +34,9 @@ remake file?}
 \code{remake.yml}).}
 }
 \description{
-Run remake to build one or more targets.
+\code{make()} builds the selected targets (default: \code{all()}) and all dependencies.
+
+\code{update()} only updates the selected targets (no default),
+without checking up-to-date state of dependencies. You should almost always
+prefer \code{make()}, unless you have specific reasons not to update dependencies.
 }
