@@ -1,6 +1,6 @@
 # remake
 
-[![Build Status](https://travis-ci.org/richfitz/remake.png?branch=master)](https://travis-ci.org/richfitz/remake)
+[![Build Status](https://travis-ci.org/richfitz/remake.svg?branch=master)](https://travis-ci.org/richfitz/remake)
 [![Build status](https://ci.appveyor.com/api/projects/status/yltv2lpn046a7e93/branch/master?svg=true)](https://ci.appveyor.com/project/richfitz/remake/branch/master)
 [![Coverage Status](https://coveralls.io/repos/richfitz/remake/badge.svg?branch=master)](https://coveralls.io/r/richfitz/remake?branch=master)
 
