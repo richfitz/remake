@@ -143,7 +143,7 @@ Some tutorials on using remake with different datasets.
 
 * [Tutorial on remake from Ecostats workshop](https://github.com/nicercode/2015.12.08-EcoStats)
 * [Tutorial on remake using the Gapminder data](https://github.com/ropenscilabs/remake-tutorial)
-
+* [Tutorial on remake using cooking recipes as examples](https://github.com/krlmlr/remake-tutorial)
 
 
 # Installation
